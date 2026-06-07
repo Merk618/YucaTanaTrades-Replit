@@ -1,8 +1,16 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import journalRouter from "./journal";
+import watchlistRouter from "./watchlist";
+import botsRouter from "./bots";
+import portfolioRouter from "./portfolio";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(journalRouter);
+router.use(watchlistRouter);
+router.use(botsRouter);
+router.use(portfolioRouter);
 
 export default router;

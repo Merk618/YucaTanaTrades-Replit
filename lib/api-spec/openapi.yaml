@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: YucaTanaTrades API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: journal
+    description: Trade journal entries
+  - name: watchlist
+    description: Watchlist management
+  - name: bots
+    description: Bot status and logs
+  - name: portfolio
+    description: Portfolio data
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,182 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /journal:
+    get:
+      operationId: listJournalEntries
+      tags: [journal]
+      summary: List all trade journal entries
+      responses:
+        "200":
+          description: List of journal entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JournalEntry"
+    post:
+      operationId: createJournalEntry
+      tags: [journal]
+      summary: Create a new journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journal/{id}:
+    get:
+      operationId: getJournalEntry
+      tags: [journal]
+      summary: Get a journal entry by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Journal entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateJournalEntry
+      tags: [journal]
+      summary: Update a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+    delete:
+      operationId: deleteJournalEntry
+      tags: [journal]
+      summary: Delete a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /journal/summary:
+    get:
+      operationId: getJournalSummary
+      tags: [journal]
+      summary: Get win/loss summary stats
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalSummary"
+
+  /watchlist:
+    get:
+      operationId: listWatchlistItems
+      tags: [watchlist]
+      summary: Get all watchlist items
+      responses:
+        "200":
+          description: Watchlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WatchlistItem"
+    post:
+      operationId: addWatchlistItem
+      tags: [watchlist]
+      summary: Add ticker to watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchlistItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+
+  /watchlist/{id}:
+    delete:
+      operationId: removeWatchlistItem
+      tags: [watchlist]
+      summary: Remove item from watchlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bots/status:
+    get:
+      operationId: getBotsStatus
+      tags: [bots]
+      summary: Get status of all bots
+      responses:
+        "200":
+          description: Bot statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotsStatus"
+
+  /portfolio/summary:
+    get:
+      operationId: getPortfolioSummary
+      tags: [portfolio]
+      summary: Get portfolio overview summary
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +216,216 @@ components:
       required:
         - status
 
+    JournalEntry:
+      type: object
+      required: [id, ticker, setupType, side, entryPrice, exitPrice, pnl, pnlPercent, thesis, outcome, tradeDate, createdAt]
+      properties:
+        id:
+          type: integer
+        ticker:
+          type: string
+        setupType:
+          type: string
+        side:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: ["number", "null"]
+        pnl:
+          type: ["number", "null"]
+        pnlPercent:
+          type: ["number", "null"]
+        thesis:
+          type: string
+        mistakes:
+          type: ["string", "null"]
+        lessons:
+          type: ["string", "null"]
+        outcome:
+          type: string
+          enum: [win, loss, breakeven, open]
+        sector:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        tradeDate:
+          type: string
+        createdAt:
+          type: string
+
+    JournalEntryInput:
+      type: object
+      required: [ticker, setupType, side, entryPrice, thesis, outcome, tradeDate]
+      properties:
+        ticker:
+          type: string
+        setupType:
+          type: string
+        side:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: ["number", "null"]
+        pnl:
+          type: ["number", "null"]
+        pnlPercent:
+          type: ["number", "null"]
+        thesis:
+          type: string
+        mistakes:
+          type: ["string", "null"]
+        lessons:
+          type: ["string", "null"]
+        outcome:
+          type: string
+          enum: [win, loss, breakeven, open]
+        sector:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        tradeDate:
+          type: string
+
+    JournalEntryUpdate:
+      type: object
+      properties:
+        ticker:
+          type: string
+        setupType:
+          type: string
+        side:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: ["number", "null"]
+        pnl:
+          type: ["number", "null"]
+        pnlPercent:
+          type: ["number", "null"]
+        thesis:
+          type: string
+        mistakes:
+          type: ["string", "null"]
+        lessons:
+          type: ["string", "null"]
+        outcome:
+          type: string
+          enum: [win, loss, breakeven, open]
+        sector:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        tradeDate:
+          type: string
+
+    JournalSummary:
+      type: object
+      required: [totalTrades, wins, losses, breakevens, openTrades, winRate, totalPnl, avgWin, avgLoss]
+      properties:
+        totalTrades:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        breakevens:
+          type: integer
+        openTrades:
+          type: integer
+        winRate:
+          type: number
+        totalPnl:
+          type: number
+        avgWin:
+          type: number
+        avgLoss:
+          type: number
+
+    WatchlistItem:
+      type: object
+      required: [id, ticker, sector, notes, addedAt]
+      properties:
+        id:
+          type: integer
+        ticker:
+          type: string
+        sector:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        addedAt:
+          type: string
+
+    WatchlistItemInput:
+      type: object
+      required: [ticker]
+      properties:
+        ticker:
+          type: string
+        sector:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [high, medium, low]
+
+    BotsStatus:
+      type: object
+      required: [moomoo, cryptoHunter]
+      properties:
+        moomoo:
+          $ref: "#/components/schemas/BotStatus"
+        cryptoHunter:
+          $ref: "#/components/schemas/BotStatus"
+
+    BotStatus:
+      type: object
+      required: [name, status, lastScan, scansToday, isReadOnly]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, scanning, idle, error]
+        lastScan:
+          type: ["string", "null"]
+        scansToday:
+          type: integer
+        isReadOnly:
+          type: boolean
+        lastResult:
+          type: ["string", "null"]
+        health:
+          type: string
+          enum: [good, warning, critical]
+
+    PortfolioSummary:
+      type: object
+      required: [totalValue, dayChange, dayChangePct, totalGain, totalGainPct, rothIra, individual, crypto]
+      properties:
+        totalValue:
+          type: number
+        dayChange:
+          type: number
+        dayChangePct:
+          type: number
+        totalGain:
+          type: number
+        totalGainPct:
+          type: number
+        rothIra:
+          type: number
+        individual:
+          type: number
+        crypto:
+          type: number

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "YucaTanaTrades"
+version = "1.0.0"
+id = "artifacts/yucatanatrades"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20531
+
+[services.development]
+run = "pnpm --filter @workspace/yucatanatrades run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/yucatanatrades", "run", "build" ]
+publicDir = "artifacts/yucatanatrades/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20531"
+BASE_PATH = "/"
