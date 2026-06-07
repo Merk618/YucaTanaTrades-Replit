@@ -16,6 +16,7 @@ import Bots from "@/pages/bots";
 import Journal from "@/pages/journal";
 import Risk from "@/pages/risk";
 import Settings from "@/pages/settings";
+import Watchlist from "@/pages/watchlist";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/portfolio" component={Portfolio} />
         <Route path="/bots" component={Bots} />
         <Route path="/journal" component={Journal} />
+        <Route path="/watchlist" component={Watchlist} />
         <Route path="/risk" component={Risk} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />

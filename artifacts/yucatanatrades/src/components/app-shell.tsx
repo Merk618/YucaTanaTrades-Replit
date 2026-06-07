@@ -13,7 +13,8 @@ import {
   Settings,
   Menu,
   Search,
-  Bell
+  Bell,
+  Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const navItems = [
   { name: "Portfolio", href: "/portfolio", icon: Briefcase },
   { name: "Bots", href: "/bots", icon: Bot },
   { name: "Journal", href: "/journal", icon: BookOpen },
+  { name: "Watchlist", href: "/watchlist", icon: Star },
   { name: "Risk", href: "/risk", icon: ShieldAlert },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
