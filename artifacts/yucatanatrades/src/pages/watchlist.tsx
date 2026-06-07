@@ -138,7 +138,7 @@ export default function Watchlist() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
+            className="btn-gold flex items-center gap-2 px-4 py-2 rounded-lg text-sm"
           >
             <Plus className="w-4 h-4" />
             Add Ticker

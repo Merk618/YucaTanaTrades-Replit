@@ -1,0 +1,98 @@
+Upgrade YucaTanaTrades with a premium high-end animated visual system.
+
+Goal:
+Make the site feel like a luxury institutional trading terminal: dark, cinematic, gold-accented, smooth, expensive, modern, and interactive — not gimmicky, not cluttered.
+
+Core Style:
+- Primary background: deep black / charcoal / midnight navy gradients.
+- Accent colors: metallic gold, champagne gold, muted bronze, subtle emerald/teal for positive market signals, crimson only for warnings/losses.
+- Use glassmorphism cards with subtle blur, thin gold borders, soft shadows, and layered depth.
+- Avoid bright yellow. Gold should feel premium and metallic.
+
+Add Global Particle System:
+- Add a lightweight animated particle background behind the main content.
+- Particles should look like subtle gold/white market-data energy points, not snow or confetti.
+- Include slow floating movement, faint connection lines, low opacity, and depth layering.
+- Particles must not block clicks or hurt readability.
+- Use canvas or CSS-only if possible.
+- Keep performance optimized: pause/reduce effects on low-power devices and mobile.
+- Respect `prefers-reduced-motion`.
+
+Add Hero Animation:
+- Create a cinematic landing hero with:
+  - slow moving gradient glow,
+  - animated gold light sweep,
+  - subtle floating trading-card elements,
+  - background candlestick/grid pattern,
+  - premium CTA buttons with hover glow.
+- Add animated text entrance: fade up, slight blur removal, staggered timing.
+- Add a live-market ticker strip with smooth horizontal motion.
+
+Add Scroll Animations:
+- Sections should animate in as the user scrolls:
+  - fade-up,
+  - scale-in,
+  - soft blur-to-clear,
+  - staggered card reveal.
+- Use IntersectionObserver, not heavy libraries unless already installed.
+- Animations should be smooth and professional, around 400–800ms.
+- Avoid over-bouncy or childish motion.
+
+Add Premium Navigation:
+- Build a sticky glass navbar with gold underline animation.
+- On hover over nav tabs, show embedded dropdown panels with:
+  - icon,
+  - title,
+  - short description,
+  - mini chart/metric style preview if appropriate.
+- Dropdowns should animate with opacity, translateY, and blur.
+- Add active-section indicator while scrolling.
+- Add subtle nav glow when scrolling past hero.
+
+Add Card Hover Effects:
+- Dashboard cards should have:
+  - gold edge glow on hover,
+  - slight lift,
+  - animated border shimmer,
+  - background radial highlight following mouse position if feasible.
+- Cards should feel interactive but not distracting.
+
+Add Button Effects:
+- Primary buttons: metallic gold gradient, glow on hover, subtle shine sweep.
+- Secondary buttons: transparent glass with gold border.
+- Include pressed/tap states.
+
+Add Market-Themed Micro Animations:
+- Positive numbers pulse soft emerald.
+- Negative numbers pulse muted red.
+- Loading states should use elegant gold skeleton shimmer.
+- Chart containers should animate into view.
+- Add subtle data-stream lines or scanning light effects in key dashboard areas.
+
+Performance Requirements:
+- Do not make the site laggy.
+- Use CSS animations and IntersectionObserver where possible.
+- Avoid excessive JavaScript.
+- Disable or simplify particles on mobile screens under 768px.
+- Respect accessibility and reduced-motion preferences.
+- Keep all animations modular in separate CSS/JS files if possible.
+
+Implementation Requirements:
+- Do not break existing layout or functionality.
+- Keep the site responsive.
+- Add clear class names and comments.
+- Use reusable animation utilities.
+- Ensure no text becomes hard to read.
+- Test desktop and mobile views.
+
+Deliverables:
+1. Add/modify the necessary CSS for premium animations.
+2. Add a lightweight particle background.
+3. Add scroll reveal animations.
+4. Add animated hover dropdown navigation.
+5. Add premium card/button hover effects.
+6. Add reduced-motion and mobile performance fallbacks.
+7. Explain what files were changed and how to adjust intensity later.
+
+Overall feel:
+YucaTanaTrades should feel like Bloomberg Terminal meets luxury fintech meets futuristic AI trading command center.

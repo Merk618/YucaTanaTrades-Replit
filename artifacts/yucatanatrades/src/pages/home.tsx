@@ -1,17 +1,24 @@
+import * as React from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Bot, Zap, Shield, Activity, ArrowUpRight, ArrowDownRight, Newspaper } from "lucide-react";
 import { mockMarketData, mockPortfolioData, mockScannerResults, mockBotStatus, mockNewsCatalysts } from "@/data/mockData";
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
 function MetricCard({ label, value, sub, up }: { label: string; value: string; sub?: string; up?: boolean }) {
   return (
-    <motion.div variants={item} className="glass-card p-5">
+    <motion.div variants={item} className="glass-card p-5 group cursor-default">
       <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
-      <p className="font-mono text-2xl font-bold text-foreground">{value}</p>
+      <p className={cn(
+        "font-mono text-2xl font-bold transition-colors duration-300",
+        up === undefined ? "text-foreground" : up ? "text-foreground group-hover:text-emerald-300" : "text-foreground group-hover:text-red-300"
+      )}>
+        {value}
+      </p>
       {sub && (
         <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", up ? "text-emerald-400" : "text-red-400")}>
           {up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -19,6 +26,19 @@ function MetricCard({ label, value, sub, up }: { label: string; value: string; s
         </p>
       )}
     </motion.div>
+  );
+}
+
+function RevealSection({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+  return (
+    <div
+      ref={ref}
+      className={cn("reveal-hidden", isVisible && "reveal-visible", className)}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
   );
 }
 

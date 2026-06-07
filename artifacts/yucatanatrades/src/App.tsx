@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 
 import { AppShell } from "@/components/app-shell";
 import { TickerTape } from "@/components/ticker-tape";
+import { AnimatedBackground } from "@/components/animated-background";
+import { ParticleField } from "@/components/particle-field";
 
 import Home from "@/pages/home";
 import Markets from "@/pages/markets";
@@ -52,7 +54,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <div className="flex flex-col h-screen overflow-hidden">
+          <AnimatedBackground />
+          <ParticleField />
+          <div className="flex flex-col h-screen overflow-hidden relative z-10">
             <TickerTape />
             <div className="flex-1 relative min-h-0">
               <Router />

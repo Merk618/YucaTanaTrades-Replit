@@ -74,7 +74,7 @@ export default function Bots() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className={cn("glass-card p-6 shadow-lg", accentColor)}
+            className={cn("glass-card p-6 shadow-lg scan-effect", accentColor)}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -161,14 +161,16 @@ export default function Bots() {
       </motion.div>
 
       {/* Bot Logs */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-border/50">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card overflow-hidden scan-effect">
+        <div className="p-4 border-b border-border/50 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <h2 className="text-sm font-display font-semibold text-primary">Bot Activity Log</h2>
+          <span className="ml-auto text-[10px] text-muted-foreground font-mono px-2 py-0.5 rounded bg-muted/50 border border-border/40">LIVE STREAM</span>
         </div>
         <div className="p-4 space-y-2 font-mono text-xs max-h-64 overflow-y-auto">
           {LOG_ENTRIES.map((log, i) => (
-            <div key={i} className={cn("flex items-start gap-3 py-1.5 px-2 rounded", log.type === "signal" ? "bg-primary/5" : "")}>
-              <span className="text-muted-foreground flex-shrink-0">{log.time}</span>
+            <div key={i} className={cn("flex items-start gap-3 py-1.5 px-2 rounded transition-colors", log.type === "signal" ? "bg-primary/5 hover:bg-primary/8" : "hover:bg-muted/30")}>
+              <span className="text-muted-foreground/60 flex-shrink-0 tabular-nums">{log.time}</span>
               <span className={cn("flex-shrink-0 px-1.5 rounded text-[10px] font-bold", {
                 "text-blue-400 bg-blue-500/10": log.bot === "CryptoHunter",
                 "text-primary bg-primary/10": log.bot === "MooMoo",

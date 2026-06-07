@@ -123,14 +123,19 @@ export default function Scanners() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="glass-card overflow-hidden"
+        className="glass-card overflow-hidden scan-effect"
       >
         <div className="p-4 border-b border-border/50 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-display font-semibold text-primary">{activeTab} Scanner</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{filtered.length} signals found · Updated 30s ago</p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <h2 className="text-sm font-display font-semibold text-primary">{activeTab} Scanner</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5 ml-3.5">{filtered.length} signals found · Updated 30s ago</p>
           </div>
-          <span className="text-[10px] text-muted-foreground font-mono px-2 py-1 rounded bg-muted/50 border border-border/50">LIVE DATA CONNECT: TODO</span>
+          <span className="text-[10px] text-emerald-400 font-mono px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />SCANNING
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
