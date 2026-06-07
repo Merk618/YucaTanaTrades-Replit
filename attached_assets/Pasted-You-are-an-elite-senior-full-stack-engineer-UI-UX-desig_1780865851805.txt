@@ -1,0 +1,407 @@
+You are an elite senior full-stack engineer, UI/UX designer, trading-dashboard architect, and motion-design specialist.
+
+Build and upgrade my project: YucaTanaTrades.
+
+Goal:
+Create a premium, high-end financial trading terminal that feels like a luxury Bloomberg + TradingView + AI research command center. The visual identity should be mostly gold, black, dark charcoal, deep navy, and subtle emerald/teal accents. The site must feel expensive, modern, animated, fast, and professional — not childish or overdone.
+
+Project Name:
+YucaTanaTrades
+
+Core Product Vision:
+YucaTanaTrades is an AI-powered trading and investing dashboard for stocks, crypto, options research, portfolio tracking, watchlists, scanners, market intelligence, AI research, trade journaling, and bot monitoring.
+
+The UI should support:
+- Stock market dashboard
+- Crypto dashboard
+- AI research terminal
+- Watchlists
+- Portfolio overview
+- Technical scanner
+- Momentum scanner
+- Dip-buy scanner
+- Options idea scanner
+- Risk center
+- Trade journal
+- News/catalyst feed
+- MooMoo/OpenD bot status panel
+- Crypto Hunter bot status panel
+- Settings/API connection area
+
+Design Style:
+Use a luxury dark theme:
+- Background: near-black, charcoal, dark navy gradients
+- Primary accent: metallic gold
+- Secondary accents: emerald, teal, electric blue, muted purple
+- Avoid flat yellow; use premium gold gradients
+- Use glassmorphism panels
+- Soft shadows
+- Subtle glowing borders
+- Animated gold edge highlights
+- Premium financial-terminal aesthetic
+- Make it look like a serious paid SaaS product
+
+Preferred Color Palette:
+- Background: #050505, #080A0F, #0D1117
+- Card background: rgba(15, 17, 24, 0.82)
+- Primary gold: #D4AF37
+- Bright gold: #FFD700
+- Soft champagne: #F5D76E
+- Deep gold: #8A6A1F
+- Emerald: #00C896
+- Teal: #14F1D9
+- Blue accent: #3B82F6
+- Danger red: #FF4D4D
+- Warning orange: #FFB020
+- Text primary: #F8F8F2
+- Text secondary: #A1A1AA
+
+Typography:
+Use a premium modern font stack:
+- Inter
+- Space Grotesk
+- Satoshi if available
+- JetBrains Mono for ticker symbols, prices, code-like metrics, and terminal panels
+
+Layout Requirements:
+1. Main app shell:
+   - Fixed left sidebar or top navigation depending on screen size
+   - High-end animated scroll tab/navigation system
+   - Dashboard content grid
+   - Command/search bar at top
+   - Account/source status indicators
+   - Responsive mobile layout
+
+2. Animated Scroll Tabs:
+   Create a premium horizontal scroll tab bar near the top.
+   Requirements:
+   - Smooth horizontal scrolling
+   - Sticky behavior when scrolling down
+   - Active tab has animated gold underline
+   - Hover causes subtle glow, scale, and gold shimmer
+   - Tabs should feel like high-end trading-terminal modules
+   - Include icons where appropriate
+   - Add mouse-wheel horizontal scroll support if practical
+   - Add drag/swipe support if practical
+   - Add scroll progress indicator
+
+3. Embedded Hover Tabs / Flyout Tabs:
+   When hovering over a main tab, show an embedded mini-tab/flyout menu below it.
+   Example:
+   - Markets tab hover shows: Stocks, Crypto, ETFs, Futures, Watchlist
+   - AI Research tab hover shows: Deep Research, Earnings, Catalysts, SEC Filings, Analyst Targets
+   - Scanners tab hover shows: Momentum, Pullbacks, Oversold, Breakouts, Options, Unusual Volume
+   - Bots tab hover shows: MooMoo Bot, Crypto Hunter, Observations, Backtests, Logs
+   - Portfolio tab hover shows: Roth IRA, Individual, Crypto, Risk, Allocation
+   - Journal tab hover shows: Trades, Notes, Mistakes, Wins, Lessons
+   Flyouts should be animated, glassy, gold-edged, and responsive.
+
+4. Visual Effects:
+   Add premium animations and particle-style effects, but keep performance good.
+   Include:
+   - Gold particle shimmer background
+   - Subtle animated gradient or aurora background
+   - Floating market-data cards
+   - Animated price tickers
+   - Smooth page transitions
+   - Hover elevation on cards
+   - Animated border glow on important panels
+   - Skeleton loading shimmer
+   - Button shine effect
+   - Glass panels with blur
+   - Animated scroll reveal effects
+   - Subtle candlestick/chart-line background watermark
+   - Motion should feel smooth, not distracting
+
+Use Framer Motion if this is React.
+Use CSS animations if simpler.
+
+Core Pages / Sections:
+Build these as real routed pages or tabbed modules:
+
+1. Home / Command Center
+   - Market overview
+   - Portfolio snapshot
+   - AI daily briefing card
+   - Top opportunities
+   - Risk alerts
+   - Bot status
+   - Watchlist movers
+   - News/catalyst strip
+
+2. Markets
+   - Stocks
+   - Crypto
+   - ETFs
+   - Sector heatmap placeholder
+   - Market breadth placeholder
+   - Index cards: SPY, QQQ, IWM, DIA, BTC, ETH, SUI, SOL
+
+3. Scanners
+   - Momentum scanner
+   - Breakout scanner
+   - Pullback/dip-buy scanner
+   - Oversold quality scanner
+   - Options-ready scanner
+   - Unusual volume scanner
+   - Each scanner should use realistic placeholder data if APIs are not connected yet
+
+4. AI Research Terminal
+   - Prompt input
+   - Research mode selector
+   - Stock analysis card
+   - Bull case / bear case
+   - Catalysts
+   - Fundamentals
+   - Technical setup
+   - Risk rating
+   - Confidence score
+   - Source placeholders
+   - Premium terminal-style output
+
+5. Portfolio
+   - Separate sleeves:
+     - Roth IRA
+     - Individual brokerage
+     - Crypto
+     - Watchlist
+   - Allocation cards
+   - Risk exposure
+   - Sector exposure
+   - Concentration warning
+   - Gain/loss cards
+   - Margin-safe indicator area
+
+6. Bots
+   - MooMoo Stock Trader Bot panel
+   - Crypto Hunter panel
+   - Read-only safety status
+   - Latest scan results
+   - Observation ledger
+   - Forward outcome tracking
+   - Bot health indicators
+   - Logs table
+
+7. Trade Journal
+   - Trade entries
+   - Setup type
+   - Entry/exit
+   - Thesis
+   - Mistakes
+   - Lessons
+   - Screenshot placeholder
+   - Win/loss summary
+
+8. Risk Center
+   - Position sizing
+   - Stop-loss planner
+   - Portfolio drawdown alerts
+   - Max exposure warnings
+   - Volatility meter
+   - Margin safety panel
+
+9. Settings / Data Sources
+   - MooMoo/OpenD connection status
+   - Kraken/Coinbase/CoinGecko placeholders
+   - Perplexity/AI research connection
+   - API key status placeholders
+   - Theme controls
+   - Animation intensity controls
+
+YucaTanaTrades-Specific Context:
+This product is for an aggressive, growth-oriented investor/trader focused on:
+- AI infrastructure
+- Semiconductors
+- Software
+- Nuclear/uranium
+- Defense tech
+- Quantum computing
+- Crypto
+- Momentum setups
+- Dip-buying quality companies
+- Options-aware trade ideas
+- Long-term Roth growth
+- Active individual brokerage trading
+- MooMoo/OpenD stock bot
+- Crypto Hunter bot
+
+Important Watchlist / Example Tickers:
+Use these as sample data:
+- MSFT
+- META
+- AVGO
+- MU
+- ORCL
+- NOW
+- ANET
+- SNOW
+- SOFI
+- KTOS
+- ZETA
+- CLSK
+- SOC
+- PGY
+- QXO
+- WLDN
+- HNST
+- SMR
+- NXE
+- URA
+- QUBT
+- RGTI
+- ASTS
+- CRDO
+- V
+- BTC
+- ETH
+- SOL
+- SUI
+- XRP
+
+Component Requirements:
+Create reusable components:
+- AppShell
+- SidebarNav
+- AnimatedTopTabs
+- HoverFlyoutTabs
+- MetricCard
+- TickerTape
+- GlassCard
+- ScannerTable
+- PortfolioCard
+- BotStatusCard
+- RiskAlertCard
+- ResearchTerminal
+- GoldButton
+- AnimatedBackground
+- MarketPulseCard
+- WatchlistTable
+- JournalTable
+- SettingsPanel
+
+Animation Requirements:
+Use motion carefully:
+- Page fade/slide transitions
+- Staggered card entrance
+- Hover glow
+- Button shimmer
+- Active tab underline animation
+- Flyout dropdown animation
+- Scroll reveal
+- Floating background particles
+- Chart-line animated SVG effect
+- Ticker tape infinite scroll
+- Subtle number count-up animation for metrics
+
+Make sure animations are:
+- Smooth
+- GPU-friendly
+- Not laggy
+- Respect reduced-motion preference
+- Mobile-friendly
+
+Data:
+If live APIs are not configured, use realistic mock data with a clean mock data service.
+Do not hardcode everything inside components.
+Create:
+- mockMarketData
+- mockPortfolioData
+- mockScannerResults
+- mockBotStatus
+- mockJournalData
+- mockNewsCatalysts
+
+Tables:
+Tables should feel like premium trading software:
+- Sticky headers
+- Sortable columns if practical
+- Status badges
+- Green/red price changes
+- Gold hover row highlight
+- Compact but readable
+- Mobile-responsive fallback cards
+
+Visual Details to Add:
+- Gold logo mark for YucaTanaTrades
+- Premium hero card
+- “AI Market Command Center” label
+- Animated ticker tape
+- Market session indicator
+- Data source health pills
+- “Read-only safety mode” badge for bots
+- Confidence score rings
+- Risk meters
+- Opportunity score badges
+- Catalyst tags
+- Sector tags
+- Glassy modal styling
+- Toast notifications
+- Empty states that look professional
+
+Performance:
+- Keep bundle reasonable
+- Use lazy loading where practical
+- Avoid excessive particle count
+- Use CSS transforms/opacity for animations
+- Avoid layout shift
+- Make responsive from desktop to mobile
+
+Accessibility:
+- Keyboard navigable tabs
+- Clear contrast
+- aria labels for nav/tabs
+- reduced-motion support
+- readable font sizes
+
+Do Not:
+- Do not make it look like a casino
+- Do not overuse neon
+- Do not make the gold look cheap or bright yellow everywhere
+- Do not clutter the dashboard
+- Do not break existing functionality
+- Do not remove existing files unless necessary
+- Do not connect live trading or execution
+- Do not create anything that places trades automatically
+
+Safety:
+All bot/trading features must be read-only by default.
+No live order execution.
+Add visible status badge:
+“READ-ONLY MODE — No live trades executed.”
+
+Deliverables:
+1. Implement the full visual upgrade.
+2. Add animated scroll tabs with embedded hover flyout tabs.
+3. Add premium gold/dark design system.
+4. Add reusable components.
+5. Add mock data where live data is not available.
+6. Make the site responsive.
+7. Add comments explaining where live APIs can later connect.
+8. Ensure the app runs cleanly in Replit.
+9. Fix any import/build errors.
+10. Provide a short final summary of changed files and how to run the app.
+
+Suggested Tech:
+Use the existing stack if already present.
+If this is React/Vite:
+- React
+- Vite
+- Framer Motion
+- Lucide React
+- CSS modules or Tailwind if already configured
+- Recharts or lightweight chart placeholders if available
+
+If Tailwind is not configured, either configure it properly or use clean CSS files.
+
+Implementation Priority:
+1. App shell and theme
+2. Animated background
+3. Animated scroll tabs
+4. Hover flyout menus
+5. Dashboard cards
+6. Scanner/portfolio/bot/journal pages
+7. Responsive polish
+8. Performance and accessibility pass
+
+Final Quality Bar:
+The finished UI should look like a premium finance SaaS product people would pay for. It should immediately feel more professional, animated, modern, and high-end than a normal dashboard. The gold theme should be the visual signature of YucaTanaTrades.
