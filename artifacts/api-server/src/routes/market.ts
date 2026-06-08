@@ -1,5 +1,10 @@
 import { Router, type IRouter } from "express";
-import { GetMarketQuotesQueryParams } from "@workspace/api-zod";
+import {
+  GetMarketQuotesQueryParams,
+  GetSourceHealthQueryParams,
+  GetSourceHealthResponse,
+  GetMarketSessionResponse,
+} from "@workspace/api-zod";
 import { getQuotes } from "../services/market/router";
 import { getProviderHealth } from "../services/market/health";
 import { getMarketSession } from "../services/market/session";
@@ -32,8 +37,9 @@ router.get("/market/quotes", async (req, res) => {
 // GET /market/health
 router.get("/market/health", async (req, res) => {
   try {
-    const force = req.query.refresh === "true" || req.query.force === "true";
-    const providers = await getProviderHealth(force);
+    // Validate & coerce query params (refresh is a boolean flag).
+    const { refresh: force } = GetSourceHealthQueryParams.parse(req.query);
+    const providers = await getProviderHealth(!!force);
     const byId = new Map<string, ProviderHealth>(providers.map((p) => [p.id, p]));
 
     const ASSET_LABELS: Record<AssetClass, string> = {
@@ -44,16 +50,20 @@ router.get("/market/health", async (req, res) => {
       ai: "AI Analysis",
     };
 
-    const classes: AssetClass[] = ["equity", "etf", "crypto", "fundamentals"];
-    const summary = classes.map((assetClass) => {
+    const PRICE_CLASSES: AssetClass[] = ["equity", "etf", "crypto", "fundamentals"];
+
+    const priceSummary = PRICE_CLASSES.map((assetClass) => {
       const ranked = quoteProvidersFor(assetClass);
       const active = ranked.find((p) => {
         const h = byId.get(p.id);
         return h && p.implemented && HEALTHY.has(h.status);
       });
-      // Fallback in use if a higher-priority provider exists but isn't the active one.
+      // Fallback is in use only when the active provider is not the highest-priority
+      // *implemented* provider for this asset class. Future-ready stubs (not implemented)
+      // are not counted as a "primary" — they cannot serve data yet.
+      const primaryImplemented = ranked.find((p) => p.implemented);
       const fallbackInUse =
-        !!active && ranked.length > 0 && ranked[0]!.id !== active.id;
+        !!active && !!primaryImplemented && active.id !== primaryImplemented.id;
       const h = active ? byId.get(active.id) : undefined;
       return {
         assetClass,
@@ -66,7 +76,26 @@ router.get("/market/health", async (req, res) => {
       };
     });
 
-    res.json({ asOf: new Date().toISOString(), providers, summary });
+    // AI is analysis-only and must never appear as a price source.
+    // Represent it explicitly so Settings can show it with the correct label.
+    const aiSummary = {
+      assetClass: "ai" as AssetClass,
+      label: ASSET_LABELS.ai,
+      activeProvider: null,
+      activeProviderLabel: null,
+      status: "analysis_only",
+      fallbackInUse: false,
+      sourceLabel: "Analysis only — never a price source",
+    };
+
+    const summary = [...priceSummary, aiSummary];
+
+    const payload = GetSourceHealthResponse.parse({
+      asOf: new Date().toISOString(),
+      providers,
+      summary,
+    });
+    res.json(payload);
   } catch (err) {
     req.log.error({ err }, "Failed to compute source health");
     res.status(500).json({ error: "Failed to compute source health" });
@@ -77,22 +106,24 @@ router.get("/market/health", async (req, res) => {
 router.get("/market/session", (req, res) => {
   try {
     const session = getMarketSession();
-    res.json({
+    const payload = GetMarketSessionResponse.parse({
       asOf: session.asOf,
       equities: {
         state: session.equities.state,
         isOpen: session.equities.isOpen,
         label: session.equities.label,
         timezone: session.equities.timezone,
-        nextChange: session.equities.nextChange,
+        nextChange: session.equities.nextChange ?? null,
       },
       crypto: {
         state: session.crypto.state,
         isOpen: session.crypto.isOpen,
         label: session.crypto.label,
+        // Crypto is 24/7 globally — timezone is not applicable.
         nextChange: null,
       },
     });
+    res.json(payload);
   } catch (err) {
     req.log.error({ err }, "Failed to compute market session");
     res.status(500).json({ error: "Failed to compute market session" });

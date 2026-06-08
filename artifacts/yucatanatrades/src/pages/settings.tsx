@@ -52,6 +52,8 @@ function summaryTone(status: string): { color: string; label: string } {
       return { color: "#34d399", label: "Delayed" };
     case "read_only":
       return { color: "#22C55E", label: "Connected" };
+    case "analysis_only":
+      return { color: "#94a3b8", label: "Analysis only" };
     default:
       return { color: "#94a3b8", label: "No live source" };
   }
@@ -140,7 +142,7 @@ export default function SettingsPage() {
                 Source Health
               </h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {summary.map((s) => {
                 const t = summaryTone(s.status);
                 return (
