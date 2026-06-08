@@ -127,9 +127,9 @@
   --app-font-display: 'Space Grotesk', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'JetBrains Mono', monospace;
-  
+
   --radius: 0.5rem;
-  
+
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.50);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.50);
   --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.50), 0px 1px 2px -1px hsl(0 0% 0% / 0.50);
@@ -146,6 +146,24 @@
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* ─── YucaTana Premium Design Tokens ────────────────────────────────────── */
+  /* Adjust glow strength: change alpha values below */
+  --yt-gold: #D4AF37;
+  --yt-gold-soft: #F5D76E;
+  --yt-champagne: #F7E7B4;
+  --yt-bronze: #B8860B;
+  --yt-emerald: #22C55E;
+  --yt-danger: #EF4444;
+  --yt-border-gold-subtle: rgba(212,175,55,0.18);
+  --yt-border-gold-strong: rgba(212,175,55,0.50);
+  --yt-shadow-gold: 0 0 24px rgba(212,175,55,0.14);
+  --yt-shadow-card: 0 4px 32px rgba(0,0,0,0.55);
+  /* Motion tokens — adjust animation speed here */
+  --yt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --yt-motion-fast: 150ms;
+  --yt-motion-med: 300ms;
+  --yt-motion-slow: 600ms;
 }
 
 @layer base {
@@ -158,8 +176,9 @@
   }
 }
 
-/* ─── Premium keyframe animations ────────────────────────────────────────── */
+/* ─── Premium keyframe library ───────────────────────────────────────────── */
 
+/* Adjust skeleton shimmer speed: change 1.6s */
 @keyframes skeleton-shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -177,6 +196,7 @@
   100% { text-shadow: 0 0 0 rgba(248, 113, 113, 0); }
 }
 
+/* Adjust scan speed: change 4s */
 @keyframes scan-sweep {
   0%   { top: -2px;   opacity: 0; }
   5%   { opacity: 1; }
@@ -206,7 +226,59 @@
   50%       { opacity: 0.7; }
 }
 
-/* Reduced motion: disable all custom animations */
+/* Logo ring — adjust 20s for faster/slower rotation */
+@keyframes ring-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* AI orb breathe — adjust 2.4s */
+@keyframes ai-breath {
+  0%, 100% { transform: scale(1);    opacity: 0.8; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+  50%       { transform: scale(1.18); opacity: 1;   box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+}
+
+/* Floating background symbols — adjust opacity values for intensity */
+@keyframes float-symbol {
+  0%   { transform: translateY(0px)   translateX(0px)   rotate(0deg);   opacity: 0.020; }
+  33%  { transform: translateY(-28px) translateX(14px)  rotate(1.5deg); opacity: 0.032; }
+  66%  { transform: translateY(12px)  translateX(-8px)  rotate(-1deg);  opacity: 0.018; }
+  100% { transform: translateY(0px)   translateX(0px)   rotate(0deg);   opacity: 0.020; }
+}
+
+/* Gold title sweep — sweep across hero title */
+@keyframes gold-sweep {
+  0%   { transform: translateX(-200%); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateX(200%);  opacity: 0; }
+}
+
+/* Active nav beam pulse — adjust 3s for pulse cadence */
+@keyframes active-beam-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px hsl(43 63% 52% / 0.5); }
+  50%       { opacity: 0.65; box-shadow: 0 0 14px hsl(43 63% 52% / 0.8); }
+}
+
+/* Orb drift for background */
+@keyframes orb-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(3%, 5%) scale(1.04); }
+  66%  { transform: translate(-2%, 3%) scale(0.97); }
+  100% { transform: translate(4%, -4%) scale(1.06); }
+}
+
+/* Confidence bar fill */
+@keyframes confidence-fill {
+  from { width: 0; }
+}
+
+/* Shimmer right — for active nav */
+@keyframes shimmer-right {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Reduced motion: disable ALL custom animations */
 @media (prefers-reduced-motion: reduce) {
   .btn-gold,
   .btn-gold::after,
@@ -214,7 +286,14 @@
   .scan-effect::after,
   .reveal-hidden,
   .reveal-stagger > *,
-  .gold-border-shimmer::before {
+  .gold-border-shimmer::before,
+  .ai-orb,
+  .active-nav-beam,
+  [style*="float-symbol"],
+  [style*="ring-rotate"],
+  [style*="orb-drift"],
+  [style*="ai-breath"],
+  [style*="gold-sweep"] {
     animation: none !important;
     transition: none !important;
   }
@@ -226,34 +305,21 @@
   }
 }
 
-/**
- * Using the elevate system.
- * Automatic contrast adjustment.
- *
- * <element className="hover-elevate" />
- * <element className="active-elevate-2" />
- *
- * // Using the tailwind utility when a data attribute is "on"
- * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
- * // Or manually controlling the toggle state
- * <element className="toggle-elevate toggle-elevated" />
- *
- * Elevation systems have to handle many states.
- * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
- * - toggled or not
- * - focused or not (this is not handled with these utilities)
- *
- * Even without handling focused or not, this is six possible combinations that
- * need to be distinguished from eachother visually.
- */
 @layer utilities {
 
+  /* ─── Glass card — core premium surface ──────────────────────────────────── */
+  /* Adjust backdrop blur: change blur(12px) */
+  /* Adjust gold overlay intensity: change the 0.04 alpha on the ::before gradient */
   .glass-card {
-    background-color: hsl(var(--card) / 0.8);
+    background-color: hsl(var(--card) / 0.82);
     backdrop-filter: blur(12px);
     border: 1px solid hsl(var(--border) / 0.6);
     border-radius: var(--radius-lg);
     position: relative;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.04),
+      0 4px 24px rgba(0,0,0,0.4);
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
   }
 
   .glass-card::before {
@@ -265,43 +331,48 @@
     background: linear-gradient(135deg, hsl(var(--primary) / 0.04), transparent 50%);
   }
 
-  /* Hide ugly search cancel button in Chrome until we can style it properly */
-  input[type="search"]::-webkit-search-cancel-button {
-    @apply hidden;
+  /* Card hover — adjust translateY and glow for lift intensity */
+  .glass-card:hover {
+    border-color: hsl(var(--primary) / 0.28);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 0 0 1px hsl(var(--primary) / 0.08),
+      0 8px 32px rgba(0,0,0,0.5),
+      0 0 40px hsl(43 63% 52% / 0.08);
+    transform: translateY(-2px);
   }
 
-  /* Placeholder styling for contentEditable div */
+  input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
     color: hsl(var(--muted-foreground));
     pointer-events: none;
   }
 
-  /* ─── Premium animation utilities ───────────────────────────────────────── */
+  /* ─── Button styles ──────────────────────────────────────────────────────── */
 
-  /* Gold shimmer sweep — apply to buttons */
+  /* Gold primary button — metallic gradient */
   .btn-gold {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, hsl(43 63% 44%), hsl(43 63% 58%), hsl(43 63% 44%));
+    background: linear-gradient(135deg, #B8860B 0%, #D4AF37 45%, #F5D76E 55%, #D4AF37 70%, #B8860B 100%);
     background-size: 200% 100%;
-    color: hsl(var(--primary-foreground));
+    color: hsl(220 20% 6%);
     font-weight: 600;
-    transition: box-shadow 0.25s, transform 0.15s, background-position 0.5s;
+    transition: box-shadow 0.25s var(--yt-ease), transform 0.15s, background-position 0.5s;
   }
   .btn-gold:hover {
     background-position: 100% 0;
-    box-shadow: 0 0 20px hsl(43 63% 52% / 0.5), 0 4px 16px hsl(43 63% 52% / 0.3);
+    box-shadow: 0 0 20px rgba(212,175,55,0.5), 0 4px 16px rgba(212,175,55,0.3);
     transform: translateY(-1px);
   }
-  .btn-gold:active { transform: translateY(0); }
+  .btn-gold:active { transform: scale(0.98) translateY(0); }
   .btn-gold::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%);
     transform: translateX(-120%);
-    transition: transform 0s;
   }
   .btn-gold:hover::after {
     transform: translateX(120%);
@@ -320,33 +391,19 @@
   .btn-glass-gold:hover {
     background: hsl(var(--primary) / 0.08);
     border-color: hsl(var(--primary) / 0.7);
-    box-shadow: 0 0 16px hsl(43 63% 52% / 0.25);
+    box-shadow: 0 0 16px rgba(212,175,55,0.25);
     transform: translateY(-1px);
   }
-  .btn-glass-gold:active { transform: translateY(0); }
+  .btn-glass-gold:active { transform: scale(0.98); }
 
-  /* Enhanced glass card — hover glow + lift */
-  .glass-card {
-    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
-  }
-  .glass-card:hover {
-    border-color: hsl(var(--primary) / 0.25);
-    box-shadow:
-      0 0 0 1px hsl(var(--primary) / 0.08),
-      0 4px 24px hsl(0 0% 0% / 0.4),
-      0 0 32px hsl(43 63% 52% / 0.06);
-    transform: translateY(-1px);
-  }
+  /* ─── Market color utilities ─────────────────────────────────────────────── */
+  .price-up   { animation: price-pulse-up   1.8s ease-out forwards; }
+  .price-down { animation: price-pulse-down 1.8s ease-out forwards; }
 
-  /* Price pulse animations */
-  .price-up {
-    animation: price-pulse-up 1.8s ease-out forwards;
-  }
-  .price-down {
-    animation: price-pulse-down 1.8s ease-out forwards;
-  }
+  .market-positive { color: #22C55E; }
+  .market-negative { color: #EF4444; }
 
-  /* Gold skeleton shimmer */
+  /* ─── Gold skeleton shimmer ──────────────────────────────────────────────── */
   .gold-skeleton {
     background: linear-gradient(
       90deg,
@@ -359,7 +416,8 @@
     border-radius: var(--radius-md);
   }
 
-  /* Scan glow line (for scanner page, bot cards) */
+  /* ─── Scan glow line ─────────────────────────────────────────────────────── */
+  /* Used on scanner page, bot cards, AI panels */
   .scan-effect {
     position: relative;
     overflow: hidden;
@@ -370,12 +428,12 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(43 63% 52% / 0.6), transparent);
-    animation: scan-sweep 4s ease-in-out infinite;
+    background: linear-gradient(90deg, transparent, hsl(43 63% 52% / 0.5), transparent);
+    animation: scan-sweep 5s ease-in-out infinite;
     pointer-events: none;
   }
 
-  /* Scroll reveal — elements start hidden, JS adds .reveal-visible */
+  /* ─── Scroll reveal ──────────────────────────────────────────────────────── */
   .reveal-hidden {
     opacity: 0;
     transform: translateY(20px);
@@ -387,8 +445,6 @@
     transform: translateY(0);
     filter: blur(0);
   }
-
-  /* Stagger children for reveal groups */
   .reveal-stagger > * {
     opacity: 0;
     transform: translateY(16px);
@@ -403,7 +459,7 @@
   .reveal-stagger.reveal-visible > *:nth-child(6)  { opacity: 1; transform: none; filter: blur(0); transition-delay: 0.40s; }
   .reveal-stagger.reveal-visible > *:nth-child(n+7) { opacity: 1; transform: none; filter: blur(0); transition-delay: 0.46s; }
 
-  /* Gold shimmer border on active/selected elements */
+  /* ─── Gold shimmer border ────────────────────────────────────────────────── */
   .gold-border-shimmer {
     border-color: transparent;
     background-clip: padding-box;
@@ -427,42 +483,135 @@
     animation: border-shimmer-rotate 4s linear infinite;
   }
 
-  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
-   * buttons/badges can remove the automatic brightness adjustment on interactions
-   * and program their own. */
-  .no-default-hover-elevate {}
+  /* ─── AI orb — breathing green indicator ────────────────────────────────── */
+  /* Adjust 2.4s for breath speed, adjust the colors/sizes below */
+  .ai-orb {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22C55E;
+    flex-shrink: 0;
+    animation: ai-breath 2.4s ease-in-out infinite;
+  }
+  .ai-orb-sm {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22C55E;
+    flex-shrink: 0;
+    animation: ai-breath 2.4s ease-in-out infinite;
+  }
 
+  /* ─── Status pill (MARKETS OPEN, LIVE, etc.) ─────────────────────────────── */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px 3px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Signal / scan badge ────────────────────────────────────────────────── */
+  .signal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(212,175,55,0.10);
+    border: 1px solid rgba(212,175,55,0.25);
+    color: hsl(var(--primary));
+  }
+
+  /* ─── Risk severity badges ───────────────────────────────────────────────── */
+  .risk-badge-warn {
+    background: rgba(212,175,55,0.10);
+    border: 1px solid rgba(212,175,55,0.30);
+    color: #D4AF37;
+  }
+  .risk-badge-high {
+    background: rgba(239,68,68,0.10);
+    border: 1px solid rgba(239,68,68,0.30);
+    color: #EF4444;
+    animation: active-beam-pulse 2.5s ease-in-out infinite;
+  }
+  .risk-badge-low {
+    background: rgba(34,197,94,0.10);
+    border: 1px solid rgba(34,197,94,0.20);
+    color: #22C55E;
+  }
+
+  /* ─── Gold glow highlight ────────────────────────────────────────────────── */
+  /* Adjust alpha values to change glow intensity */
+  .gold-glow {
+    box-shadow: 0 0 24px rgba(212,175,55,0.18), 0 0 8px rgba(212,175,55,0.10);
+  }
+
+  /* ─── Sparkline glow ─────────────────────────────────────────────────────── */
+  .sparkline-glow {
+    filter: drop-shadow(0 0 3px rgba(34,197,94,0.5));
+  }
+  .sparkline-glow-gold {
+    filter: drop-shadow(0 0 3px rgba(212,175,55,0.5));
+  }
+
+  /* ─── Liquid glass surface (elevated panel) ──────────────────────────────── */
+  .liquid-glass {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-top-color: rgba(255,255,255,0.11);
+  }
+
+  /* ─── Active nav beam ────────────────────────────────────────────────────── */
+  .active-nav-beam {
+    animation: active-beam-pulse 3s ease-in-out infinite;
+  }
+
+  /* ─── Command surface (dark elevated panel) ──────────────────────────────── */
+  .command-surface {
+    background: rgba(8,10,18,0.8);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ─── Premium tooltip ────────────────────────────────────────────────────── */
+  .premium-tooltip {
+    background: hsl(225 22% 10% / 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212,175,55,0.20);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(212,175,55,0.08);
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* ─── Elevation system ───────────────────────────────────────────────────── */
+  .no-default-hover-elevate {}
   .no-default-active-elevate {}
 
-
-  /**
-   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
-   * This way they can stack/compound. Both will overlap the parent's borders!
-   * So borders will be automatically adjusted both on toggle, and hover/active,
-   * and they will be compounded.
-   */
   .toggle-elevate::before,
   .toggle-elevate-2::before {
     content: "";
     pointer-events: none;
     position: absolute;
     inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
     border-radius: inherit;
     z-index: -1;
-    /* sits behind content but above backdrop */
   }
+  .toggle-elevate.toggle-elevated::before { background-color: var(--elevate-2); }
+  .border.toggle-elevate::before { inset: -1px; }
 
-  .toggle-elevate.toggle-elevated::before {
-    background-color: var(--elevate-2);
-  }
-
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
-  .border.toggle-elevate::before {
-    inset: -1px;
-  }
-
-  /* Does not work on elements with overflow:hidden! */
   .hover-elevate:not(.no-default-hover-elevate),
   .active-elevate:not(.no-default-active-elevate),
   .hover-elevate-2:not(.no-default-hover-elevate),
@@ -479,28 +628,16 @@
     pointer-events: none;
     position: absolute;
     inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
     border-radius: inherit;
     z-index: 999;
-    /* sits in front of content */
   }
-
   .hover-elevate:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-1);
-  }
-
+  .active-elevate:active:not(.no-default-active-elevate)::after { background-color: var(--elevate-1); }
   .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-2);
-  }
+  .active-elevate-2:active:not(.no-default-active-elevate)::after { background-color: var(--elevate-2); }
 
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
-    inset: -1px;
-  }
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after { inset: -1px; }
 }

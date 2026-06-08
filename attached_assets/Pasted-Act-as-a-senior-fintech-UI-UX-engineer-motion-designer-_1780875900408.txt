@@ -1,0 +1,1110 @@
+Act as a senior fintech UI/UX engineer, motion designer, frontend architect, and performance specialist.
+
+You are upgrading the existing YucaTanaTrades dashboard into a premium, high-end AI trading command center.
+
+This is not a simple styling pass. Treat this as a full premium product polish pass with a cohesive design system, motion system, visual hierarchy, and interaction model.
+
+The app already has a dark dashboard layout, sidebar navigation, market ticker, search bar, dashboard cards, index overview, top opportunities, risk alerts, AI briefing panel, and command center-style layout. Preserve the structure and existing functionality, but dramatically improve the visual quality, animation quality, depth, and premium feel.
+
+Do not rewrite the entire app unless absolutely necessary. Audit the current project structure first, identify the correct files/components/styles/scripts, then implement the upgrades safely and incrementally.
+
+Target identity:
+
+YucaTanaTrades should feel like:
+
+Bloomberg Terminal
++ TradingView Premium
++ Palantir-style command center
++ luxury black-and-gold fintech SaaS
++ futuristic AI market intelligence dashboard
++ institutional-grade trading cockpit
+
+The interface should feel alive, intelligent, expensive, calm, sharp, and trustworthy.
+
+It should NOT feel like:
+- a cheap crypto dashboard
+- a neon gaming UI
+- a random animation demo
+- a template website
+- a cluttered personal project
+- a casino-style trading app
+
+The final product should look like something that could be shown to investors, traders, or early SaaS users.
+
+==================================================
+CORE DESIGN PHILOSOPHY
+==================================================
+
+Do not simply add random animations.
+
+Build a cohesive premium motion and design system.
+
+Every visual effect or animation must support at least one of these feelings:
+
+1. Intelligence
+2. Speed
+3. Market awareness
+4. Premium luxury
+5. Institutional trust
+6. AI-powered monitoring
+7. Calm professional control
+
+Use premium restraint.
+
+Most elements should stay calm until:
+- hovered
+- focused
+- updated
+- revealed
+- selected
+- expanded
+- loading
+- transitioning
+
+Only a few elements should constantly animate:
+- subtle background particles
+- market ticker
+- market-open pulse
+- AI orb breathing
+- active sidebar glow
+- very slow ambient background movement
+
+Avoid excessive movement. The dashboard should feel alive, not busy.
+
+==================================================
+VISUAL DIRECTION
+==================================================
+
+Primary look:
+- Deep black / charcoal / midnight navy base
+- Metallic gold and champagne accents
+- Subtle emerald for gains/positive states
+- Muted crimson for losses/risk states
+- Glassmorphism cards
+- Thin premium borders
+- Cinematic ambient glow
+- Layered depth
+- Calm motion
+- Crisp typography
+- Data-first hierarchy
+
+Color system:
+- Main background: deep black, charcoal, midnight navy
+- Primary accent: metallic gold / champagne gold
+- Secondary accent: muted bronze
+- Positive market color: emerald green
+- Negative market color: muted crimson/red
+- Avoid bright cartoon yellow
+- Gold should feel metallic, expensive, and restrained
+
+Recommended colors:
+- Background primary: #050608
+- Background secondary: #0B0D12
+- Background elevated: #10131A
+- Card background: rgba(255,255,255,0.04) to rgba(255,255,255,0.08)
+- Gold: #D4AF37
+- Soft gold: #F5D76E
+- Bronze: #B8860B
+- Champagne: #F7E7B4
+- Emerald: #22C55E
+- Crimson: #EF4444
+- Subtle gold border: rgba(212,175,55,0.25)
+- Strong gold border: rgba(212,175,55,0.55)
+
+Typography:
+- Upgrade typography if possible using Inter, Geist, Satoshi, or similar clean fintech-style font.
+- Dashboard labels should use subtle uppercase tracking.
+- Numbers should use tabular figures if possible.
+- Financial numbers should be crisp, bold, and easy to scan.
+- Hero titles should feel larger, tighter, and more premium.
+- Avoid overly rounded playful fonts.
+
+==================================================
+1. CREATE A PREMIUM DESIGN TOKEN SYSTEM
+==================================================
+
+Before adding effects, create a consistent design token system.
+
+Add CSS variables for:
+- background colors
+- elevated surfaces
+- card surfaces
+- gold accents
+- champagne accents
+- emerald gains
+- crimson losses
+- border colors
+- glow strength
+- shadow depth
+- border radius
+- animation speeds
+- easing curves
+- font sizes
+- sidebar width
+- ticker height
+- z-index layers
+
+Use names similar to:
+
+--color-bg-primary
+--color-bg-secondary
+--color-bg-elevated
+--color-card-glass
+--color-gold
+--color-gold-soft
+--color-champagne
+--color-bronze
+--color-emerald
+--color-danger
+--border-gold-subtle
+--border-gold-strong
+--shadow-gold-soft
+--shadow-card
+--radius-card
+--radius-pill
+--motion-fast
+--motion-medium
+--motion-slow
+--ease-premium
+
+Use a premium easing curve:
+cubic-bezier(0.22, 1, 0.36, 1)
+
+The goal is for the app to feel intentionally designed instead of patched together.
+
+==================================================
+2. DEPTH, LAYERING, AND CINEMATIC COMPOSITION
+==================================================
+
+Improve visual depth across the dashboard.
+
+Use a layered composition model:
+
+Layer 0:
+Deep background gradient.
+
+Layer 1:
+Animated market grid and subtle particle field.
+
+Layer 2:
+Ambient gold/emerald glow zones.
+
+Layer 3:
+Main dashboard layout.
+
+Layer 4:
+Glass cards and navigation.
+
+Layer 5:
+Hover glows, dropdowns, tooltips, and active indicators.
+
+Layer 6:
+Notification/status overlays.
+
+Important:
+The background must never compete with financial data. Background effects should be visible enough to feel premium, but subtle enough that numbers, cards, and market information remain dominant.
+
+Add soft depth separation between:
+- sidebar and main content
+- ticker and dashboard
+- hero section and cards
+- AI briefing panel and surrounding widgets
+- active navigation and inactive navigation
+
+Use shadows, borders, gradients, and blur carefully.
+
+==================================================
+3. PREMIUM LOGO / BRAND AREA
+==================================================
+
+The current yellow square logo/brand area must be upgraded.
+
+Create a premium YucaTanaTrades brand mark.
+
+Design requirements:
+- Create a metallic gold “YT” monogram.
+- Place it inside a dark glass rounded-square or orb container.
+- Add subtle bevel/emboss effect using gradients and shadows.
+- Add an animated outer ring that resembles:
+  - market radar
+  - AI signal ring
+  - trading terminal pulse
+  - data orbit
+- Add a tiny orbiting gold dot or data node around the logo.
+- Add restrained animated glow.
+
+Hover animation:
+- Outer ring rotates slightly.
+- Glow intensifies.
+- Monogram receives a soft metallic shine sweep.
+- Brand text receives a subtle champagne/gold highlight.
+
+Brand text:
+- Use “YucaTanaTrades” or “YucaTana”
+- Optional micro-label: “AI Market Intelligence”
+- Brand text should use subtle gold/champagne gradient.
+- Avoid cartoon yellow.
+- Do not make the logo huge.
+- Logo should feel like a serious premium fintech startup icon.
+
+==================================================
+4. GLOBAL BACKGROUND EFFECTS
+==================================================
+
+Add layered background visuals behind the dashboard content.
+
+A. Animated market grid:
+- Very thin grid lines
+- Low opacity
+- Slight parallax movement
+- Looks like radar / trading terminal infrastructure
+- Should not distract from dashboard content
+
+B. Particle canvas:
+- Lightweight canvas-based particle system
+- Particles should be tiny gold, white, champagne, and occasional emerald data points
+- Very low opacity
+- Slow floating movement
+- Faint connecting lines between nearby particles
+- Particles must not block clicks
+- Use pointer-events: none
+- Keep behind all content
+
+C. Floating market symbols:
+Add extremely subtle background symbols at 2–5% opacity:
+- NVDA
+- MSFT
+- BTC
+- ETH
+- SPY
+- QQQ
+- SUI
+- AI
+- RISK
+- ALPHA
+- FLOW
+- SIGNAL
+
+They should drift very slowly in the background.
+
+D. Ambient lighting:
+Add soft radial gradients behind key areas:
+- hero/command center header
+- active sidebar item
+- primary dashboard cards
+- AI briefing panel
+- top opportunities card
+- risk alerts card
+
+Glow should be cinematic and subtle.
+
+E. Candlestick/chart watermark:
+- Add a huge transparent candlestick/chart silhouette behind the hero/dashboard area.
+- Opacity should be around 3–5%.
+- It should feel like a background watermark, not a visible chart.
+
+F. Data-stream effect:
+- Add subtle animated data lines behind AI/research/risk panels.
+- Very low opacity.
+- Should feel like the platform is processing market intelligence.
+
+Performance:
+- Desktop: 45–80 particles max.
+- Tablet: 25–40 particles max.
+- Mobile: off or 10–20 particles max.
+- Pause particle rendering when document is hidden.
+- Disable or simplify particles on screens under 768px.
+- Respect prefers-reduced-motion.
+- Use requestAnimationFrame.
+- Avoid layout thrashing.
+
+==================================================
+5. COMMAND CENTER HERO / HEADER
+==================================================
+
+Upgrade the top command center section.
+
+Hero should include:
+- Animated status pill: “MARKETS OPEN”
+- Smaller status text: “NYSE • NASDAQ • CRYPTO 24/7”
+- Main title: “AI Market Command Center”
+- Subtitle: “Real-time trading intelligence across equities, options, crypto, research, risk, and automation.”
+
+Animations:
+- Status pill has a soft emerald pulse.
+- Live dot pulses gently.
+- Title fades up with slight blur removal.
+- Subtitle fades up after title.
+- Gold light sweep passes subtly across the title every few seconds.
+- Background behind hero has slow animated radial glow.
+- Capability badges stagger into view.
+
+Add animated capability badges:
+- Stocks
+- Options
+- Crypto
+- Research
+- Risk
+- Bots
+- Journal
+- AI Briefing
+
+Badge behavior:
+- Glass style
+- Thin gold border
+- Fade/stagger on load
+- Glow gently on hover
+- Slight lift on hover
+- Optional tiny icon or dot
+
+Do not make the hero oversized. It should feel like a premium dashboard header, not a generic landing page.
+
+==================================================
+6. SIDEBAR NAVIGATION ANIMATIONS
+==================================================
+
+Upgrade the sidebar heavily. It should feel like a command module.
+
+Current sidebar is functional but static. Make it premium, interactive, and alive.
+
+For every nav item:
+- Add icon animation on hover.
+- Add text glow on hover.
+- Add gold left-edge beam on hover.
+- Add active state with vertical animated gold beam.
+- Add subtle moving shine across the active tab.
+- Add small micro-glow behind the active tab.
+- Replace flat yellow active rectangle with a premium glass/gold highlight.
+
+Hover behavior:
+- Item translates 2–4px right.
+- Icon scales to 1.08.
+- Gold line animates from top to bottom.
+- Background becomes glassy with gold border.
+- Optional tiny particle burst near icon, very subtle.
+- Text becomes champagne/gold.
+
+Active item:
+- Vertical glowing gold bar.
+- Glass background.
+- Subtle pulse every 3–5 seconds.
+- Small gold dot indicator.
+- Very subtle liquid-glass shimmer.
+
+Advanced sidebar motion:
+- Add magnetic hover effect if feasible.
+- Add tiny animated particles/data dots flowing from active nav item toward the main content.
+- Add a subtle animated connection line from the active sidebar item toward the current page header.
+- Keep this extremely subtle.
+
+Embedded hover preview panels:
+When hovering over main nav tabs, show a premium mini preview flyout next to the sidebar.
+
+Flyout should include:
+- Icon
+- Title
+- 1-line description
+- 2–3 relevant mini metrics
+- Mini sparkline or skeleton placeholder if real data is unavailable
+
+Examples:
+
+Markets:
+“Live equities, ETFs, crypto, and indices.”
+Mini preview:
+SPY +0.23%
+QQQ +0.52%
+
+Scanners:
+“Momentum, breakout, pullback, and options-ready setups.”
+Mini preview:
+Top signal: ASTS Momentum
+Signal quality: 95
+
+Research:
+“AI-assisted market research, catalysts, and source-backed summaries.”
+
+Portfolio:
+“Allocation, P&L, risk exposure, and account-level intelligence.”
+
+Bots:
+“Read-only strategy bots, observations, and signal engines.”
+
+Journal:
+“Trade history, lessons, entries, exits, and review notes.”
+
+Watchlist:
+“Tracked tickers, alerts, setups, and thesis monitoring.”
+
+Risk:
+“Exposure, drawdown, volatility, alerts, and position sizing.”
+
+Settings:
+“Account preferences, data sources, AI behavior, and interface controls.”
+
+Flyout animation:
+- opacity 0 to 1
+- translateX 8px
+- blur 8px to 0
+- duration 200–300ms
+- premium easing
+- close smoothly when mouse leaves
+- do not block normal navigation
+- make keyboard accessible
+
+==================================================
+7. TOP MARKET TICKER BAR
+==================================================
+
+Upgrade the top ticker bar into a premium live-market rail.
+
+Add:
+- Smooth infinite horizontal motion
+- Subtle gold separators
+- Soft scanning line across the ticker
+- Live market dot pulse
+- Hover expansion for each ticker
+- Positive changes glow emerald
+- Negative changes glow muted red
+- Neutral values use champagne/gray
+
+On ticker hover:
+- Ticker item expands slightly.
+- Show small extra data such as mini sparkline, price, percent change, and source/status.
+- Sparkline glows subtly.
+- Do not cause layout jump.
+
+Ticker should feel like real market infrastructure, not plain text.
+
+==================================================
+8. SEARCH BAR / AI COMMAND INPUT
+==================================================
+
+Upgrade the search bar into an AI command input.
+
+Search bar should:
+- Use glassmorphism.
+- Have a premium gold/champagne border on focus.
+- Include keyboard shortcut styling.
+- Add subtle scan-line animation inside the input.
+- Have intelligent placeholder text:
+  “Search tickers, commands, research, or strategies…”
+
+On focus:
+- Expand slightly.
+- Border turns champagne gold.
+- Background blur increases.
+- Soft gold glow appears.
+- Optional dropdown suggestion panel appears.
+
+Suggestion examples:
+- “NVDA research”
+- “Top momentum setups”
+- “Portfolio risk”
+- “AI briefing”
+- “Options flow”
+- “Crypto strength”
+- “Nuclear/defense watchlist”
+
+Suggestion panel:
+- Glass card
+- Staggered suggestion reveal
+- Small icons
+- Hover highlight
+- Keyboard friendly
+
+==================================================
+9. DASHBOARD METRIC CARDS
+==================================================
+
+Upgrade all cards with premium glassmorphism and hover physics.
+
+Default card style:
+- Glassmorphism background
+- Subtle gold/gray border
+- Soft shadow
+- Inner highlight
+- Rounded corners
+- Layered depth
+- Slight noise/texture optional if subtle
+
+Hover animation:
+- translateY(-4px to -6px)
+- scale(1.01)
+- gold border intensifies
+- soft gold/emerald glow
+- animated border shimmer
+- radial spotlight follows mouse position if feasible
+- cursor should feel interactive but not gimmicky
+
+For cards such as:
+- Total Portfolio
+- Day P&L
+- Total Gain
+- Active Bots
+
+Add:
+- small animated icon in top corner
+- shimmer effect across key number on load
+- positive metric pulse
+- subtle counter animation on initial load
+- small trend indicator
+
+Number behavior:
+- Use tabular numbers.
+- Add count-up animation on first render only.
+- Do not constantly animate numbers unless data updates.
+- If data updates, briefly flash positive or negative state.
+
+==================================================
+10. INDEX OVERVIEW CARDS
+==================================================
+
+Each index/crypto card should include:
+- Ticker symbol
+- Price
+- Change %
+- Tiny sparkline
+- Status glow based on positive/negative movement
+
+Assets:
+- SPY
+- QQQ
+- IWM
+- DIA
+- BTC
+- ETH
+- SOL
+- SUI
+
+Add hover state:
+- Card expands slightly.
+- Sparkline brightens.
+- Tooltip appears:
+  “Delayed 15min” or “Crypto live”
+- Positive cards get emerald glow.
+- Negative cards get muted red glow.
+- Neutral cards remain subdued.
+
+If real sparkline data is not available, use a lightweight SVG placeholder that still looks premium and clearly non-misleading.
+
+==================================================
+11. AI DAILY BRIEFING PANEL
+==================================================
+
+Upgrade the AI Daily Briefing panel into a centerpiece.
+
+It should feel like a live AI market intelligence module.
+
+Add:
+- Header: “AI Daily Briefing”
+- GPT/model badge if already used
+- Animated AI pulse/orb
+- Confidence meter
+- Sentiment badge:
+  - Bullish
+  - Neutral
+  - Risk-Off
+- Last updated timestamp
+- Source/status mini indicators
+- Premium section labels
+
+Recommended briefing sections:
+- Bull Thesis
+- Watch
+- Crypto
+- Nuclear/Defense
+- Risk Flags
+- Market Regime
+
+Animations:
+- Briefing bullets reveal subtly.
+- AI orb softly breathes.
+- Scan line passes across the card occasionally.
+- Confidence meter animates on load.
+- Sentiment badge has subtle glow.
+- Hover increases card depth.
+
+Visual style:
+- Dark glass card
+- Gold header accent
+- Emerald/red/gold badges based on tone
+- Small animated neural/particle orb near title
+- Subtle data-stream background
+
+==================================================
+12. TOP OPPORTUNITIES AND RISK ALERTS
+==================================================
+
+Top Opportunities:
+- Add rank badges.
+- Add signal-type badges:
+  - Momentum
+  - Breakout
+  - Pullback
+  - Watchlist
+  - Options-ready
+  - High Conviction
+  - Early Momentum
+- Add animated gain percentage.
+- Add mini sparkline per ticker.
+- Add hover reveal for:
+  - reason
+  - confidence
+  - risk level
+  - support/resistance
+  - catalyst if available
+
+Risk Alerts:
+- Alerts should have severity color:
+  - Gold = watch
+  - Red = high risk
+  - Emerald = resolved/low risk
+- Add pulsing border for urgent alerts.
+- Add small shield icon animation.
+- Add expand/collapse interaction if feasible.
+- Use premium risk-card styling.
+- Avoid harsh red blocks unless truly critical.
+
+==================================================
+13. AI COMMAND CENTER DETAILS THROUGHOUT
+==================================================
+
+Add small AI/intelligence details throughout the interface.
+
+Ideas:
+- AI pulse orb in top-right or inside AI briefing.
+- Subtle “analyzing market conditions” micro-status.
+- Confidence meters on AI-generated insight cards.
+- Signal quality badges.
+- Mini data-stream animation behind AI/research/risk panels.
+- Small scanning line across research/briefing/risk cards.
+- Animated source/status indicators:
+  - Market Data
+  - Research
+  - Risk Engine
+  - Bots
+  - Journal
+  - Portfolio
+
+These should be subtle and professional. The user should feel like the platform is constantly monitoring the market.
+
+==================================================
+14. PAGE / TAB TRANSITIONS
+==================================================
+
+When switching sidebar tabs or dashboard sections:
+- Do not instantly swap content.
+- Add smooth transition:
+  - fade out current content
+  - slight blur
+  - slide up/down
+  - fade in new content
+
+Use:
+- 200–400ms duration
+- premium easing
+- transform and opacity
+- no layout jank
+
+Add section reveal:
+- Use IntersectionObserver.
+- Cards reveal in staggered sequence.
+- Stagger delay: 80–120ms.
+- Use fade-up + blur-to-clear.
+- Avoid over-bouncy motion.
+
+==================================================
+15. BUTTONS AND INTERACTIVE ELEMENTS
+==================================================
+
+Primary buttons:
+- Metallic gold gradient.
+- Subtle shine sweep on hover.
+- Slight lift.
+- Pressed state scale(0.98).
+- Soft shadow.
+- Crisp focus ring.
+
+Secondary buttons:
+- Glass background.
+- Gold border.
+- Hover glow.
+- Muted champagne text.
+
+Icon buttons:
+- Circular glass style.
+- Gold/emerald glow on hover.
+- Subtle rotation or scale.
+- Clear active/focus state.
+
+==================================================
+16. MICRO-ANIMATIONS THROUGHOUT
+==================================================
+
+Add small professional motion details:
+
+- Positive numbers softly pulse emerald when updated.
+- Negative numbers softly pulse red when updated.
+- Loading skeletons use gold shimmer.
+- Notification bell has subtle gold pulse.
+- Active bots indicator pulses green.
+- Market open pill pulses green.
+- Risk alert shield pulses gold/red depending on severity.
+- AI orb softly breathes.
+- Ticker row scan-line moves slowly.
+- Cards reveal in staggered sequence.
+- Sidebar items have hover trail.
+- Search input has scanning glow.
+- Badges have soft shimmer.
+- Charts fade in and draw line paths if possible.
+- Dropdowns blur in smoothly.
+- Tooltips rise and fade in.
+- Focus states animate cleanly.
+
+Avoid:
+- big bounces
+- spinning everything
+- excessive neon
+- too many constant animations
+- meme/crypto casino feel
+- overdone particle effects
+- unreadable glow
+- animations that make financial data harder to scan
+
+==================================================
+17. PREMIUM EMPTY / LOADING / ERROR STATES
+==================================================
+
+Upgrade all non-data states.
+
+Loading states:
+- Use dark glass skeleton cards.
+- Add subtle gold shimmer.
+- Avoid plain gray loaders.
+
+Empty states:
+- Use polished icon/illustration style.
+- Short professional copy.
+- Example: “No high-conviction setups detected yet.”
+- Add secondary action where appropriate.
+
+Error states:
+- Use premium risk-card styling.
+- Clear message.
+- Small red/gold accent.
+- Do not show raw ugly errors to the user unless in developer mode.
+
+This matters because premium apps feel polished even when data is loading or unavailable.
+
+==================================================
+18. MOBILE / RESPONSIVE QUALITY
+==================================================
+
+On mobile:
+- Reduce or disable particle system.
+- Sidebar should collapse cleanly.
+- Cards should stack with proper spacing.
+- No horizontal overflow.
+- Ticker should remain readable.
+- Touch targets should be large enough.
+- Animations should be lighter and faster.
+- Hover preview panels should become tap/accordion behavior.
+- Search should remain usable.
+- Cards should not feel cramped.
+- Background effects should not hurt performance.
+
+Mobile must feel intentional, not like a compressed desktop screen.
+
+==================================================
+19. ACCESSIBILITY
+==================================================
+
+Add prefers-reduced-motion support.
+
+If user has reduced motion enabled:
+- disable particles
+- disable parallax
+- disable long loops
+- disable ticker auto-motion if needed
+- keep only simple fades or no animations
+
+Make sure:
+- contrast remains readable
+- text is not hidden by glow
+- focus states are visible
+- keyboard navigation still works
+- hover-only interactions have keyboard/touch alternatives
+- animations do not block reading
+- tooltips/flyouts do not trap focus
+
+==================================================
+20. PERFORMANCE REQUIREMENTS
+==================================================
+
+Very important:
+Do not make the app laggy.
+
+Implementation rules:
+- Use CSS animations where possible.
+- Use requestAnimationFrame for canvas particles.
+- Pause particle rendering when document is hidden.
+- Limit particle count.
+- Debounce mousemove effects.
+- Avoid layout thrashing.
+- Avoid unnecessary re-renders.
+- Avoid heavy libraries unless already installed.
+- Keep animation files modular.
+- Use transform and opacity for animations.
+- Avoid animating width, height, top, left unless necessary.
+- Keep box-shadow/glow effects reasonable.
+- Test with browser devtools for console errors.
+
+Suggested particle rules:
+- Desktop: 45–80 particles max.
+- Tablet: 25–40 particles max.
+- Mobile: off or 10–20 max.
+- Opacity: very low.
+- Speed: slow.
+- Connections: short-distance only.
+- Background only.
+
+==================================================
+21. FILE ORGANIZATION
+==================================================
+
+Keep implementation clean and modular.
+
+If the project structure allows it, create or update files such as:
+
+- styles/premium-theme.css
+- styles/animations.css
+- scripts/particles.js
+- scripts/scrollReveal.js
+- scripts/navAnimations.js
+- scripts/cardEffects.js
+
+If the current structure is different, adapt to the existing files.
+
+Add comments explaining:
+- where to adjust particle intensity
+- where to adjust glow strength
+- where to adjust animation speed
+- how to disable effects
+- where animation tokens live
+- how reduced-motion fallback works
+
+Do not scatter random CSS everywhere if a more organized approach is possible.
+
+==================================================
+22. REUSABLE CSS UTILITIES
+==================================================
+
+Add reusable utility classes where appropriate:
+
+.glass-card
+.gold-glow
+.premium-border
+.hover-lift
+.shine-sweep
+.soft-pulse
+.data-grid-bg
+.reveal-on-scroll
+.reveal-visible
+.market-positive
+.market-negative
+.active-nav-beam
+.ticker-scanline
+.ai-orb
+.skeleton-gold
+.sparkline-glow
+.command-surface
+.premium-tooltip
+.magnetic-hover
+.card-spotlight
+.liquid-glass
+.status-pill
+.signal-badge
+.risk-badge
+
+Add keyframes where appropriate:
+
+goldShimmer
+softPulse
+floatSlow
+scanLine
+borderSweep
+fadeUpBlur
+tickerScroll
+orbPulse
+activeBeam
+glowBreath
+dataDrift
+sparklineDraw
+liquidShimmer
+statusPulse
+
+==================================================
+23. IMPLEMENTATION PLAN
+==================================================
+
+Work in safe stages.
+
+Stage 1:
+Audit existing structure.
+Identify main layout, sidebar, ticker, hero/header, cards, AI briefing, opportunities, risk alerts, search bar, and style files.
+
+Stage 2:
+Add design tokens and premium base theme.
+Do not break layout.
+
+Stage 3:
+Add background effects:
+- grid
+- ambient glow
+- particles
+- reduced-motion fallback
+
+Stage 4:
+Upgrade core components:
+- logo
+- sidebar
+- ticker
+- search
+- hero
+- dashboard cards
+- index overview
+- AI briefing
+- opportunities
+- risk alerts
+
+Stage 5:
+Add interactions:
+- hover physics
+- flyout previews
+- scroll reveal
+- page transitions
+- card spotlight effects
+- buttons
+- tooltips
+
+Stage 6:
+Test:
+- desktop
+- mobile
+- reduced motion
+- performance
+- hover states
+- keyboard focus
+- no broken navigation
+- no console errors
+
+Stage 7:
+Provide a final summary:
+- files changed
+- effects added
+- how to adjust intensity
+- any follow-up recommendations
+
+==================================================
+24. ANIMATION BUDGET / RESTRAINT RULES
+==================================================
+
+Use an animation budget.
+
+Constant animations allowed:
+- particle background
+- very subtle grid movement
+- ticker motion
+- market-open pulse
+- AI orb breathing
+- occasional shimmer on active nav item
+- slow ambient background glow
+
+Hover/focus animations allowed:
+- card lift
+- sidebar hover
+- search focus
+- button shine
+- ticker expansion
+- dropdown reveal
+- tooltip reveal
+
+Load/transition animations allowed:
+- page fade/blur
+- card stagger reveal
+- count-up numbers
+- sparkline draw-in
+- skeleton shimmer
+
+Do not make every element constantly move.
+
+Premium restraint is more important than visual noise.
+
+==================================================
+25. ACCEPTANCE CRITERIA
+==================================================
+
+After the upgrade, the dashboard should visibly have:
+
+1. Premium animated logo/brand area.
+2. Metallic gold/champagne design language.
+3. Subtle particle background.
+4. Animated market grid.
+5. Ambient gold/emerald glow.
+6. Upgraded glassmorphism cards.
+7. Card hover physics.
+8. Radial card spotlight effects if feasible.
+9. Sidebar hover animations.
+10. Sidebar active gold beam.
+11. Hover preview/flyout panels for nav items.
+12. Animated ticker bar with premium effects.
+13. Upgraded AI command search bar.
+14. Enhanced command center hero/header.
+15. Animated capability badges.
+16. Improved AI Daily Briefing panel.
+17. AI orb / pulse indicator.
+18. Confidence/sentiment/status indicators.
+19. Improved top opportunities card.
+20. Improved risk alerts card.
+21. Mini sparklines or premium placeholders where appropriate.
+22. Smooth section/page transitions.
+23. Staggered scroll/card reveal.
+24. Premium loading/empty/error states.
+25. Reduced-motion support.
+26. Mobile performance fallback.
+27. No broken existing functionality.
+28. No console errors.
+29. No unreadable text due to glow.
+30. Clear file organization.
+
+==================================================
+FINAL QUALITY BAR
+==================================================
+
+The final YucaTanaTrades interface should look and feel like a serious premium AI trading intelligence platform.
+
+It should feel:
+- darker
+- sharper
+- smoother
+- more dimensional
+- more animated
+- more intelligent
+- more luxurious
+- more institutional
+- more alive
+- more trustworthy
+
+It should look like a real commercial fintech SaaS product, not just a styled personal dashboard.
+
+Prioritize:
+- premium restraint
+- performance
+- readability
+- polish
+- consistency
+- clean implementation
+- high-end motion design
+
+Do not overdo the effects. The goal is subtle motion, depth, glass, gold, intelligence, and a luxury institutional trading feel.
