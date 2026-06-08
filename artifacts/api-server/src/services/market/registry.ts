@@ -42,7 +42,7 @@ export const PROVIDERS: ProviderDescriptor[] = [
     isDelayed: false,
     implemented: true,
     sourceLabel: "CoinGecko · Reference",
-    description: "Free public crypto reference prices. Near real-time, labeled reference.",
+    description: "Free public crypto reference prices (BTC, ETH, SOL, SUI). Near real-time, labeled reference.",
   },
   {
     id: "kraken",

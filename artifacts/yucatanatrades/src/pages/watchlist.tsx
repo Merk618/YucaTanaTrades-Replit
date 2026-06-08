@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Plus, Trash2, X, TrendingUp, TrendingDown, Bell, SlidersHorizontal, Search } from "lucide-react";
 import {
@@ -8,32 +8,9 @@ import {
   getListWatchlistItemsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { mockMarketData } from "@/data/mockData";
+import { useMarketQuotes, isQuoteUsable, formatPrice, type Quote } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
-
-// Enrich watchlist tickers with mock price data where available
-const PRICE_MAP: Record<string, { price: number; change: number; changePercent: number }> = {};
-for (const m of mockMarketData) {
-  PRICE_MAP[m.symbol] = { price: m.price, change: m.change, changePercent: m.changePercent };
-}
-
-// Extended price coverage for commonly-watched names
-const EXTRA_PRICES: Record<string, { price: number; change: number; changePercent: number }> = {
-  ASTS: { price: 15.40, change: 1.72, changePercent: 12.57 },
-  KTOS: { price: 36.40, change: 1.80, changePercent: 5.20 },
-  SMR: { price: 8.90, change: -0.41, changePercent: -4.40 },
-  RGTI: { price: 2.15, change: 0.17, changePercent: 8.60 },
-  QUBT: { price: 1.85, change: 0.24, changePercent: 14.90 },
-  CLSK: { price: 18.75, change: 1.14, changePercent: 6.47 },
-  META: { price: 510.30, change: 8.40, changePercent: 1.67 },
-  ORCL: { price: 128.55, change: -1.20, changePercent: -0.92 },
-  AMZN: { price: 182.60, change: 2.10, changePercent: 1.16 },
-  TSLA: { price: 177.40, change: -3.80, changePercent: -2.10 },
-  XRP: { price: 0.523, change: 0.021, changePercent: 4.18 },
-  NXE: { price: 7.80, change: 0.31, changePercent: 4.13 },
-};
-const ALL_PRICES = { ...EXTRA_PRICES, ...PRICE_MAP };
 
 type Priority = "high" | "medium" | "low";
 
@@ -67,6 +44,19 @@ export default function Watchlist() {
   const { data: items = [], isLoading } = useListWatchlistItems();
   const addItem = useAddWatchlistItem();
   const removeItem = useRemoveWatchlistItem();
+
+  // Fetch real delayed/reference quotes for every ticker in the watchlist.
+  // Yahoo Finance covers equities/ETFs; CoinGecko covers crypto.
+  // Symbols not supported by either source will return an error quote → shown as "No price data".
+  const tickers = useMemo(() => items.map((i) => i.ticker), [items]);
+  const { data: quotesResponse } = useMarketQuotes(tickers, 60_000);
+  const quoteBySymbol = useMemo(() => {
+    const map: Record<string, Quote> = {};
+    for (const q of quotesResponse?.quotes ?? []) {
+      if (isQuoteUsable(q)) map[q.symbol] = q;
+    }
+    return map;
+  }, [quotesResponse]);
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     defaultValues: { ticker: "", sector: "", notes: "", priority: "medium" },
@@ -124,8 +114,8 @@ export default function Watchlist() {
   });
 
   const highCount = items.filter((i) => i.priority === "high").length;
-  const gainers = items.filter((i) => (ALL_PRICES[i.ticker]?.changePercent ?? 0) > 0).length;
-  const losers = items.filter((i) => (ALL_PRICES[i.ticker]?.changePercent ?? 0) < 0).length;
+  const gainers = items.filter((i) => (quoteBySymbol[i.ticker]?.changePercent ?? 0) > 0).length;
+  const losers = items.filter((i) => (quoteBySymbol[i.ticker]?.changePercent ?? 0) < 0).length;
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -225,10 +215,10 @@ export default function Watchlist() {
         >
           <AnimatePresence>
             {sorted.map((item, i) => {
-              const price = ALL_PRICES[item.ticker];
+              const q = quoteBySymbol[item.ticker];
               const priority = (item.priority ?? "medium") as Priority;
               const cfg = PRIORITY_CONFIG[priority];
-              const up = (price?.changePercent ?? 0) >= 0;
+              const up = (q?.changePercent ?? 0) >= 0;
 
               return (
                 <motion.div
@@ -260,32 +250,29 @@ export default function Watchlist() {
                     </button>
                   </div>
 
-                  {/* Price block */}
-                  {price ? (
+                  {/* Price block — real delayed/reference quotes only; no mock prices */}
+                  {q ? (
                     <div className="mb-3">
                       <div className="flex items-end gap-2">
                         <span className="font-mono text-2xl font-bold text-foreground">
-                          {price.price >= 10000
-                            ? `$${price.price.toLocaleString()}`
-                            : price.price >= 1
-                            ? `$${price.price.toFixed(2)}`
-                            : `$${price.price.toFixed(4)}`}
+                          ${formatPrice(q.price)}
                         </span>
                         <span className={cn("font-mono text-sm font-semibold mb-0.5", up ? "text-emerald-400" : "text-red-400")}>
-                          {up ? "+" : ""}{price.changePercent.toFixed(2)}%
+                          {up ? "+" : ""}{(q.changePercent ?? 0).toFixed(2)}%
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                         {up ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
                         <span className={cn("font-mono", up ? "text-emerald-400" : "text-red-400")}>
-                          {up ? "+" : ""}{price.change.toFixed(price.price < 1 ? 4 : 2)} today
+                          {up ? "+" : ""}{(q.change ?? 0).toFixed(q.price < 1 ? 4 : 2)} today
                         </span>
+                        <span className="text-muted-foreground/35 text-[10px]">· {q.sourceLabel}</span>
                       </div>
                     </div>
                   ) : (
                     <div className="mb-3">
                       <p className="font-mono text-lg text-muted-foreground/50 italic">No price data</p>
-                      <p className="text-xs text-muted-foreground">Connect live feed to see prices</p>
+                      <p className="text-xs text-muted-foreground/60">Not covered by current sources</p>
                     </div>
                   )}
 

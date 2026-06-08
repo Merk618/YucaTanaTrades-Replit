@@ -11,14 +11,46 @@ import { fetchAlpacaQuotes } from "./providers/alpaca";
 import { fetchFmpQuotes } from "./providers/fmp";
 import type { Logger } from "pino";
 
+// ─── Per-symbol quote cache ───────────────────────────────────────────────────
+// Prevents hammering upstream providers when multiple concurrent requests arrive
+// for overlapping symbol sets (e.g. ticker tape + watchlist both requesting BTC
+// within the same polling window). TTL is set just under the client-side
+// refetchInterval so bursts are collapsed without hiding genuinely fresh data.
+const QUOTE_CACHE_TTL_MS = 55_000;
+
+interface CacheEntry { quote: Quote; expiresAt: number }
+const quoteCache = new Map<string, CacheEntry>();
+
+function getCached(symbol: string): Quote | null {
+  const entry = quoteCache.get(symbol);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { quoteCache.delete(symbol); return null; }
+  return entry.quote;
+}
+
+function setCached(symbol: string, quote: Quote): void {
+  quoteCache.set(symbol, { quote, expiresAt: Date.now() + QUOTE_CACHE_TTL_MS });
+}
+
 // ─── Data router ─────────────────────────────────────────────────────────────
 // Classifies symbols by asset class, routes each class to the highest-priority
 // implemented provider, then falls back sequentially if a provider fails.
 // Never fabricates a price: if every provider fails, returns an honest error
 // quote (price=0, provider="none", confidence=0).
+//
+// Active providers (implemented=true):
+//   Equities/ETFs — Yahoo Finance (delayed ~15 min)        priority 20
+//   Equities/ETFs — Alpaca (delayed IEX, keyed)            priority  8
+//   Equities/ETFs — Polygon (delayed→live, keyed)          priority 10
+//   Equities/ETFs — FMP (delayed, keyed)                   priority 15
+//   Crypto        — CoinGecko (reference, no key)          priority 20
+//   Crypto        — Kraken (live, no key)                  priority 12
+//   Crypto        — Coinbase (live, no key)                priority 14
 
 type Fetcher = (symbols: string[]) => Promise<Map<string, RawQuote | Error>>;
 
+// Only providers with implemented=true in the registry AND present in FETCHERS
+// are ever called. Adding a new provider: flip implemented=true + add entry here.
 const FETCHERS: Record<string, Fetcher> = {
   // Free, no-key public feeds (always available)
   yahoo:     (symbols) => fetchYahooQuotes(symbols),
@@ -100,6 +132,18 @@ async function routeAssetClass(
   const out = new Map<string, Quote>();
   const remaining = new Set(symbols.map((s) => s.toUpperCase()));
 
+  // Serve cache hits first — avoids redundant upstream calls when the ticker
+  // tape and watchlist both request the same symbols within one polling window.
+  for (const sym of [...remaining]) {
+    const cached = getCached(sym);
+    if (cached) {
+      out.set(sym, cached);
+      remaining.delete(sym);
+    }
+  }
+
+  if (remaining.size === 0) return out;
+
   // Use all implemented providers that have a fetcher wired up.
   const providers = quoteProvidersFor(assetClass).filter(
     (p) => p.implemented && FETCHERS[p.id],
@@ -130,7 +174,9 @@ async function routeAssetClass(
         if (isFallback) {
           log?.info({ symbol: sym, provider: provider.id }, "Served via fallback provider");
         }
-        out.set(sym, enrich(r, provider.id, isFallback));
+        const enriched = enrich(r, provider.id, isFallback);
+        out.set(sym, enriched);
+        setCached(sym, enriched);
         remaining.delete(sym);
       } else if (r instanceof Error) {
         log?.warn(
@@ -141,7 +187,7 @@ async function routeAssetClass(
     }
   }
 
-  // Any unresolved symbols → honest error quote.
+  // Any unresolved symbols → honest error quote (not cached — let retries work).
   for (const sym of remaining) {
     out.set(sym, errorQuote(sym, assetClass, "All providers failed for this symbol."));
   }

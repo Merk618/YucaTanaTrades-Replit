@@ -28,6 +28,7 @@ export function useMarketQuotes(symbols: readonly string[], refetchMs = 60_000) 
   return useGetMarketQuotes(params, {
     query: {
       queryKey: getGetMarketQuotesQueryKey(params),
+      enabled: symbols.length > 0,
       refetchInterval: refetchMs,
       staleTime: 30_000,
     },

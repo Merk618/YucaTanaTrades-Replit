@@ -1,0 +1,71 @@
+Important correction: Do not require Alpaca keys and do not make Alpaca the main market-data source.
+
+Alpaca should remain optional/future-ready only. It should not block the build, and it should not be treated as the required live market data provider.
+
+Please revise the market-data architecture with this provider priority:
+
+Equities / ETFs:
+
+1. MooMoo/OpenD — primary when connected and healthy.
+2. Yahoo Finance delayed fallback — use now because it requires no key. Clearly label as “Delayed · Yahoo” or “Yahoo fallback · Delayed.”
+3. Polygon.io — future premium provider if API key is added later.
+4. Financial Modeling Prep / FMP — future fundamentals/company profile/backup quotes if API key is added later.
+5. Twelve Data — optional future provider.
+6. Alpaca — optional future provider only, mainly for paper trading or backup equity data. Do not require Alpaca keys right now.
+7. If no provider is available, show “Unavailable,” not demo/fake data.
+
+Crypto:
+
+1. Kraken — preferred future crypto exchange source if keys are added later.
+2. Coinbase — secondary future crypto exchange source if keys are added later.
+3. Binance/Binance.US — optional future source if available.
+4. CoinGecko — use now as free/reference crypto fallback. Clearly label as “Reference · CoinGecko” or “CoinGecko fallback.”
+
+Options:
+
+1. MooMoo/OpenD if supported.
+2. Polygon/Tradier/Unusual Whales later if configured.
+3. Otherwise show unavailable.
+
+Fundamentals / filings:
+
+1. FMP later if API key is added.
+2. SEC EDGAR for filings where possible.
+3. Otherwise unavailable.
+
+AI / Research:
+
+* OpenAI, Perplexity, DeepSeek, and Gemini are AI/research providers only.
+* They must never be treated as market-data sources.
+* They must never generate fake prices.
+
+Required change:
+Remove the current blocking request that asks for Alpaca keys as if Alpaca is required for live market data.
+
+Instead:
+
+* Allow the app to run now using Yahoo delayed equities and CoinGecko crypto reference data.
+* Clearly label all Yahoo equity data as delayed/fallback.
+* Clearly label CoinGecko crypto data as reference/fallback.
+* Keep Alpaca listed in Settings as “Future Ready” or “Optional · Not Connected.”
+* Do not show Alpaca as required.
+* Do not show Alpaca as primary unless I explicitly configure it later and choose it as primary.
+* Do not show “LIVE” for Yahoo delayed data.
+* Do not show “LIVE” unless the connected provider truly supports live data.
+* Do not add fake prices.
+* Do not simulate price movement.
+* Do not use static mock prices as real market data.
+
+Settings page behavior:
+
+* MooMoo/OpenD: Primary stock source when connected/healthy, otherwise disconnected/stale/future depending actual status.
+* Yahoo: No key required, delayed equity fallback.
+* CoinGecko: No key or optional key, crypto reference fallback.
+* Alpaca: Optional future provider, not required.
+* Polygon: Future premium provider, missing key until configured.
+* FMP: Future fundamentals provider, missing key until configured.
+* Kraken/Coinbase: Future crypto exchange providers, missing keys until configured.
+
+The build should continue without any Alpaca API key.
+The app should still show real delayed equity prices via Yahoo fallback and real/reference crypto prices via CoinGecko where available.
+Every displayed quote must include provider, timestamp, delayed/live/stale/fallback metadata.

@@ -39,7 +39,7 @@ function gatewayConfigured(p: ProviderDescriptor): boolean {
 function errorToStatus(msg: string): ProviderStatusCode {
   if (msg === "rate_limited") return "rate_limited";
   if (msg === "auth_failed" || msg.includes("auth_failed")) return "auth_failed";
-  if (msg.includes("missing_api_key") || msg.includes("missing_credentials")) return "missing_api_key";
+  if (msg.includes("missing_api_key") || msg.includes("missing_credentials") || msg.includes("not_configured")) return "missing_api_key";
   return "health_check_failed";
 }
 
@@ -97,9 +97,9 @@ async function probe(p: ProviderDescriptor): Promise<{
       const latencyMs = Date.now() - start;
       const status: ProviderStatusCode = p.liveCapable ? "connected" : "delayed";
       const message =
-        p.id === "yahoo"   ? "Delayed feed reachable (~15 min)." :
-        p.id === "kraken"  ? "Live exchange ticker reachable." :
-        p.id === "coinbase"? "Live exchange stats reachable." :
+        p.id === "yahoo"    ? "Delayed feed reachable (~15 min)." :
+        p.id === "kraken"   ? "Live exchange ticker reachable." :
+        p.id === "coinbase" ? "Live exchange stats reachable." :
         "Reference feed reachable.";
       return { status, message, ok: true, latencyMs, detail: null };
     } catch (err) {
@@ -155,9 +155,9 @@ async function probe(p: ProviderDescriptor): Promise<{
       const msg = err instanceof Error ? err.message : String(err);
       const status = errorToStatus(msg);
       const humanMsg =
-        status === "auth_failed"    ? `Authentication failed — check ${p.envVars.join(", ")}.` :
-        status === "rate_limited"   ? "Rate limited — will retry." :
-        status === "missing_api_key"? `Add ${p.envVars.join(", ")} to Replit Secrets.` :
+        status === "auth_failed"     ? `Authentication failed — check ${p.envVars.join(", ")}.` :
+        status === "rate_limited"    ? "Rate limited — will retry." :
+        status === "missing_api_key" ? `Add ${p.envVars.join(", ")} to Replit Secrets.` :
         "Health check failed — provider unreachable.";
       return { status, message: humanMsg, ok: false, latencyMs: Date.now() - start, detail: msg };
     }
