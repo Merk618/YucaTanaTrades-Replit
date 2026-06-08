@@ -11,6 +11,7 @@ export * from './botStatus';
 export * from './botStatusHealth';
 export * from './botStatusStatus';
 export * from './getMarketQuotesParams';
+export * from './getSourceHealthParams';
 export * from './healthStatus';
 export * from './journalEntry';
 export * from './journalEntryInput';

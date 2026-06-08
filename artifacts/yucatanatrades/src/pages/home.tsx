@@ -12,7 +12,7 @@ import {
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
   useMarketQuotes, useMarketSession, INDEX_SYMBOLS,
-  isQuoteUsable, type Quote,
+  isQuoteUsable, quoteTooltip, type Quote,
 } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
@@ -116,16 +116,17 @@ function MetricCard({
 }
 
 // ─── Index card with sparkline ───────────────────────────────────────────────
-function IndexCard({ symbol, price, change, changePercent }: {
-  symbol: string; price: number; change: number; changePercent: number;
+function IndexCard({ symbol, price, change, changePercent, tooltip }: {
+  symbol: string; price: number; change: number; changePercent: number; tooltip?: string;
 }) {
   const isUp = change >= 0;
   const sparkData = TICKER_SPARKLINES[symbol] ?? [price * 0.96, price * 0.98, price];
 
   return (
     <div
+      title={tooltip}
       className={cn(
-        "p-3 rounded-lg border transition-all duration-300 cursor-default group relative overflow-hidden",
+        "p-3 rounded-lg border transition-all duration-300 cursor-help group relative overflow-hidden",
         isUp
           ? "bg-background/60 border-border/40 hover:border-emerald-500/30 hover:shadow-[0_0_16px_rgba(34,197,94,0.08)]"
           : "bg-background/60 border-border/40 hover:border-red-500/25 hover:shadow-[0_0_16px_rgba(239,68,68,0.06)]"
@@ -478,6 +479,7 @@ export default function Home() {
                       price={q.price}
                       change={q.change}
                       changePercent={q.changePercent}
+                      tooltip={quoteTooltip(q)}
                     />
                   ))}
                 </div>

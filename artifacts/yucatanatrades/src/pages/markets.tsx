@@ -7,6 +7,7 @@ import {
   isQuoteUsable,
   formatPrice,
   quoteBadge,
+  quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
 import { DemoBadge } from "@/components/demo-badge";
@@ -43,7 +44,8 @@ function QuoteCard({ q }: { q: Quote }) {
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -2 }}
-      className={cn("glass-card p-5 cursor-pointer transition-all", up ? "hover:border-emerald-500/30" : "hover:border-red-500/30")}
+      title={quoteTooltip(q)}
+      className={cn("glass-card p-5 cursor-help transition-all", up ? "hover:border-emerald-500/30" : "hover:border-red-500/30")}
     >
       <div className="flex items-start justify-between mb-3">
         <span className="font-mono font-bold text-primary text-base">{q.symbol}</span>

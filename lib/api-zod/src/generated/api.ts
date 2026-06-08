@@ -262,6 +262,10 @@ export const GetMarketQuotesResponse = zod.object({
 /**
  * @summary Real provider/source health status
  */
+export const GetSourceHealthQueryParams = zod.object({
+  "refresh": zod.coerce.boolean().optional().describe('Force a fresh probe of every provider, bypassing cache')
+})
+
 export const GetSourceHealthResponse = zod.object({
   "asOf": zod.string(),
   "providers": zod.array(zod.object({

@@ -5,6 +5,7 @@ import {
   TICKER_SYMBOLS,
   formatPrice,
   isQuoteUsable,
+  quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
 
@@ -44,7 +45,7 @@ export function TickerTape() {
 
       <div className="flex animate-[ticker_35s_linear_infinite]">
         {[...quotes, ...quotes, ...quotes].map((item, i) => (
-          <div key={`${item.symbol}-${i}`} className="flex items-center mx-5 gap-2 group">
+          <div key={`${item.symbol}-${i}`} title={quoteTooltip(item)} className="flex items-center mx-5 gap-2 group cursor-help">
             <span className="font-bold text-foreground/90 tracking-wide group-hover:text-primary transition-colors duration-200">
               {item.symbol}
             </span>

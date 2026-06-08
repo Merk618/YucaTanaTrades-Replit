@@ -409,3 +409,10 @@ export type GetMarketQuotesParams = {
 symbols: string;
 };
 
+export type GetSourceHealthParams = {
+/**
+ * Force a fresh probe of every provider, bypassing cache
+ */
+refresh?: boolean;
+};
+

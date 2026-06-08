@@ -233,6 +233,13 @@ paths:
       operationId: getSourceHealth
       tags: [market]
       summary: Real provider/source health status
+      parameters:
+        - name: refresh
+          in: query
+          required: false
+          description: Force a fresh probe of every provider, bypassing cache
+          schema:
+            type: boolean
       responses:
         "200":
           description: Source health

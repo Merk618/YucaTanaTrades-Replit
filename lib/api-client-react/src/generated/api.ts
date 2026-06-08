@@ -22,6 +22,7 @@ import type {
 import type {
   BotsStatus,
   GetMarketQuotesParams,
+  GetSourceHealthParams,
   HealthStatus,
   JournalEntry,
   JournalEntryInput,
@@ -1024,20 +1025,27 @@ export function useGetMarketQuotes<TData = Awaited<ReturnType<typeof getMarketQu
 
 
 
-export const getGetSourceHealthUrl = () => {
+export const getGetSourceHealthUrl = (params?: GetSourceHealthParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/market/health`
+  return stringifiedParams.length > 0 ? `/api/market/health?${stringifiedParams}` : `/api/market/health`
 }
 
 /**
  * @summary Real provider/source health status
  */
-export const getSourceHealth = async ( options?: RequestInit): Promise<SourceHealth> => {
+export const getSourceHealth = async (params?: GetSourceHealthParams, options?: RequestInit): Promise<SourceHealth> => {
 
-  return customFetch<SourceHealth>(getGetSourceHealthUrl(),
+  return customFetch<SourceHealth>(getGetSourceHealthUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1050,23 +1058,23 @@ export const getSourceHealth = async ( options?: RequestInit): Promise<SourceHea
 
 
 
-export const getGetSourceHealthQueryKey = () => {
+export const getGetSourceHealthQueryKey = (params?: GetSourceHealthParams,) => {
     return [
-    `/api/market/health`
+    `/api/market/health`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetSourceHealthQueryOptions = <TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSourceHealthQueryOptions = <TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>(params?: GetSourceHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetSourceHealthQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetSourceHealthQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceHealth>>> = ({ signal }) => getSourceHealth({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceHealth>>> = ({ signal }) => getSourceHealth(params, { signal, ...requestOptions });
 
 
 
@@ -1084,11 +1092,11 @@ export type GetSourceHealthQueryError = ErrorType<unknown>
  */
 
 export function useGetSourceHealth<TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetSourceHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetSourceHealthQueryOptions(options)
+  const queryOptions = getGetSourceHealthQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

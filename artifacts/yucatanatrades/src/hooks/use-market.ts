@@ -2,9 +2,11 @@ import {
   useGetMarketQuotes,
   useGetMarketSession,
   useGetSourceHealth,
+  useTestQuoteFetch,
   getGetMarketQuotesQueryKey,
   getGetMarketSessionQueryKey,
   getGetSourceHealthQueryKey,
+  getTestQuoteFetchQueryKey,
   type Quote,
 } from "@workspace/api-client-react";
 
@@ -43,11 +45,36 @@ export function useMarketSession(refetchMs = 60_000) {
 }
 
 export function useSourceHealth(refetchMs = 60_000) {
-  return useGetSourceHealth({
+  return useGetSourceHealth(undefined, {
     query: {
       queryKey: getGetSourceHealthQueryKey(),
       refetchInterval: refetchMs,
       staleTime: 30_000,
+    },
+  });
+}
+
+// Forced probe (refresh=true) that bypasses the server-side health cache.
+// Manual-only — call refetch() on the "Re-check" action so we don't hammer
+// upstream providers on every auto-refresh tick.
+export function useForceSourceHealth() {
+  const params = { refresh: true };
+  return useGetSourceHealth(params, {
+    query: {
+      queryKey: getGetSourceHealthQueryKey(params),
+      enabled: false,
+      gcTime: 0,
+    },
+  });
+}
+
+// On-demand probe of real sources (SPY + BTC). Disabled until triggered.
+export function useTestQuotes() {
+  return useTestQuoteFetch({
+    query: {
+      queryKey: getTestQuoteFetchQueryKey(),
+      enabled: false,
+      gcTime: 0,
     },
   });
 }
@@ -73,6 +100,32 @@ export function quoteBadge(q: Quote): { text: string; tone: "live" | "delayed" |
   if (q.isLive) return { text: "LIVE", tone: "live" };
   if (q.isDelayed) return { text: "DELAYED", tone: "delayed" };
   return { text: "REFERENCE", tone: "ref" };
+}
+
+// Human-readable freshness, e.g. "12s ago" / "3m ago".
+export function freshnessLabel(iso: string | undefined): string {
+  if (!iso) return "unknown";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(diff)) return "unknown";
+  const s = Math.round(diff / 1000);
+  if (s < 60) return `${Math.max(s, 0)}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  return `${Math.round(m / 60)}h ago`;
+}
+
+// Tooltip text exposing the quote's real provenance: source, freshness, trust.
+export function quoteTooltip(q: Quote): string {
+  const badge = quoteBadge(q).text;
+  const parts = [
+    `${q.symbol} · ${q.sourceLabel}`,
+    `Source: ${q.provider}`,
+    `As of: ${freshnessLabel(q.timestamp)}`,
+    `Status: ${badge}`,
+  ];
+  if (q.isFallback) parts.push("Fallback source in use");
+  if (q.isStale) parts.push("Data may be outdated");
+  return parts.join("\n");
 }
 
 export type { Quote };

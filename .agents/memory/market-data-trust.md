@@ -23,10 +23,14 @@ The terminal must never present fake or simulated data as real/live.
 **Why:** The product's value depends on users trusting that what's labeled real is real.
 A single fake "LIVE" badge over simulated data destroys that trust.
 
-**How to apply:** Any mock/sample/illustrative UI surface (e.g. Sector Heatmap, sample bot
-logs, hardcoded portfolio/bots JSON) must carry a `DemoBadge` (`components/demo-badge.tsx`).
-Derive market-state labels from the real `/api/market/session` and per-quote source metadata
-(`isDelayed`/`isLive`/`isStale`/`sourceLabel`), not hardcoded "OPEN"/"LIVE" strings. Reuse the
-`use-market.ts` helpers (`useMarketQuotes`, `isQuoteUsable`, `formatPrice`, `quoteBadge`).
-Generated React Query option objects require an explicit `queryKey` (pass the generated
-`getGet*QueryKey(...)`), or typecheck fails (TS2741).
+**How to apply:** Any mock/sample/illustrative UI surface must carry a demo badge — never
+let illustrative data read as real. Derive market-state labels from the real market-session
+endpoint and per-quote source metadata, not hardcoded "OPEN"/"LIVE" strings. The forced
+health probe (`?refresh=true`) bypasses the server-side health cache and should be wired only
+to explicit user actions (e.g. a "Re-check" button), never to auto-refresh — forcing a probe
+on every tick risks rate-limiting upstream providers (CoinGecko in particular).
+
+**Codegen gotcha:** Generated React Query option objects require an explicit `queryKey` (pass
+the matching generated query-key helper), or typecheck fails (TS2741). When a generated GET
+hook needs new query params, add them to the OpenAPI spec and regenerate rather than
+hand-rolling a fetch — keep the contract as the single source of truth.

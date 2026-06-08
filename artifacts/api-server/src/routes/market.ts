@@ -90,7 +90,6 @@ router.get("/market/session", (req, res) => {
         state: session.crypto.state,
         isOpen: session.crypto.isOpen,
         label: session.crypto.label,
-        timezone: null,
         nextChange: null,
       },
     });
