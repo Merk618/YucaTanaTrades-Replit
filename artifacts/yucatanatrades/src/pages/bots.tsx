@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Bot, Shield, Activity, Clock, Scan, AlertTriangle, CheckCircle, WifiOff } from "lucide-react";
+import { Bot, Shield, Clock, Scan, CheckCircle, WifiOff } from "lucide-react";
 import { useGetBotsStatus } from "@workspace/api-client-react";
-import { mockBotStatus } from "@/data/mockData";
 import { DemoBadge } from "@/components/demo-badge";
+import { freshnessLabel } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 
 const LOG_ENTRIES = [
@@ -53,7 +53,6 @@ export default function Bots() {
           <div className="flex items-center gap-3">
             <Bot className="w-5 h-5 text-primary" />
             <h1 className="font-display text-3xl font-bold tracking-tight">Trading Bots</h1>
-            <DemoBadge />
           </div>
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-red-400" />
@@ -91,7 +90,7 @@ export default function Bots() {
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               {[
-                { label: "Last Scan", value: bot.lastScan ?? "—" },
+                { label: "Last Scan", value: bot.lastScan ? freshnessLabel(bot.lastScan) : "—" },
                 { label: "Scans Today", value: String(bot.scansToday) },
                 { label: "Health", value: bot.health ?? "good" },
                 { label: "Mode", value: bot.isReadOnly ? "READ-ONLY" : "ACTIVE" },
@@ -130,7 +129,10 @@ export default function Bots() {
       {/* Observation Ledger */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
         <div className="p-4 border-b border-border/50">
-          <h2 className="text-sm font-display font-semibold text-primary">Observation Ledger</h2>
+          <div className="flex items-center gap-2 mb-0.5">
+            <h2 className="text-sm font-display font-semibold text-primary">Observation Ledger</h2>
+            <DemoBadge label="Sample Setups" />
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">Bot-identified setups being monitored — no execution</p>
         </div>
         <div className="overflow-x-auto">
