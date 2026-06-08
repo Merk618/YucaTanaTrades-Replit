@@ -1,0 +1,1 @@
+- [Card spotlight effect](spotlight-effect.md) — cursor-glow on cards; `.spotlight` and `.scan-effect` both use `::after` so never combine them on one element.

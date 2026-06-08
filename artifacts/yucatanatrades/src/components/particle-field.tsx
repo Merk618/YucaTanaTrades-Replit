@@ -42,8 +42,8 @@ const PARTICLE_THEMES: Record<string, ParticleTheme> = {
   "/": { // Command Center — gold/champagne AI hub
     dotColors:   ["212,175,55", "247,231,180", "34,197,94", "255,255,255"],
     labelColors: ["212,175,55", "247,231,180", "34,197,94"],
-    labels:      ["AI", "SPY", "QQQ", "BTC", "ETH", "NVDA", "MSFT"],
-    dotCount:    36, labelCount: 14, speed: 0.22,
+    labels:      ["AI", "SPY", "QQQ", "BTC", "ETH", "NVDA", "MSFT", "SOL", "SUI", "ALPHA", "FLOW", "SCAN", "RISK", "◆"],
+    dotCount:    44, labelCount: 20, speed: 0.22,
   },
   "/markets": { // Markets — emerald/red live market flow
     dotColors:   ["34,197,94", "239,68,68", "212,175,55", "255,255,255"],
@@ -128,7 +128,7 @@ function r(min: number, max: number) { return Math.random() * (max - min) + min;
 
 function spawnDot(w: number, h: number, theme: ParticleTheme, fadingIn: boolean): Particle {
   const color = theme.dotColors[Math.floor(Math.random() * theme.dotColors.length)]!;
-  const maxOp = r(0.08, 0.22);
+  const maxOp = r(0.14, 0.34);
   return {
     x: Math.random() * w, y: Math.random() * h,
     vx: r(-0.35, 0.35) * theme.speed, vy: r(-0.35, 0.35) * theme.speed,
@@ -142,7 +142,7 @@ function spawnDot(w: number, h: number, theme: ParticleTheme, fadingIn: boolean)
 function spawnLabel(w: number, h: number, theme: ParticleTheme, fadingIn: boolean): Particle {
   const color = theme.labelColors[Math.floor(Math.random() * theme.labelColors.length)]!;
   const label = theme.labels[Math.floor(Math.random() * theme.labels.length)]!;
-  const maxOp = r(0.06, 0.16);
+  const maxOp = r(0.11, 0.24);
   return {
     x: Math.random() * w, y: Math.random() * h,
     vx: r(-0.2, 0.2) * theme.speed, vy: r(-0.15, 0.15) * theme.speed,
@@ -220,11 +220,11 @@ export function ParticleField() {
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < CONNECTION_DIST) {
             const t     = 1 - dist / CONNECTION_DIST;
-            const alpha = t * t * 0.06 * Math.min(dots[i]!.opacity, dots[j]!.opacity) / 0.15;
+            const alpha = t * t * 0.10 * Math.min(dots[i]!.opacity, dots[j]!.opacity) / 0.20;
             if (alpha > 0.005) {
               ctx.beginPath();
-              ctx.strokeStyle = `rgba(196,164,74,${Math.min(0.08, alpha)})`;
-              ctx.lineWidth   = 0.4;
+              ctx.strokeStyle = `rgba(196,164,74,${Math.min(0.14, alpha)})`;
+              ctx.lineWidth   = 0.5;
               ctx.moveTo(dots[i]!.x, dots[i]!.y);
               ctx.lineTo(dots[j]!.x, dots[j]!.y);
               ctx.stroke();

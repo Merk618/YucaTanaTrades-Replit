@@ -1,0 +1,858 @@
+Act as a senior fintech backend engineer, market-data architect, trading-platform reliability engineer, and frontend integration specialist.
+
+I am attaching a screenshot of the YucaTanaTrades Settings/API Connections page. The UI says some APIs are connected, but some displayed market prices/data are inaccurate or stale. I need you to build a serious, trustworthy API/data-source architecture so YucaTanaTrades never presents fake, stale, simulated, or incorrectly sourced market data as real.
+
+This task is NOT about visual redesign.
+This task is about market-data trust, API routing, future API readiness, source labeling, stale-data detection, and accurate connection status.
+
+Important:
+- Do not add fake prices.
+- Do not simulate price movement.
+- Do not randomly update ticker/index/portfolio values.
+- Do not mark an API as “Connected” unless a real health check succeeds.
+- Do not show “Live” unless the data is actually live.
+- If data is delayed, stale, unavailable, cached, placeholder, or demo, label it clearly.
+- AI models must never be used as market-data sources.
+- AI can interpret market data, but APIs/databases must provide the actual prices, candles, volume, options data, fundamentals, and portfolio values.
+
+==================================================
+1. CURRENT ISSUE
+==================================================
+
+The app currently shows API connection rows such as:
+- MooMoo / Moomoo API
+- Crypto Hunter custom bot
+- Alpaca Markets
+- Interactive Brokers
+- CoinGecko API
+- OpenAI Research AI
+
+Some rows show connected/read-only/data-feed status, but the dashboard/ticker prices are not fully accurate.
+
+Fix this by implementing a reliable market-data source-of-truth system.
+
+The app should be able to answer:
+
+1. Where did this price come from?
+2. Is it live, delayed, cached, demo, or stale?
+3. When was it last updated?
+4. Which provider supplied it?
+5. Is this provider actually connected right now?
+6. Did another provider disagree?
+7. Is there a fallback source?
+8. Is this data safe to use for scanners, alerts, and portfolio calculations?
+
+==================================================
+2. BUILD A DATA SOURCE REGISTRY
+==================================================
+
+Create a central data-source registry.
+
+Every API/provider should have:
+- provider id
+- display name
+- asset classes supported
+- connection status
+- last successful health check
+- last failed health check
+- latency
+- rate-limit state
+- auth status
+- enabled/disabled flag
+- read-only/trading-capable flag
+- data freshness rules
+- priority ranking
+- fallback ranking
+- environment variable requirements
+- supported endpoints/features
+
+Suggested structure:
+
+/services/data/providerRegistry.js
+/services/data/dataRouter.js
+/services/data/healthChecks.js
+/services/data/freshnessPolicy.js
+/services/data/sourceLabels.js
+/services/data/fallbackPolicy.js
+/services/data/dataValidation.js
+
+Adapt paths to existing project structure if different.
+
+==================================================
+3. REQUIRED PROVIDERS TO SUPPORT NOW OR PREPARE FOR FUTURE
+==================================================
+
+Add architecture support for all APIs/providers we have discussed or may realistically need.
+
+Do not require every provider to be connected immediately.
+Some should be implemented as:
+- active
+- optional
+- future-ready
+- disabled until API key exists
+
+The Settings UI should clearly show:
+- Connected
+- Not Connected
+- Missing API Key
+- Health Check Failed
+- Rate Limited
+- Delayed Data
+- Read-Only
+- Trading Disabled
+- Future Ready
+
+--------------------------------------------------
+A. STOCKS / ETFs / OPTIONS / BROKER DATA
+--------------------------------------------------
+
+1. MooMoo / OpenD
+Use case:
+- Primary source for equities/options quotes where available
+- Candles/OHLCV
+- Watchlists
+- Scanner data
+- Options chains if available
+- Read-only by default
+
+Rules:
+- Treat MooMoo/OpenD as primary for stock bot scanning.
+- Do not assume it is connected just because a UI row says connected.
+- Verify actual local/OpenD connection.
+- Show health status and last successful quote fetch.
+- Add stale-data detection.
+
+2. Alpaca Markets
+Use case:
+- Optional stock/ETF market data provider
+- Optional paper trading in future
+- Optional broker integration later
+
+Rules:
+- Keep trading disabled unless explicitly enabled later.
+- Add environment variable placeholders.
+- Add health check.
+- Add clear “Not connected” or “Missing API Key” state.
+
+3. Interactive Brokers
+Use case:
+- Future broker/data provider
+- Optional advanced brokerage integration
+- Broad market/instrument support
+
+Rules:
+- Future-ready only unless already configured.
+- Do not pretend connected.
+- Add placeholder provider config and Settings row.
+
+4. Polygon.io
+Use case:
+- Future premium market data
+- Equities, options, indices, aggregates, snapshots, reference data
+- Better reliability if paid later
+
+Rules:
+- Add as optional/future provider.
+- Use only if API key exists.
+- Add source label: Polygon.
+- Add delayed/live status depending account/data permission.
+
+5. Financial Modeling Prep / FMP
+Use case:
+- Fundamentals
+- Financial statements
+- ratios
+- company profiles
+- analyst estimates if available
+- earnings/calendar/news
+- backup quotes if configured
+
+Rules:
+- Add as optional/future provider.
+- Do not use FMP prices as primary if better live source exists.
+- Good for fundamentals and research cards.
+
+6. Yahoo Finance fallback
+Use case:
+- Free fallback/reference for basic quotes and historical prices if implemented legally/appropriately through existing package/source
+
+Rules:
+- Mark as fallback only.
+- Label clearly if data is delayed or unofficial.
+- Do not rely on it as institutional source-of-truth.
+
+7. Nasdaq / exchange calendar source
+Use case:
+- Market open/closed status
+- Trading holidays
+- Market sessions
+
+Rules:
+- The “LIVE” and “MARKETS OPEN” UI should be based on actual market session logic, not static text.
+- Crypto can be 24/7, but equities are not.
+
+8. Tradier or options-specific provider
+Use case:
+- Future options chains
+- Options quotes
+- Greeks
+- IV
+- Expirations
+
+Rules:
+- Optional/future provider.
+- Useful for options-ready scanner later.
+
+9. Unusual Whales
+Use case:
+- Future options flow
+- unusual volume
+- dark pool/flow style data if connected
+- catalyst/flow intelligence
+
+Rules:
+- Optional/future provider.
+- Add Settings row if appropriate.
+- Do not invent flow data.
+
+--------------------------------------------------
+B. CRYPTO DATA
+--------------------------------------------------
+
+1. Crypto Hunter custom bot
+Use case:
+- Existing internal custom crypto scanner/bot
+- Read-only signal engine
+- Observations
+- crypto watch outputs
+
+Rules:
+- Must clearly distinguish bot signals from real exchange prices.
+- Bot status should not imply price feed accuracy unless it provides verified market data.
+- Add last scan timestamp from real bot output only.
+
+2. Kraken API
+Use case:
+- Preferred serious crypto price/exchange data source
+- BTC, ETH, SOL, SUI if supported through available pairs
+- OHLCV/candles
+- volume
+- exchange quotes
+
+Rules:
+- Add provider support.
+- Use as primary crypto exchange source if connected.
+- Add environment variable placeholders.
+- Add health check.
+- Add source label: Kraken.
+
+3. Coinbase API
+Use case:
+- Secondary crypto price source
+- backup exchange data
+- BTC/ETH/SOL and major crypto assets
+
+Rules:
+- Add provider support.
+- Use as secondary/fallback crypto quote source.
+- Add health check.
+
+4. Binance / Binance.US
+Use case:
+- Optional/future crypto exchange data
+- broad crypto coverage depending user region and API availability
+
+Rules:
+- Add as optional/future provider.
+- Do not assume availability.
+- Label clearly as disabled/missing key unless configured.
+
+5. CoinGecko API
+Use case:
+- Crypto reference prices
+- broad token coverage
+- backup crypto data
+- market cap/rank/metadata
+
+Rules:
+- CoinGecko can be connected as a data feed, but it should be labeled as reference/aggregated data.
+- Use CoinGecko as fallback or broad-coverage metadata source.
+- Do not use it as exchange-execution price source.
+- Add stale detection and timestamp.
+
+6. CoinMarketCap
+Use case:
+- Optional/future crypto metadata, rankings, market cap, broad market data
+
+Rules:
+- Optional/future provider.
+- Add only if API key available later.
+
+--------------------------------------------------
+C. FUNDAMENTALS / FILINGS / NEWS / RESEARCH
+--------------------------------------------------
+
+1. SEC EDGAR
+Use case:
+- Filings
+- 10-K
+- 10-Q
+- 8-K
+- insider forms where applicable
+- official public-company source
+
+Rules:
+- Add future-ready research provider.
+- Use for source-backed company research.
+- Add proper source labels.
+
+2. FMP fundamentals
+Use case:
+- Financial statements
+- revenue growth
+- EPS
+- margins
+- ratios
+- company profile
+- earnings dates
+
+Rules:
+- Use for fundamentals if configured.
+- Source-label all outputs.
+
+3. Seeking Alpha / analyst-research style source
+Use case:
+- Optional future research summaries if integrated legally/through supported APIs or manual import
+- analyst sentiment/research notes
+
+Rules:
+- Do not scrape restricted content.
+- Only implement if allowed.
+- Add as future/manual source.
+
+4. Perplexity API / research provider
+Use case:
+- Fresh source-backed market research
+- news/catalysts
+- cited summaries
+- current events
+
+Rules:
+- AI/research provider only.
+- Not a market data source.
+- Must return citations/sources if used.
+- Label outputs as AI research.
+
+5. OpenAI Research AI
+Use case:
+- Reasoning/synthesis
+- portfolio/risk explanations
+- scanner explanations
+- summarizing structured data
+
+Rules:
+- Not a market-data source.
+- Must never invent prices.
+- Must use app-provided data/context.
+- Add model-used badge.
+- Add “analysis only” label.
+
+6. DeepSeek
+Use case:
+- Future low-cost/bulk analysis model
+- scanner summaries
+- ticker thesis drafts
+- cheap first-pass research compression
+
+Rules:
+- Add as optional/future AI provider.
+- Not a market-data source.
+- Use through AI router later.
+
+7. Gemini
+Use case:
+- Optional/future low-cost/fast AI model
+- lightweight summaries/classification
+
+Rules:
+- Optional/future AI provider.
+- Not market-data source.
+
+8. Reddit / social sentiment
+Use case:
+- Optional future social sentiment
+- ticker mentions
+- theme tracking
+
+Rules:
+- Optional/future provider.
+- Label clearly as social sentiment, not verified financial data.
+
+--------------------------------------------------
+D. INTERNAL APP DATA SOURCES
+--------------------------------------------------
+
+1. Portfolio database/app state
+Use case:
+- user holdings
+- allocation
+- P&L
+- journal
+- watchlist
+- alerts
+
+Rules:
+- Portfolio values should be calculated from user positions + verified market price source.
+- Do not let AI overwrite portfolio data.
+- Do not use placeholder prices for real portfolio calculations.
+
+2. Watchlist
+Use case:
+- tracked tickers
+- alerts
+- thesis notes
+
+Rules:
+- Watchlist prices must show provider and timestamp.
+
+3. Bot observations
+Use case:
+- MooMoo bot observations
+- Crypto Hunter observations
+- scanner results
+- signal history
+
+Rules:
+- Bot signals are separate from market price data.
+- Bot status and market data status must not be confused.
+
+==================================================
+4. DATA ROUTING PRIORITY
+==================================================
+
+Implement a data router that chooses the correct provider by asset class and data type.
+
+Example priority:
+
+Equity/ETF real-time quote:
+1. MooMoo/OpenD if connected and fresh
+2. Polygon if configured
+3. Alpaca if configured
+4. FMP/Yahoo fallback if configured
+5. mark unavailable/stale
+
+Equity candles/OHLCV:
+1. MooMoo/OpenD
+2. Polygon
+3. Alpaca
+4. FMP/Yahoo fallback
+
+Options chains/IV/Greeks:
+1. MooMoo/OpenD if supported
+2. Tradier/Polygon/Unusual Whales if configured later
+3. unavailable
+
+Crypto price:
+1. Kraken if connected
+2. Coinbase if connected
+3. Binance/Binance.US if connected
+4. CoinGecko reference fallback
+5. unavailable/stale
+
+Crypto metadata:
+1. CoinGecko
+2. CoinMarketCap if configured
+3. exchange metadata if available
+
+Fundamentals:
+1. FMP if configured
+2. SEC EDGAR for filings
+3. unavailable
+
+News/catalysts:
+1. Perplexity/research provider
+2. FMP/news provider if configured
+3. SEC filings for official company events
+4. manual/unavailable
+
+AI explanation:
+1. OpenAI/premium reasoning
+2. DeepSeek for budget/bulk if configured
+3. Gemini/fast model if configured
+4. unavailable
+
+==================================================
+5. CONNECTION STATUS MUST BE REAL
+==================================================
+
+Fix API Settings page so “Connected” means real connectivity.
+
+A provider can show Connected only if:
+- required env vars exist
+- auth succeeds if needed
+- a test request succeeds
+- response format is valid
+- last health check is recent
+- provider is not currently rate-limited or failing
+
+Statuses to support:
+- Connected
+- Connected but stale
+- Connected but rate-limited
+- Connected but delayed
+- Missing API key
+- Auth failed
+- Health check failed
+- Not connected
+- Disabled
+- Future-ready
+- Read-only
+- Trading disabled
+
+For each connected provider, show:
+- last successful check
+- data type supported
+- latency
+- source label
+- read-only/trading status
+- whether it is currently used as primary or fallback
+
+Do not hardcode “Today 2:32 PM” unless it is real.
+
+==================================================
+6. PRICE ACCURACY AND STALENESS RULES
+==================================================
+
+Every price shown in the app should carry metadata:
+
+{
+  symbol,
+  assetClass,
+  price,
+  change,
+  changePercent,
+  provider,
+  timestamp,
+  isLive,
+  isDelayed,
+  isStale,
+  isFallback,
+  isDemo,
+  marketSession,
+  confidence,
+  error
+}
+
+Freshness rules:
+- Equities during market hours: stale if older than 60–120 seconds unless delayed feed is expected.
+- Equities after hours: label as after-hours/last close/extended depending source.
+- Crypto: stale if older than 30–90 seconds for live display.
+- Fundamentals: can be older but must show reporting period/date.
+- News/research: show published/source timestamp.
+
+If data is stale:
+- show “Stale”
+- show last updated time
+- do not show green “LIVE”
+- optionally dim the value
+- do not use stale data for new alerts unless allowed by settings
+
+If provider fails:
+- try next fallback
+- label fallback provider
+- show warning in Settings/source health
+- do not silently hide failure
+
+==================================================
+7. CROSS-PROVIDER PRICE VALIDATION
+==================================================
+
+Add optional cross-provider validation.
+
+If multiple providers are available for the same symbol:
+- compare price difference
+- if difference exceeds threshold, flag discrepancy
+- show warning in source health panel
+- prefer configured primary provider unless clearly stale/failed
+
+Example thresholds:
+- large-cap equities: flag if providers differ by more than 0.5–1.0%
+- crypto: flag if providers differ by more than 0.5–1.5% depending asset liquidity
+- low-liquidity assets: allow wider threshold
+
+Add a “Data Quality” object:
+- good
+- delayed
+- stale
+- mismatched
+- fallback
+- unavailable
+
+==================================================
+8. UI CHANGES FOR SOURCE TRANSPARENCY
+==================================================
+
+Update UI so the user can trust the data.
+
+Add source badges:
+- MooMoo
+- Kraken
+- Coinbase
+- CoinGecko
+- Polygon
+- Alpaca
+- FMP
+- Yahoo fallback
+- SEC
+- AI Research
+
+For ticker rail/index cards:
+- On hover, show provider and timestamp.
+- Show “Live,” “Delayed,” “Stale,” or “Fallback.”
+- Never show generic LIVE unless all primary visible market data is truly live.
+
+For Settings:
+- Add “Source Health” panel.
+- Add provider priority table.
+- Add last checked time.
+- Add current primary provider by asset class:
+  - Equities
+  - Options
+  - Crypto
+  - Fundamentals
+  - News/Research
+  - AI
+- Add “Refresh Health Checks” button.
+- Add “Test Quote Fetch” button for a sample symbol like SPY and BTC.
+- Add environment/key missing warning.
+
+For dashboard:
+- Add small data freshness indicator near ticker rail.
+- Add “Data source” tooltip on market cards.
+- If source is fallback, show a small fallback badge.
+- If source is stale, show stale badge.
+
+==================================================
+9. ENVIRONMENT VARIABLES
+==================================================
+
+Add clear environment variable support without exposing secrets.
+
+Suggested env vars:
+
+MOO_MOO_ENABLED
+MOOMOO_HOST
+MOOMOO_PORT
+
+ALPACA_API_KEY
+ALPACA_SECRET_KEY
+ALPACA_BASE_URL
+
+IBKR_ENABLED
+IBKR_GATEWAY_URL
+
+POLYGON_API_KEY
+FMP_API_KEY
+TWELVE_DATA_API_KEY
+TRADIER_API_KEY
+UNUSUAL_WHALES_API_KEY
+
+KRAKEN_API_KEY
+KRAKEN_API_SECRET
+
+COINBASE_API_KEY
+COINBASE_API_SECRET
+
+BINANCE_API_KEY
+BINANCE_API_SECRET
+
+COINGECKO_API_KEY
+COINMARKETCAP_API_KEY
+
+PERPLEXITY_API_KEY
+OPENAI_API_KEY
+DEEPSEEK_API_KEY
+GEMINI_API_KEY
+
+SEC_USER_AGENT
+
+Rules:
+- Never expose keys to frontend.
+- Use server-side proxy/service layer where needed.
+- Settings page should only show configured/not configured, never raw keys.
+- Add example .env documentation if appropriate.
+- Add graceful failure when keys are missing.
+
+==================================================
+10. READ-ONLY SAFETY
+==================================================
+
+Keep everything read-only by default.
+
+For providers capable of trading:
+- MooMoo
+- Alpaca
+- Interactive Brokers
+- Kraken
+- Coinbase
+- Binance
+
+Default:
+- trading disabled
+- no order placement
+- no auto-trading
+- no account mutations
+- no portfolio changes from AI
+
+UI should show:
+- READ-ONLY
+- TRADING DISABLED
+
+Do not add trade execution.
+
+==================================================
+11. AI MODEL ROUTER PREP
+==================================================
+
+Prepare the architecture for AI models, but do not use them as data feeds.
+
+AI providers:
+- OpenAI
+- DeepSeek
+- Gemini
+- Perplexity/research provider
+
+AI use cases:
+- explain scanner results
+- summarize market regime
+- summarize portfolio risk
+- explain why data sources disagree
+- summarize catalysts from cited research
+- generate watchlist thesis
+
+AI cannot:
+- invent prices
+- generate market data
+- overwrite real data
+- claim something is live without provider metadata
+- make up API connection status
+
+Add AI output metadata:
+- model used
+- provider
+- timestamp
+- input data timestamp
+- sources/citations if research mode
+- confidence if scoring system supports it
+- disclaimer: analysis only
+
+==================================================
+12. IMPLEMENTATION PLAN
+==================================================
+
+Stage 1:
+Audit existing API connection/settings code, ticker data source, dashboard market card data source, and bot status source.
+
+Stage 2:
+Create provider registry and health check architecture.
+
+Stage 3:
+Implement source metadata and freshness policy.
+
+Stage 4:
+Implement data router priority/fallback logic.
+
+Stage 5:
+Add Settings UI improvements:
+- real status
+- source health
+- provider priority
+- test quote fetch
+- missing key warnings
+
+Stage 6:
+Update ticker rail/index cards/dashboard cards to show:
+- source
+- timestamp
+- live/delayed/stale/fallback
+- no fake live labels
+
+Stage 7:
+Add optional future-ready provider stubs for APIs not connected yet.
+
+Stage 8:
+Add logs and error handling:
+- provider failures
+- stale data
+- fallback use
+- mismatches
+
+Stage 9:
+Test:
+- no API keys
+- one API connected
+- provider failure
+- stale response
+- fallback response
+- missing env vars
+- crypto source only
+- equity source only
+- health check button
+- dashboard data display
+
+==================================================
+13. ACCEPTANCE CRITERIA
+==================================================
+
+After implementation:
+
+1. Settings page does not falsely show Connected.
+2. Connected status is based on real health checks.
+3. Every visible price has provider metadata.
+4. Every visible price has timestamp/freshness status.
+5. Ticker rail does not show inaccurate/fake live data.
+6. Index overview cards show source on hover.
+7. Crypto prices are routed separately from equity prices.
+8. CoinGecko is treated as reference/backup crypto data.
+9. MooMoo/OpenD is primary for stock bot/equity data if healthy.
+10. Kraken/Coinbase/Binance are prepared for crypto exchange data.
+11. Alpaca/IBKR/Polygon/FMP/SEC/Unusual Whales are supported or future-ready.
+12. AI models are separated from market-data providers.
+13. No AI-generated market data is used.
+14. Fallback data is labeled.
+15. Stale data is labeled.
+16. Delayed data is labeled.
+17. Missing API keys are clearly shown.
+18. API keys are never exposed to frontend.
+19. Trading-capable APIs remain read-only/trading disabled.
+20. No fake numbers are added.
+21. No simulated price ticking is added.
+22. No existing dashboard functionality breaks.
+23. No console errors.
+
+==================================================
+FINAL QUALITY BAR
+==================================================
+
+YucaTanaTrades should become trustworthy before it becomes flashy.
+
+The data layer should feel like a real trading terminal:
+- source-aware
+- timestamped
+- health-checked
+- fallback-aware
+- stale-data resistant
+- transparent
+- read-only safe
+- future-ready
+
+The user should always know whether a price is:
+- live
+- delayed
+- stale
+- fallback
+- unavailable
+- reference-only
+- real provider data
+
+Do not prioritize visual “LIVE” effects over truth. Accuracy, transparency, and trust come first.

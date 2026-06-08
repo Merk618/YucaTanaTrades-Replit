@@ -1,0 +1,72 @@
+Yes, add the mouse-spotlight effect on the metric cards and all major dashboard cards.
+
+Make it premium and subtle:
+
+* Add a soft radial glow that follows the cursor inside each card.
+* The glow should feel like depth/light reflection, not a flashlight.
+* Use gold/champagne glow for normal cards.
+* Use emerald glow for positive performance cards.
+* Use muted red/amber glow for risk-alert cards.
+* Keep opacity low so text and numbers remain readable.
+* Debounce/throttle mouse tracking for performance.
+* Disable the effect on mobile and for prefers-reduced-motion.
+* Do not make the card movement aggressive.
+* Use transform/opacity only where possible.
+
+Also strongly emphasize the background particle system.
+
+The particle effects are one of the most important parts of this next polish pass. I want the app background to feel alive, smooth, luxury, and institutional.
+
+Please upgrade the background particles with much more intention:
+
+* Add smooth floating particles behind the dashboard content.
+* Particles should include a mix of tiny dots, ticker symbols, crypto symbols, AI nodes, market glyphs, shield/risk icons, chart-line marks, and subtle signal points.
+* Use small recognizable symbols such as SPY, QQQ, NVDA, MSFT, BTC, ETH, SOL, SUI, AI, RISK, ALPHA, FLOW, SCAN.
+* They should behave like normal premium particles: floating, drifting, fading, connecting softly, and moving slowly.
+* They should be noticeable enough to give the dashboard identity, but subtle enough not to distract from the data.
+* Add tab-specific particle themes if possible:
+
+  * Command Center: AI nodes, gold dots, SPY/QQQ/BTC/ETH
+  * Markets: ticker symbols, candlestick glyphs, up/down arrows
+  * Scanners: radar rings, signal dots, lightning glyphs
+  * Research: document/source nodes, AI/source links
+  * Portfolio: allocation rings, P&L/NAV symbols
+  * Bots: circuit nodes, RUN/SCAN/READ symbols
+  * Journal: ENTRY/EXIT/LESSON note particles
+  * Watchlist: stars, eye glyphs, ticker labels
+  * Risk: shields, warning triangles, VAR/DD/STOP symbols
+  * Settings: gear/sliders/config nodes
+
+Important:
+
+* Do not use fake numbers.
+* Do not simulate prices.
+* Do not randomly change ticker values.
+* Do not make fake market data look live.
+* Only animate the visual environment, particles, glows, cards, transitions, and hover states.
+* Keep all real dashboard numbers unchanged unless connected to actual data.
+
+Make the particles high-end:
+
+* crisp
+* sharp
+* smooth
+* low-opacity
+* luxury gold/champagne/emerald/red accents
+* no clutter
+* no cheesy neon
+* no gaming feel
+* no confetti effect
+
+Performance rules:
+
+* Use one reusable particle engine.
+* Use requestAnimationFrame.
+* Pause when browser tab is hidden.
+* Cap particle count.
+* Reduce or disable particles on mobile.
+* Respect reduced-motion settings.
+* Keep pointer-events: none.
+
+Final quality goal:
+The dashboard should feel like a premium AI trading cockpit with a living market-intelligence atmosphere behind it. The card spotlight effect should add depth, and the particles should make every tab feel alive, smooth, and high-end without hurting readability or trust.

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Bot, Zap, Shield, Activity,
   ArrowUpRight, ArrowDownRight, Newspaper, Brain, Target,
@@ -13,11 +13,42 @@ import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { useCountUp } from "@/hooks/use-count-up";
+import { useSpotlight } from "@/hooks/use-spotlight";
 import { Sparkline, TICKER_SPARKLINES } from "@/components/sparkline";
 
+// ─── Mouse-spotlight colors ──────────────────────────────────────────────────
+// gold = neutral, emerald = positive performance, risk = amber/red alert cards
+const SPOT_COLORS = {
+  gold:    "rgba(212,175,55,0.18)",
+  emerald: "rgba(34,197,94,0.16)",
+  risk:    "rgba(245,158,11,0.18)",
+} as const;
+
+// Reusable glass card with a cursor-following radial spotlight (see .spotlight in index.css)
+function SpotlightCard({
+  spot = "gold", className, children, ...rest
+}: {
+  spot?: keyof typeof SPOT_COLORS;
+  className?: string;
+  children: React.ReactNode;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  const { ref, onMouseMove } = useSpotlight<HTMLDivElement>();
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      className={cn("glass-card spotlight", className)}
+      style={{ ["--spot-color"]: SPOT_COLORS[spot] } as React.CSSProperties}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ─── Animation presets ───────────────────────────────────────────────────────
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
-const item = {
+const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const item: Variants = {
   hidden: { opacity: 0, y: 18, filter: "blur(4px)" },
   show:   { opacity: 1, y: 0,  filter: "blur(0px)", transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] } },
 };
@@ -46,8 +77,15 @@ function MetricCard({
   icon?: React.ElementType;
 }) {
   const counted = useCountUp(rawValue);
+  const { ref, onMouseMove } = useSpotlight<HTMLDivElement>();
   return (
-    <motion.div variants={item} className="glass-card p-5 group cursor-default">
+    <motion.div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      variants={item}
+      className="glass-card spotlight p-5 group cursor-default"
+      style={{ ["--spot-color"]: up ? SPOT_COLORS.emerald : SPOT_COLORS.gold } as React.CSSProperties}
+    >
       <div className="flex items-start justify-between mb-2">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
         {Icon && (
@@ -393,7 +431,7 @@ export default function Home() {
 
           {/* Index overview */}
           <RevealSection>
-            <div className="glass-card p-5">
+            <SpotlightCard className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-widest">Index Overview</h2>
@@ -411,7 +449,7 @@ export default function Home() {
                   />
                 ))}
               </div>
-            </div>
+            </SpotlightCard>
           </RevealSection>
 
           {/* Top Opportunities + Risk Alerts */}
@@ -419,7 +457,7 @@ export default function Home() {
 
             {/* Top Opportunities */}
             <RevealSection delay={40}>
-              <div className="glass-card p-5 h-full">
+              <SpotlightCard className="p-5 h-full">
                 <div className="flex items-center gap-2 mb-4">
                   <Zap className="w-4 h-4 text-primary" />
                   <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Top Opportunities</h3>
@@ -466,12 +504,12 @@ export default function Home() {
                     );
                   })}
                 </div>
-              </div>
+              </SpotlightCard>
             </RevealSection>
 
             {/* Risk Alerts */}
             <RevealSection delay={80}>
-              <div className="glass-card p-5 h-full">
+              <SpotlightCard spot="risk" className="p-5 h-full">
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="w-4 h-4 text-orange-400" />
                   <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Risk Alerts</h3>
@@ -512,13 +550,13 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </SpotlightCard>
             </RevealSection>
           </div>
 
           {/* News & Catalysts */}
           <RevealSection delay={60}>
-            <div className="glass-card p-5">
+            <SpotlightCard className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Newspaper className="w-4 h-4 text-muted-foreground/70" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">News & Catalysts</h3>
@@ -545,7 +583,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SpotlightCard>
           </RevealSection>
         </div>
 
@@ -559,7 +597,7 @@ export default function Home() {
 
           {/* Bot status */}
           <RevealSection delay={60}>
-            <div className="glass-card p-5">
+            <SpotlightCard className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Bot className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Bot Status</h3>
@@ -591,12 +629,12 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SpotlightCard>
           </RevealSection>
 
           {/* Market regime */}
           <RevealSection delay={100}>
-            <div className="glass-card p-5">
+            <SpotlightCard className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Market Regime</h3>
@@ -625,7 +663,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SpotlightCard>
           </RevealSection>
         </div>
       </div>

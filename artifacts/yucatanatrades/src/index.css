@@ -342,6 +342,34 @@
     transform: translateY(-2px);
   }
 
+  /* ─── Mouse spotlight — soft radial glow following the cursor ─────────────── */
+  /* Driven by useSpotlight hook (--mx / --my). Color set per-card via --spot-color. */
+  /* mix-blend-mode: screen keeps text crisp — it only lightens, never darkens. */
+  .spotlight::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 0.5s var(--yt-ease, ease);
+    background: radial-gradient(
+      320px circle at var(--mx, 50%) var(--my, 50%),
+      var(--spot-color, rgba(212,175,55,0.18)),
+      transparent 62%
+    );
+  }
+  .spotlight:hover::after { opacity: 1; }
+
+  /* Disable spotlight on touch + reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .spotlight::after { display: none; }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .spotlight::after { display: none; }
+  }
+
   input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
