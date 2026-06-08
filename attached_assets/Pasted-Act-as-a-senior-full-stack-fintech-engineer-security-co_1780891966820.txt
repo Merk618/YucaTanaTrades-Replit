@@ -1,0 +1,685 @@
+Act as a senior full-stack fintech engineer, security-conscious API integration architect, and premium UI/motion designer.
+
+I need two focused upgrades to YucaTanaTrades:
+
+1. Add a secure API key management UI in Settings for each provider.
+2. Add visible but subtle luxury particle/background wallpaper effects across the app, especially behind each tab/page.
+
+Do not rewrite the app.
+Do not break the current dashboard.
+Do not add fake prices.
+Do not simulate price movement.
+Do not expose API keys to the frontend.
+Do not store API keys insecurely in plain localStorage.
+Do not mark an API as connected just because a key was entered.
+Connection status must still come from a real health check.
+
+==================================================
+PART 1 — API KEY INPUT + SAVE BUTTONS
+=====================================
+
+Current issue:
+The Settings page shows API providers, but I need a place to input API keys for each provider and save/test them.
+
+Add an API Credentials / API Key Manager section inside Settings.
+
+For each provider row, add:
+
+* Provider name
+* Provider purpose
+* Status badge
+* API key input field, masked by default
+* Show/hide key toggle
+* Save button
+* Test Connection button
+* Clear/Remove Key button
+* Last tested timestamp
+* Last successful connection timestamp
+* Error message area
+* Data role badge, such as:
+
+  * Equity quotes
+  * Crypto quotes
+  * Fundamentals
+  * Research AI
+  * Broker
+  * Options
+  * Filings
+  * Social sentiment
+* Read-only/trading disabled badge where applicable
+
+Providers to include:
+
+Stocks / ETFs / Options:
+
+* MooMoo / OpenD
+* Alpaca Markets
+* Interactive Brokers
+* Polygon.io
+* Financial Modeling Prep / FMP
+* Twelve Data
+* Tradier
+* Unusual Whales
+* Yahoo fallback — no API key required, delayed/reference only
+
+Crypto:
+
+* Kraken
+* Coinbase
+* Binance / Binance.US
+* CoinGecko
+* CoinMarketCap
+
+Research / Fundamentals / News:
+
+* SEC EDGAR — no API key required, but needs SEC_USER_AGENT
+* Perplexity API
+* OpenAI
+* DeepSeek
+* Gemini
+* Reddit / social sentiment provider if future-ready
+
+Internal:
+
+* Crypto Hunter custom bot
+* MooMoo Stock Bot
+* App portfolio/watchlist database
+
+==================================================
+SECURITY REQUIREMENTS
+=====================
+
+Important:
+API keys must be handled securely.
+
+Do not put secret keys directly in frontend JavaScript.
+Do not expose raw keys in client responses.
+Do not log full API keys.
+Do not store full keys in localStorage.
+
+Preferred implementation:
+
+* Store API keys server-side.
+* Use environment variables or secure server-side storage.
+* If persistent user-entered keys require database storage, encrypt them server-side before saving.
+* Only return masked key state to frontend, such as:
+  “••••••••••••ABCD”
+* Show whether a key exists, but never reveal the full key after save.
+* The user can replace or delete the key.
+* Add clear comments explaining where keys are stored.
+
+If true secure server-side persistent key storage is not available in this Replit setup:
+
+* Add the UI and backend structure anyway.
+* Add clear TODO comments.
+* Do not fake saving.
+* Prefer using Replit Secrets/environment variables.
+* Show instructions in the UI: “Add this key in Replit Secrets for production safety.”
+
+==================================================
+API KEY UI BEHAVIOR
+===================
+
+For each provider:
+
+Default state:
+
+* If no key exists: “Missing API Key”
+* If provider does not require key: “No Key Required”
+* If key exists but not tested: “Key Saved · Not Tested”
+* If health check passes: “Connected”
+* If health check fails: “Health Check Failed”
+* If auth fails: “Auth Failed”
+* If rate limited: “Rate Limited”
+* If provider is prepared but disabled: “Future Ready”
+* If source is fallback only: “Fallback / Reference”
+
+Buttons:
+
+* Save Key
+* Test Connection
+* Remove Key
+* Refresh Status
+
+Input behavior:
+
+* Mask input by default.
+* Add show/hide toggle.
+* Add copy should be disabled for saved masked keys unless user is entering a new key.
+* Validate empty input.
+* Trim whitespace.
+* Do not save placeholder text as a key.
+* Show success/error toast.
+
+Health check behavior:
+
+* Saving a key should not automatically mark provider connected unless a health check succeeds.
+* Test Connection should call a backend endpoint.
+* Backend should test a lightweight endpoint for that provider.
+* Store last health result.
+* Show provider latency if available.
+
+==================================================
+BACKEND/API STRUCTURE
+=====================
+
+Create or update backend routes/services similar to:
+
+/api/settings/providers
+/api/settings/providers/:providerId/key
+/api/settings/providers/:providerId/test
+/api/settings/providers/:providerId/remove
+/api/settings/source-health
+
+Adapt paths to current architecture.
+
+Create or update services:
+
+/services/data/providerRegistry.js
+/services/data/providerCredentials.js
+/services/data/providerHealthChecks.js
+/services/data/dataRouter.js
+/services/data/freshnessPolicy.js
+
+Provider registry should include:
+
+* providerId
+* displayName
+* description
+* assetClasses
+* requiresApiKey
+* requiredEnvVars
+* optionalEnvVars
+* isTradingCapable
+* tradingEnabled default false
+* readOnly default true
+* providerRole
+* priority
+* fallbackPriority
+* status
+* lastChecked
+* lastSuccess
+* lastError
+
+==================================================
+PROVIDER KEY FIELD EXAMPLES
+===========================
+
+Some providers require multiple fields.
+
+Alpaca:
+
+* ALPACA_API_KEY
+* ALPACA_SECRET_KEY
+* ALPACA_BASE_URL
+
+Kraken:
+
+* KRAKEN_API_KEY
+* KRAKEN_API_SECRET
+
+Coinbase:
+
+* COINBASE_API_KEY
+* COINBASE_API_SECRET
+
+Binance:
+
+* BINANCE_API_KEY
+* BINANCE_API_SECRET
+
+OpenAI:
+
+* OPENAI_API_KEY
+
+DeepSeek:
+
+* DEEPSEEK_API_KEY
+
+Gemini:
+
+* GEMINI_API_KEY
+
+Perplexity:
+
+* PERPLEXITY_API_KEY
+
+Polygon:
+
+* POLYGON_API_KEY
+
+FMP:
+
+* FMP_API_KEY
+
+Tradier:
+
+* TRADIER_API_KEY
+
+Unusual Whales:
+
+* UNUSUAL_WHALES_API_KEY
+
+CoinGecko:
+
+* COINGECKO_API_KEY, optional depending tier
+
+CoinMarketCap:
+
+* COINMARKETCAP_API_KEY
+
+SEC:
+
+* SEC_USER_AGENT
+
+MooMoo/OpenD:
+
+* MOOMOO_HOST
+* MOOMOO_PORT
+* MOO_MOO_ENABLED
+
+Interactive Brokers:
+
+* IBKR_ENABLED
+* IBKR_GATEWAY_URL
+
+Yahoo:
+
+* No key required
+* Must be labeled delayed/reference/fallback
+
+==================================================
+SETTINGS PAGE DESIGN
+====================
+
+Make the API key manager look premium and consistent with the current YucaTanaTrades UI.
+
+Design:
+
+* Dark glass cards
+* Gold/champagne borders
+* Clear provider rows
+* Status badges
+* Small icons
+* Smooth expand/collapse provider details
+* Save/Test buttons with gold premium styling
+* Error states with muted red
+* Success states with emerald
+* Future-ready states with champagne/gray
+* Read-only badges with red/gold styling
+
+Add provider grouping:
+
+1. Market Data
+2. Crypto Data
+3. Broker Connections
+4. Fundamentals / Filings
+5. AI / Research Models
+6. Internal Bots
+
+Each provider row should be expandable:
+Collapsed view:
+
+* Provider name
+* Purpose
+* Status
+* Primary/Fallback badge
+* Last checked
+* Connect/Edit button
+
+Expanded view:
+
+* API key fields
+* Save button
+* Test connection button
+* Remove key button
+* Supported data/features
+* Last error
+* Last success
+* Read-only/trading disabled state
+
+==================================================
+DATA TRUST RULES
+================
+
+Keep existing data trust rules:
+
+* No fake prices
+* No simulated price ticking
+* No fake connected statuses
+* No fake timestamps
+* No AI-generated market prices
+* No trading execution
+* No auto-trading
+* No portfolio modification from AI
+
+Every provider status must be truthful:
+
+* Connected means health check passed.
+* Missing API Key means no configured key.
+* Future Ready means code exists but not configured.
+* Fallback means not primary.
+* Delayed means delayed data.
+* Stale means data timestamp is too old.
+
+==================================================
+PART 2 — LUXURY PARTICLE BACKGROUND / WALLPAPER EFFECTS
+=======================================================
+
+Current issue:
+I still do not see enough particle effects in the dashboard background/wallpaper.
+
+Add a visible but subtle luxury particle wallpaper system across the app.
+
+Goal:
+The dashboard background should feel alive, smooth, high-end, and institutional, without hurting readability.
+
+Particle style:
+
+* Small
+* Crisp
+* Smooth
+* High-end
+* Low opacity
+* Gold/champagne/emerald/red accents
+* No confetti
+* No gaming neon
+* No clutter
+* No flashing
+* No distraction from text or market data
+
+Particles should include:
+
+* Tiny dots
+* Ticker symbols
+* Crypto symbols
+* AI nodes
+* Market glyphs
+* Shield/risk icons
+* Chart-line marks
+* Signal points
+* Small finance-themed monograms
+
+Examples:
+
+* SPY
+* QQQ
+* NVDA
+* MSFT
+* BTC
+* ETH
+* SOL
+* SUI
+* AI
+* RISK
+* ALPHA
+* FLOW
+* SCAN
+* NAV
+* P&L
+* VAR
+* DD
+* STOP
+
+These should behave like normal particle effects:
+
+* floating
+* drifting
+* fading
+* breathing
+* occasional connection lines
+* slow motion
+* slight rotation
+* depth/parallax
+* smooth transitions
+
+Important:
+Particles should be visible enough that the background clearly feels upgraded, but subtle enough that the dashboard remains readable.
+
+==================================================
+TAB-SPECIFIC PARTICLE THEMES
+============================
+
+Add a reusable tab-specific particle theme system.
+
+Each tab/page should have its own particle personality.
+
+Command Center:
+
+* AI nodes
+* gold dots
+* SPY/QQQ/BTC/ETH
+* neural connection lines
+* champagne/gold/emerald
+
+Markets:
+
+* ticker particles
+* tiny candlestick glyphs
+* up/down arrows
+* mini chart marks
+* emerald/red/gold
+
+Scanners:
+
+* radar rings
+* signal dots
+* lightning glyphs
+* MOM
+* BO
+* RS
+* amber/gold/emerald
+
+Research:
+
+* document/source nodes
+* SEC
+* NEWS
+* AI
+* link lines
+* champagne/blue-gray/gold
+
+Portfolio:
+
+* allocation rings
+* P&L
+* NAV
+* pie-slice glyphs
+* gold/emerald/champagne
+
+Bots:
+
+* circuit nodes
+* RUN
+* SCAN
+* READ
+* small bot/circuit glyphs
+* emerald/teal/gold
+
+Journal:
+
+* ENTRY
+* EXIT
+* LESSON
+* note-card glyphs
+* champagne/gold
+
+Watchlist:
+
+* stars
+* eye glyphs
+* ticker labels
+* alert dots
+* gold/emerald
+
+Risk:
+
+* shield icons
+* warning triangles
+* VAR
+* DD
+* STOP
+* volatility waves
+* amber/red/gold
+
+Settings:
+
+* gear glyphs
+* sliders
+* config nodes
+* API
+* KEY
+* muted gold/gray/champagne
+
+==================================================
+PARTICLE IMPLEMENTATION REQUIREMENTS
+====================================
+
+Use one reusable particle engine.
+
+Suggested files:
+
+* particles.js
+* tabParticleThemes.js
+* premiumBackground.css
+
+Adapt to current project structure.
+
+Particles should:
+
+* run behind content
+* use pointer-events: none
+* not block clicks
+* resize with viewport
+* pause when browser tab is hidden
+* respect prefers-reduced-motion
+* reduce/disable on mobile
+* avoid heavy libraries
+* use requestAnimationFrame
+* cap particle count
+
+Particle count:
+
+* Desktop: 35–70 particles
+* Tablet: 20–35 particles
+* Mobile: disabled or 8–15
+* Reduced motion: disabled
+
+Opacity:
+
+* Dots: 0.10–0.25
+* Ticker symbols/glyphs: 0.07–0.18
+* Lines: 0.04–0.10
+* Glows: 0.06–0.16
+
+Motion:
+
+* slow drift
+* smooth easing
+* no fast movement
+* no jumpy behavior
+
+Layering:
+
+* Background gradient
+* Grid layer
+* Particle layer
+* Ambient glow layer
+* Main content
+* Tooltips/flyouts
+
+Particles should change theme when active tab changes.
+Transition between themes smoothly:
+
+* fade old particle type out
+* fade new particle type in
+* avoid flicker
+* avoid sudden reset if possible
+
+==================================================
+BACKGROUND ATMOSPHERE
+=====================
+
+Add background wallpaper layers:
+
+1. Deep dark gradient base
+2. Ultra-subtle animated grid
+3. Tab-specific particles
+4. Soft radial gold/emerald/amber glows
+5. Optional low-opacity chart/candlestick watermark
+6. Main content above all effects
+
+Make the empty dark areas behind cards feel intentionally designed.
+
+The background should be clearly visible in:
+
+* Command Center
+* Settings
+* Markets
+* Research
+* Risk
+* Portfolio
+* Bots
+
+But never overpower text.
+
+==================================================
+PARTICLE DEBUG / INTENSITY CONTROLS
+===================================
+
+Add easy intensity controls in code comments or settings constants:
+
+particleIntensity:
+
+* off
+* low
+* medium
+* high
+
+Default:
+medium
+
+Add clear comments showing:
+
+* where to increase particle count
+* where to increase logo/ticker particle visibility
+* where to reduce opacity
+* where to disable particles
+* where each tab theme is configured
+
+==================================================
+ACCEPTANCE CRITERIA
+===================
+
+After this task:
+
+API Key Manager:
+
+1. Settings has an API key input area for each provider.
+2. Each provider has Save, Test Connection, and Remove/Clear buttons.
+3. Saved keys are masked.
+4. Keys are not exposed in frontend responses.
+5. Connected status requires a real health check.
+6. Missing keys show Missing API Key.
+7. Future providers show Future Ready.
+8. Yahoo is labeled no-key delayed fallback.
+9. CoinGecko is labeled reference/fallback unless configured otherwise.
+10. Trading-capable APIs remain read-only/trading disabled.
+11. No fake prices or fake statuses are added.
+12. No console errors.
+
+Particle Wallpaper:
+
+1. Background particles are visible but subtle.
+2. Particles appear behind the dashboard wallpaper/background.
+3. Particles include finance-themed symbols/tickers/glyphs, not just dots.
+4. Each tab has a unique particle theme.
+5. Sidebar/tab changes update particle theme.
+6. Particles do not block clicks.
+7. Particles do not reduce readability.
+8. Particles pause/reduce on mobile and reduced-motion.
+9. Performance remains smooth.
+10. No fake market data is introduced.
+
+Final quality bar:
+Settings should feel like a real fintech API control center, and the background should finally feel alive with smooth luxury market-intelligence particles.
