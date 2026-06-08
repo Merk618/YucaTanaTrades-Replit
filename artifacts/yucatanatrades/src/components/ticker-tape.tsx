@@ -1,8 +1,32 @@
 import * as React from "react";
-import { mockMarketData } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import {
+  useMarketQuotes,
+  TICKER_SYMBOLS,
+  formatPrice,
+  isQuoteUsable,
+  type Quote,
+} from "@/hooks/use-market";
 
 export function TickerTape() {
+  const { data, isError } = useMarketQuotes(TICKER_SYMBOLS);
+
+  const quotes: Quote[] = React.useMemo(
+    () => (data?.quotes ?? []).filter(isQuoteUsable),
+    [data],
+  );
+
+  // Honest empty/error state — never fabricate a scrolling tape.
+  if (quotes.length === 0) {
+    return (
+      <div className="flex items-center justify-center border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm text-muted-foreground/50">
+        {isError
+          ? "Market data unavailable — sources unreachable"
+          : "Connecting to market data sources…"}
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex overflow-hidden border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm">
       {/* Gold gradient fade edges */}
@@ -19,16 +43,13 @@ export function TickerTape() {
       />
 
       <div className="flex animate-[ticker_35s_linear_infinite]">
-        {[...mockMarketData, ...mockMarketData, ...mockMarketData].map((item, i) => (
+        {[...quotes, ...quotes, ...quotes].map((item, i) => (
           <div key={`${item.symbol}-${i}`} className="flex items-center mx-5 gap-2 group">
             <span className="font-bold text-foreground/90 tracking-wide group-hover:text-primary transition-colors duration-200">
               {item.symbol}
             </span>
             <span className="text-muted-foreground/70 tabular-nums">
-              {item.price.toLocaleString("en-US", {
-                minimumFractionDigits: item.price < 10 ? 4 : 2,
-                maximumFractionDigits: item.price < 10 ? 4 : 2,
-              })}
+              {formatPrice(item.price)}
             </span>
             <span
               className={cn(

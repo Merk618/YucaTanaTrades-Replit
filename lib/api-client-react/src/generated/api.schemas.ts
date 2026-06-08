@@ -235,3 +235,177 @@ export interface PortfolioSummary {
   crypto: number;
 }
 
+export type QuoteAssetClass = typeof QuoteAssetClass[keyof typeof QuoteAssetClass];
+
+
+export const QuoteAssetClass = {
+  equity: 'equity',
+  etf: 'etf',
+  crypto: 'crypto',
+  fundamentals: 'fundamentals',
+  ai: 'ai',
+} as const;
+
+export type QuoteMarketSession = typeof QuoteMarketSession[keyof typeof QuoteMarketSession];
+
+
+export const QuoteMarketSession = {
+  open: 'open',
+  pre: 'pre',
+  post: 'post',
+  closed: 'closed',
+  holiday: 'holiday',
+  '24h': '24h',
+} as const;
+
+export interface Quote {
+  symbol: string;
+  assetClass: QuoteAssetClass;
+  price: number;
+  change: number;
+  changePercent: number;
+  provider: string;
+  sourceLabel: string;
+  timestamp: string;
+  isLive: boolean;
+  isDelayed: boolean;
+  isStale: boolean;
+  isFallback: boolean;
+  isDemo: boolean;
+  marketSession: QuoteMarketSession;
+  confidence: number;
+  /** @nullable */
+  error: string | null;
+}
+
+export interface QuoteList {
+  asOf: string;
+  quotes: Quote[];
+}
+
+export type ProviderStatusStatus = typeof ProviderStatusStatus[keyof typeof ProviderStatusStatus];
+
+
+export const ProviderStatusStatus = {
+  connected: 'connected',
+  delayed: 'delayed',
+  read_only: 'read_only',
+  missing_api_key: 'missing_api_key',
+  auth_failed: 'auth_failed',
+  health_check_failed: 'health_check_failed',
+  rate_limited: 'rate_limited',
+  stale: 'stale',
+  not_connected: 'not_connected',
+  disabled: 'disabled',
+  future_ready: 'future_ready',
+} as const;
+
+export type ProviderStatusAssetClassesItem = typeof ProviderStatusAssetClassesItem[keyof typeof ProviderStatusAssetClassesItem];
+
+
+export const ProviderStatusAssetClassesItem = {
+  equity: 'equity',
+  etf: 'etf',
+  crypto: 'crypto',
+  fundamentals: 'fundamentals',
+  ai: 'ai',
+} as const;
+
+export type ProviderStatusCapabilitiesItem = typeof ProviderStatusCapabilitiesItem[keyof typeof ProviderStatusCapabilitiesItem];
+
+
+export const ProviderStatusCapabilitiesItem = {
+  quotes: 'quotes',
+  fundamentals: 'fundamentals',
+  news: 'news',
+  filings: 'filings',
+  analysis: 'analysis',
+  trading: 'trading',
+} as const;
+
+export interface ProviderStatus {
+  id: string;
+  name: string;
+  status: ProviderStatusStatus;
+  assetClasses: ProviderStatusAssetClassesItem[];
+  capabilities: ProviderStatusCapabilitiesItem[];
+  configured: boolean;
+  readOnly: boolean;
+  isTradingCapable: boolean;
+  liveCapable: boolean;
+  envVars: string[];
+  sourceLabel: string;
+  message: string;
+  lastCheckedAt: string;
+  /** @nullable */
+  lastSuccessAt: string | null;
+  /** @nullable */
+  latencyMs: number | null;
+  /** @nullable */
+  detail: string | null;
+}
+
+export type SourceHealthSummaryAssetClass = typeof SourceHealthSummaryAssetClass[keyof typeof SourceHealthSummaryAssetClass];
+
+
+export const SourceHealthSummaryAssetClass = {
+  equity: 'equity',
+  etf: 'etf',
+  crypto: 'crypto',
+  fundamentals: 'fundamentals',
+  ai: 'ai',
+} as const;
+
+export interface SourceHealthSummary {
+  assetClass: SourceHealthSummaryAssetClass;
+  label: string;
+  /** @nullable */
+  activeProvider: string | null;
+  /** @nullable */
+  activeProviderLabel: string | null;
+  status: string;
+  fallbackInUse: boolean;
+  /** @nullable */
+  sourceLabel: string | null;
+}
+
+export interface SourceHealth {
+  asOf: string;
+  providers: ProviderStatus[];
+  summary: SourceHealthSummary[];
+}
+
+export type MarketSessionSegmentState = typeof MarketSessionSegmentState[keyof typeof MarketSessionSegmentState];
+
+
+export const MarketSessionSegmentState = {
+  open: 'open',
+  pre: 'pre',
+  post: 'post',
+  closed: 'closed',
+  holiday: 'holiday',
+  '24h': '24h',
+} as const;
+
+export interface MarketSessionSegment {
+  state: MarketSessionSegmentState;
+  isOpen: boolean;
+  label: string;
+  timezone?: string;
+  /** @nullable */
+  nextChange?: string | null;
+}
+
+export interface MarketSession {
+  asOf: string;
+  equities: MarketSessionSegment;
+  crypto: MarketSessionSegment;
+}
+
+export type GetMarketQuotesParams = {
+/**
+ * Comma-separated ticker symbols (e.g. SPY,BTC,NVDA)
+ */
+symbols: string;
+};
+

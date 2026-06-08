@@ -21,12 +21,16 @@ import type {
 
 import type {
   BotsStatus,
+  GetMarketQuotesParams,
   HealthStatus,
   JournalEntry,
   JournalEntryInput,
   JournalEntryUpdate,
   JournalSummary,
+  MarketSession,
   PortfolioSummary,
+  QuoteList,
+  SourceHealth,
   WatchlistItem,
   WatchlistItemInput
 } from './api.schemas';
@@ -924,6 +928,321 @@ export function useGetPortfolioSummary<TData = Awaited<ReturnType<typeof getPort
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPortfolioSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMarketQuotesUrl = (params: GetMarketQuotesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/market/quotes?${stringifiedParams}` : `/api/market/quotes`
+}
+
+/**
+ * @summary Batch quotes with source + freshness metadata
+ */
+export const getMarketQuotes = async (params: GetMarketQuotesParams, options?: RequestInit): Promise<QuoteList> => {
+
+  return customFetch<QuoteList>(getGetMarketQuotesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMarketQuotesQueryKey = (params?: GetMarketQuotesParams,) => {
+    return [
+    `/api/market/quotes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMarketQuotesQueryOptions = <TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<unknown>>(params: GetMarketQuotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMarketQuotesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarketQuotes>>> = ({ signal }) => getMarketQuotes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMarketQuotesQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketQuotes>>>
+export type GetMarketQuotesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Batch quotes with source + freshness metadata
+ */
+
+export function useGetMarketQuotes<TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<unknown>>(
+ params: GetMarketQuotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMarketQuotesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSourceHealthUrl = () => {
+
+
+
+
+  return `/api/market/health`
+}
+
+/**
+ * @summary Real provider/source health status
+ */
+export const getSourceHealth = async ( options?: RequestInit): Promise<SourceHealth> => {
+
+  return customFetch<SourceHealth>(getGetSourceHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSourceHealthQueryKey = () => {
+    return [
+    `/api/market/health`
+    ] as const;
+    }
+
+
+export const getGetSourceHealthQueryOptions = <TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSourceHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceHealth>>> = ({ signal }) => getSourceHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSourceHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getSourceHealth>>>
+export type GetSourceHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Real provider/source health status
+ */
+
+export function useGetSourceHealth<TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSourceHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMarketSessionUrl = () => {
+
+
+
+
+  return `/api/market/session`
+}
+
+/**
+ * @summary Real US equity market session + crypto status
+ */
+export const getMarketSession = async ( options?: RequestInit): Promise<MarketSession> => {
+
+  return customFetch<MarketSession>(getGetMarketSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMarketSessionQueryKey = () => {
+    return [
+    `/api/market/session`
+    ] as const;
+    }
+
+
+export const getGetMarketSessionQueryOptions = <TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMarketSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarketSession>>> = ({ signal }) => getMarketSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMarketSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketSession>>>
+export type GetMarketSessionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Real US equity market session + crypto status
+ */
+
+export function useGetMarketSession<TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMarketSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getTestQuoteFetchUrl = () => {
+
+
+
+
+  return `/api/market/test`
+}
+
+/**
+ * @summary Test-fetch reference quotes (SPY / BTC) to verify live sources
+ */
+export const testQuoteFetch = async ( options?: RequestInit): Promise<QuoteList> => {
+
+  return customFetch<QuoteList>(getTestQuoteFetchUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getTestQuoteFetchQueryKey = () => {
+    return [
+    `/api/market/test`
+    ] as const;
+    }
+
+
+export const getTestQuoteFetchQueryOptions = <TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTestQuoteFetchQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof testQuoteFetch>>> = ({ signal }) => testQuoteFetch({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type TestQuoteFetchQueryResult = NonNullable<Awaited<ReturnType<typeof testQuoteFetch>>>
+export type TestQuoteFetchQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Test-fetch reference quotes (SPY / BTC) to verify live sources
+ */
+
+export function useTestQuoteFetch<TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getTestQuoteFetchQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

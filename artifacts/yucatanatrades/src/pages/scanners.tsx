@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Zap } from "lucide-react";
 import { mockScannerResults } from "@/data/mockData";
+import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 
 const SCANNER_TABS = ["Momentum", "Breakouts", "Dip-Buy", "Oversold", "Options", "Unusual Volume"];
@@ -77,8 +78,9 @@ export default function Scanners() {
         <div className="flex items-center gap-3 mb-1">
           <Radar className="w-5 h-5 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">Market Scanners</h1>
+          <DemoBadge />
         </div>
-        <p className="text-muted-foreground text-sm ml-8">Real-time technical pattern recognition across 3,000+ securities</p>
+        <p className="text-muted-foreground text-sm ml-8">Technical pattern recognition — signal results shown are simulated demo data</p>
       </motion.div>
 
       {/* Stats row */}

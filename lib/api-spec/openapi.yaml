@@ -17,6 +17,8 @@ tags:
     description: Bot status and logs
   - name: portfolio
     description: Portfolio data
+  - name: market
+    description: Market quotes, source health, and session status
 paths:
   /healthz:
     get:
@@ -205,6 +207,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PortfolioSummary"
+
+  /market/quotes:
+    get:
+      operationId: getMarketQuotes
+      tags: [market]
+      summary: Batch quotes with source + freshness metadata
+      parameters:
+        - name: symbols
+          in: query
+          required: true
+          description: Comma-separated ticker symbols (e.g. SPY,BTC,NVDA)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quotes with trust metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteList"
+
+  /market/health:
+    get:
+      operationId: getSourceHealth
+      tags: [market]
+      summary: Real provider/source health status
+      responses:
+        "200":
+          description: Source health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceHealth"
+
+  /market/session:
+    get:
+      operationId: getMarketSession
+      tags: [market]
+      summary: Real US equity market session + crypto status
+      responses:
+        "200":
+          description: Market session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketSession"
+
+  /market/test:
+    get:
+      operationId: testQuoteFetch
+      tags: [market]
+      summary: Test-fetch reference quotes (SPY / BTC) to verify live sources
+      responses:
+        "200":
+          description: Test quote result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteList"
 
 components:
   schemas:
@@ -429,3 +490,164 @@ components:
           type: number
         crypto:
           type: number
+
+    Quote:
+      type: object
+      required:
+        [symbol, assetClass, price, change, changePercent, provider, sourceLabel, timestamp, isLive, isDelayed, isStale, isFallback, isDemo, marketSession, confidence, error]
+      properties:
+        symbol:
+          type: string
+        assetClass:
+          type: string
+          enum: [equity, etf, crypto, fundamentals, ai]
+        price:
+          type: number
+        change:
+          type: number
+        changePercent:
+          type: number
+        provider:
+          type: string
+        sourceLabel:
+          type: string
+        timestamp:
+          type: string
+        isLive:
+          type: boolean
+        isDelayed:
+          type: boolean
+        isStale:
+          type: boolean
+        isFallback:
+          type: boolean
+        isDemo:
+          type: boolean
+        marketSession:
+          type: string
+          enum: [open, pre, post, closed, holiday, "24h"]
+        confidence:
+          type: number
+        error:
+          type: ["string", "null"]
+
+    QuoteList:
+      type: object
+      required: [asOf, quotes]
+      properties:
+        asOf:
+          type: string
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+
+    ProviderStatus:
+      type: object
+      required:
+        [id, name, status, assetClasses, capabilities, configured, readOnly, isTradingCapable, liveCapable, envVars, sourceLabel, message, lastCheckedAt, lastSuccessAt, latencyMs, detail]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            [connected, delayed, read_only, missing_api_key, auth_failed, health_check_failed, rate_limited, stale, not_connected, disabled, future_ready]
+        assetClasses:
+          type: array
+          items:
+            type: string
+            enum: [equity, etf, crypto, fundamentals, ai]
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum: [quotes, fundamentals, news, filings, analysis, trading]
+        configured:
+          type: boolean
+        readOnly:
+          type: boolean
+        isTradingCapable:
+          type: boolean
+        liveCapable:
+          type: boolean
+        envVars:
+          type: array
+          items:
+            type: string
+        sourceLabel:
+          type: string
+        message:
+          type: string
+        lastCheckedAt:
+          type: string
+        lastSuccessAt:
+          type: ["string", "null"]
+        latencyMs:
+          type: ["number", "null"]
+        detail:
+          type: ["string", "null"]
+
+    SourceHealthSummary:
+      type: object
+      required: [assetClass, label, activeProvider, activeProviderLabel, status, fallbackInUse, sourceLabel]
+      properties:
+        assetClass:
+          type: string
+          enum: [equity, etf, crypto, fundamentals, ai]
+        label:
+          type: string
+        activeProvider:
+          type: ["string", "null"]
+        activeProviderLabel:
+          type: ["string", "null"]
+        status:
+          type: string
+        fallbackInUse:
+          type: boolean
+        sourceLabel:
+          type: ["string", "null"]
+
+    SourceHealth:
+      type: object
+      required: [asOf, providers, summary]
+      properties:
+        asOf:
+          type: string
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderStatus"
+        summary:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceHealthSummary"
+
+    MarketSessionSegment:
+      type: object
+      required: [state, isOpen, label]
+      properties:
+        state:
+          type: string
+          enum: [open, pre, post, closed, holiday, "24h"]
+        isOpen:
+          type: boolean
+        label:
+          type: string
+        timezone:
+          type: string
+        nextChange:
+          type: ["string", "null"]
+
+    MarketSession:
+      type: object
+      required: [asOf, equities, crypto]
+      properties:
+        asOf:
+          type: string
+        equities:
+          $ref: "#/components/schemas/MarketSessionSegment"
+        crypto:
+          $ref: "#/components/schemas/MarketSessionSegment"

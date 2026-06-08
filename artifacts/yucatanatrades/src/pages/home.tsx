@@ -6,15 +6,20 @@ import {
   Clock, Flame, BarChart2, Lock,
 } from "lucide-react";
 import {
-  mockMarketData, mockPortfolioData, mockScannerResults,
+  mockPortfolioData, mockScannerResults,
   mockBotStatus, mockNewsCatalysts,
 } from "@/data/mockData";
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
+import {
+  useMarketQuotes, useMarketSession, INDEX_SYMBOLS,
+  isQuoteUsable, type Quote,
+} from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useSpotlight } from "@/hooks/use-spotlight";
 import { Sparkline, TICKER_SPARKLINES } from "@/components/sparkline";
+import { DemoBadge } from "@/components/demo-badge";
 
 // ─── Mouse-spotlight colors ──────────────────────────────────────────────────
 // gold = neutral, emerald = positive performance, risk = amber/red alert cards
@@ -220,10 +225,11 @@ function AiBriefingPanel() {
                 style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#22C55E" }}>
                 ▲ BULLISH
               </span>
+              <DemoBadge />
             </div>
             <p className="text-[10px] text-muted-foreground/50 mt-0.5 flex items-center gap-1">
               <Clock className="w-2.5 h-2.5" />
-              Updated 4 min ago · NYSE open
+              Sample briefing · AI is not a market-data source
             </p>
           </div>
         </div>
@@ -297,6 +303,25 @@ function RevealSection({ children, className, delay = 0 }: {
 export default function Home() {
   const { data: portfolioSummary } = useGetPortfolioSummary();
   const { data: botStatus } = useGetBotsStatus();
+  const { data: session } = useMarketSession();
+  const { data: quoteData } = useMarketQuotes(INDEX_SYMBOLS);
+
+  const indexQuotes: Quote[] = (quoteData?.quotes ?? []).filter(isQuoteUsable);
+  // Honest source label for the Index Overview footer, derived from the quotes.
+  const hasDelayed = indexQuotes.some((q) => q.isDelayed);
+  const hasCrypto = indexQuotes.some((q) => q.assetClass === "crypto");
+  const indexSourceLabel = indexQuotes.length === 0
+    ? "Awaiting source data"
+    : [hasDelayed ? "Equities delayed ~15min" : null, hasCrypto ? "Crypto reference" : null]
+        .filter(Boolean)
+        .join(" · ") || "Reference data";
+
+  // Honest market-status badge from the real session endpoint.
+  const eqOpen = session?.equities.isOpen ?? false;
+  const statusColor = eqOpen ? "#22C55E" : "#94a3b8";
+  const statusLabel = session
+    ? (session.equities.label ?? (eqOpen ? "Markets Open" : "Markets Closed"))
+    : "Checking session…";
 
   const portfolio = portfolioSummary ?? {
     totalValue:    mockPortfolioData.rothIra.total + mockPortfolioData.individual.total + mockPortfolioData.crypto.total,
@@ -323,15 +348,17 @@ export default function Home() {
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase"
             style={{
-              background: "rgba(34,197,94,0.08)",
-              border: "1px solid rgba(34,197,94,0.20)",
-              color: "#22C55E",
+              background: `${statusColor}14`,
+              border: `1px solid ${statusColor}33`,
+              color: statusColor,
             }}
           >
-            <span className="ai-orb-sm" style={{ background: "#22C55E" }} />
-            MARKETS OPEN
+            <span className="ai-orb-sm" style={{ background: statusColor }} />
+            {statusLabel}
           </span>
-          <span className="text-xs text-muted-foreground/60">NYSE · NASDAQ · CRYPTO 24/7</span>
+          <span className="text-xs text-muted-foreground/60">
+            NYSE · NASDAQ{session?.crypto.isOpen ? " · Crypto 24/7" : ""}
+          </span>
         </div>
 
         {/* Title with gold sweep */}
@@ -436,19 +463,25 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-widest">Index Overview</h2>
                 </div>
-                <span className="text-[10px] text-muted-foreground/50 font-mono">Delayed 15min · Crypto live</span>
+                <span className="text-[10px] text-muted-foreground/50 font-mono">{indexSourceLabel}</span>
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {mockMarketData.slice(0, 8).map((m) => (
-                  <IndexCard
-                    key={m.symbol}
-                    symbol={m.symbol}
-                    price={m.price}
-                    change={m.change}
-                    changePercent={m.changePercent}
-                  />
-                ))}
-              </div>
+              {indexQuotes.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground/50 font-mono">
+                  Market data sources unavailable
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-3">
+                  {indexQuotes.map((q) => (
+                    <IndexCard
+                      key={q.symbol}
+                      symbol={q.symbol}
+                      price={q.price}
+                      change={q.change}
+                      changePercent={q.changePercent}
+                    />
+                  ))}
+                </div>
+              )}
             </SpotlightCard>
           </RevealSection>
 
@@ -461,6 +494,7 @@ export default function Home() {
                 <div className="flex items-center gap-2 mb-4">
                   <Zap className="w-4 h-4 text-primary" />
                   <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Top Opportunities</h3>
+                  <DemoBadge className="ml-auto" />
                 </div>
                 <div className="space-y-0.5">
                   {topOpps.map((opp, i) => {
@@ -513,7 +547,8 @@ export default function Home() {
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="w-4 h-4 text-orange-400" />
                   <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Risk Alerts</h3>
-                  <span className="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded"
+                  <DemoBadge className="ml-auto" />
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                     style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
                     2 HIGH
                   </span>
@@ -560,6 +595,7 @@ export default function Home() {
               <div className="flex items-center gap-2 mb-4">
                 <Newspaper className="w-4 h-4 text-muted-foreground/70" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">News & Catalysts</h3>
+                <DemoBadge className="ml-auto" />
               </div>
               <div className="space-y-3">
                 {mockNewsCatalysts.map((n) => (
@@ -601,7 +637,8 @@ export default function Home() {
               <div className="flex items-center gap-2 mb-4">
                 <Bot className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Bot Status</h3>
-                <Lock className="w-3 h-3 text-muted-foreground/40 ml-auto" />
+                <DemoBadge className="ml-auto" />
+                <Lock className="w-3 h-3 text-muted-foreground/40" />
                 <span className="text-[9px] text-muted-foreground/40 font-mono">READ-ONLY</span>
               </div>
               <div className="space-y-3">

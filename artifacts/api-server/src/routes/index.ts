@@ -4,6 +4,7 @@ import journalRouter from "./journal";
 import watchlistRouter from "./watchlist";
 import botsRouter from "./bots";
 import portfolioRouter from "./portfolio";
+import marketRouter from "./market";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(journalRouter);
 router.use(watchlistRouter);
 router.use(botsRouter);
 router.use(portfolioRouter);
+router.use(marketRouter);
 
 export default router;

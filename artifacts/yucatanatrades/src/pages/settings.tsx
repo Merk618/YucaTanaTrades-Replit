@@ -1,16 +1,55 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, CheckCircle, XCircle, Wifi, WifiOff, Bell, Shield, Palette, Database, ChevronRight } from "lucide-react";
+import {
+  Settings, CheckCircle, Bell, Shield, ChevronRight, RefreshCw,
+  Clock, KeyRound, Plug, AlertTriangle, Ban, Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSourceHealth } from "@/hooks/use-market";
+import type { ProviderStatus } from "@workspace/api-client-react";
 
-const CONNECTIONS = [
-  { name: "MooMoo (Moomoo API)", status: "connected", icon: "📊", last: "Today 2:32 PM", mode: "READ-ONLY" },
-  { name: "Crypto Hunter (Custom Bot)", status: "connected", icon: "🤖", last: "Today 2:28 PM", mode: "READ-ONLY" },
-  { name: "Alpaca Markets", status: "disconnected", icon: "🦙", last: "Not connected", mode: "—" },
-  { name: "Interactive Brokers", status: "disconnected", icon: "🏛️", last: "Not connected", mode: "—" },
-  { name: "CoinGecko API", status: "connected", icon: "🦎", last: "Today 2:15 PM", mode: "Data feed" },
-  { name: "OpenAI (Research AI)", status: "connected", icon: "🧠", last: "Today 1:00 PM", mode: "GPT-4o" },
-];
+// Map a provider health status to an honest visual treatment.
+// We only ever show an affirmative "reachable" state when a real probe succeeded.
+function statusView(p: ProviderStatus): {
+  label: string; color: string; Icon: typeof CheckCircle; positive: boolean;
+} {
+  switch (p.status) {
+    case "connected":
+      return { label: "Connected", color: "#22C55E", Icon: CheckCircle, positive: true };
+    case "delayed":
+      return { label: "Reachable · Delayed", color: "#34d399", Icon: Clock, positive: true };
+    case "read_only":
+      return { label: "Connected · Read-only", color: "#22C55E", Icon: CheckCircle, positive: true };
+    case "missing_api_key":
+      return { label: "API key required", color: "#94a3b8", Icon: KeyRound, positive: false };
+    case "auth_failed":
+      return { label: "Auth failed", color: "#f87171", Icon: Ban, positive: false };
+    case "health_check_failed":
+      return { label: "Health check failed", color: "#f87171", Icon: AlertTriangle, positive: false };
+    case "rate_limited":
+      return { label: "Rate limited", color: "#fb923c", Icon: AlertTriangle, positive: false };
+    case "stale":
+      return { label: "Stale", color: "#fb923c", Icon: AlertTriangle, positive: false };
+    case "future_ready":
+      return { label: "Future-ready", color: "#60a5fa", Icon: Sparkles, positive: false };
+    case "disabled":
+      return { label: "Disabled", color: "#94a3b8", Icon: Ban, positive: false };
+    default:
+      return { label: "Not connected", color: "#94a3b8", Icon: Plug, positive: false };
+  }
+}
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return "Never";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(diff)) return "Never";
+  const s = Math.round(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  return `${h}h ago`;
+}
 
 const NOTIFICATION_SETTINGS = [
   { label: "Bot Signal Alerts", desc: "Notify when a bot detects a trading signal", on: true },
@@ -29,6 +68,9 @@ const RISK_SETTINGS = [
 
 export default function SettingsPage() {
   const [notifs, setNotifs] = useState(NOTIFICATION_SETTINGS.map((n) => n.on));
+  const { data: health, isLoading, isError, refetch, isFetching } = useSourceHealth();
+
+  const providers = health?.providers ?? [];
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -37,47 +79,93 @@ export default function SettingsPage() {
           <Settings className="w-5 h-5 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">Settings</h1>
         </div>
-        <p className="text-muted-foreground text-sm ml-8">Connections, alerts, risk thresholds, and preferences</p>
+        <p className="text-muted-foreground text-sm ml-8">Live data sources, alerts, risk thresholds, and preferences</p>
       </motion.div>
 
-      {/* Connection Status */}
+      {/* Data Sources — REAL health */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-border/50 flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-display font-semibold text-foreground">API Connections</h2>
+        <div className="p-4 border-b border-border/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Plug className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-display font-semibold text-foreground">Data Sources</h2>
+            <span className="text-[10px] text-muted-foreground/60">
+              Status reflects real health checks{health ? ` · updated ${timeAgo(health.asOf)}` : ""}
+            </span>
+          </div>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground border border-border/50 px-2.5 py-1 rounded-lg hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} /> Re-check
+          </button>
         </div>
-        <div className="divide-y divide-border/30">
-          {CONNECTIONS.map((conn, i) => (
-            <motion.div
-              key={conn.name}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors"
-            >
-              <span className="text-xl w-8 text-center flex-shrink-0">{conn.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{conn.name}</p>
-                <p className="text-xs text-muted-foreground">{conn.last}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {conn.mode !== "—" && (
-                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded border font-bold", conn.mode === "READ-ONLY" ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-blue-500/10 text-blue-300 border-blue-500/20")}>
-                    {conn.mode}
+
+        {isLoading ? (
+          <div className="p-6 text-center text-xs text-muted-foreground/60">Running health checks…</div>
+        ) : isError ? (
+          <div className="p-6 text-center text-xs text-red-400/80">Unable to reach the health endpoint.</div>
+        ) : (
+          <div className="divide-y divide-border/30">
+            {providers.map((p, i) => {
+              const v = statusView(p);
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-start gap-4 p-4 hover:bg-primary/5 transition-colors"
+                >
+                  <v.Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: v.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-foreground">{p.name}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground font-mono">
+                        {p.sourceLabel}
+                      </span>
+                      {p.isTradingCapable && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border font-bold bg-red-500/10 text-red-400 border-red-500/20">
+                          READ-ONLY
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{p.message}</p>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground/60">
+                        {p.assetClasses.join(" · ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/50">
+                        Checked {timeAgo(p.lastCheckedAt)}
+                        {p.latencyMs != null ? ` · ${p.latencyMs}ms` : ""}
+                      </span>
+                      {p.envVars.length > 0 && !v.positive && (
+                        <span className="text-[10px] text-muted-foreground/50 font-mono">
+                          needs {p.envVars.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className="flex items-center gap-1 text-xs font-semibold flex-shrink-0"
+                    style={{ color: v.color }}
+                  >
+                    {v.label}
                   </span>
-                )}
-                {conn.status === "connected" ? (
-                  <span className="flex items-center gap-1 text-emerald-400 text-xs font-semibold">
-                    <CheckCircle className="w-3.5 h-3.5" /> Connected
-                  </span>
-                ) : (
-                  <button className="flex items-center gap-1 text-xs text-muted-foreground border border-border/50 px-2.5 py-1 rounded-lg hover:text-foreground hover:border-primary/30 transition-colors">
-                    <WifiOff className="w-3 h-3" /> Connect
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          ))}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="p-3 border-t border-border/40 bg-background/40">
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+            Equity & ETF quotes are <span className="text-foreground/80">delayed ~15 min</span> via Yahoo;
+            crypto is reference pricing via CoinGecko. Trading-capable providers are wired
+            <span className="text-red-400/90"> read-only</span> — no live order execution. AI providers
+            power research only and are never used as a price source. API keys live on the server and
+            never reach the browser.
+          </p>
         </div>
       </motion.div>
 
@@ -87,6 +175,7 @@ export default function SettingsPage() {
           <div className="p-4 border-b border-border/50 flex items-center gap-2">
             <Bell className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-display font-semibold text-foreground">Notifications</h2>
+            <span className="text-[10px] text-muted-foreground/50">Local preferences</span>
           </div>
           <div className="divide-y divide-border/30">
             {NOTIFICATION_SETTINGS.map((n, i) => (
@@ -115,6 +204,7 @@ export default function SettingsPage() {
           <div className="p-4 border-b border-border/50 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-display font-semibold text-foreground">Risk Thresholds</h2>
+            <span className="text-[10px] text-muted-foreground/50">Local preferences</span>
           </div>
           <div className="divide-y divide-border/30">
             {RISK_SETTINGS.map((r) => (

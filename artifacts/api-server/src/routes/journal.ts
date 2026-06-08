@@ -131,7 +131,7 @@ router.get("/journal/:id", async (req, res) => {
 
     if (!entry) return res.status(404).json({ error: "Not found" });
 
-    res.json({
+    return res.json({
       ...entry,
       entryPrice: Number(entry.entryPrice),
       exitPrice: entry.exitPrice != null ? Number(entry.exitPrice) : null,
@@ -141,7 +141,7 @@ router.get("/journal/:id", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get journal entry");
-    res.status(500).json({ error: "Failed to fetch journal entry" });
+    return res.status(500).json({ error: "Failed to fetch journal entry" });
   }
 });
 
@@ -174,7 +174,7 @@ router.patch("/journal/:id", async (req, res) => {
 
     if (!entry) return res.status(404).json({ error: "Not found" });
 
-    res.json({
+    return res.json({
       ...entry,
       entryPrice: Number(entry.entryPrice),
       exitPrice: entry.exitPrice != null ? Number(entry.exitPrice) : null,
@@ -184,7 +184,7 @@ router.patch("/journal/:id", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to update journal entry");
-    res.status(400).json({ error: "Invalid update data" });
+    return res.status(400).json({ error: "Invalid update data" });
   }
 });
 

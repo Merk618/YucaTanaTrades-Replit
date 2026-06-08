@@ -1,1 +1,1 @@
-- [Card spotlight effect](spotlight-effect.md) — cursor-glow on cards; `.spotlight` and `.scan-effect` both use `::after` so never combine them on one element.
+- [Market data trust rules](market-data-trust.md) — honest source labeling for YucaTanaTrades quotes; never fake "LIVE"/"Connected", AI is never a data source.

@@ -229,3 +229,116 @@ export const GetPortfolioSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary Batch quotes with source + freshness metadata
+ */
+export const GetMarketQuotesQueryParams = zod.object({
+  "symbols": zod.coerce.string().describe('Comma-separated ticker symbols (e.g. SPY,BTC,NVDA)')
+})
+
+export const GetMarketQuotesResponse = zod.object({
+  "asOf": zod.string(),
+  "quotes": zod.array(zod.object({
+  "symbol": zod.string(),
+  "assetClass": zod.enum(['equity', 'etf', 'crypto', 'fundamentals', 'ai']),
+  "price": zod.number(),
+  "change": zod.number(),
+  "changePercent": zod.number(),
+  "provider": zod.string(),
+  "sourceLabel": zod.string(),
+  "timestamp": zod.string(),
+  "isLive": zod.boolean(),
+  "isDelayed": zod.boolean(),
+  "isStale": zod.boolean(),
+  "isFallback": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "marketSession": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
+  "confidence": zod.number(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Real provider/source health status
+ */
+export const GetSourceHealthResponse = zod.object({
+  "asOf": zod.string(),
+  "providers": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.enum(['connected', 'delayed', 'read_only', 'missing_api_key', 'auth_failed', 'health_check_failed', 'rate_limited', 'stale', 'not_connected', 'disabled', 'future_ready']),
+  "assetClasses": zod.array(zod.enum(['equity', 'etf', 'crypto', 'fundamentals', 'ai'])),
+  "capabilities": zod.array(zod.enum(['quotes', 'fundamentals', 'news', 'filings', 'analysis', 'trading'])),
+  "configured": zod.boolean(),
+  "readOnly": zod.boolean(),
+  "isTradingCapable": zod.boolean(),
+  "liveCapable": zod.boolean(),
+  "envVars": zod.array(zod.string()),
+  "sourceLabel": zod.string(),
+  "message": zod.string(),
+  "lastCheckedAt": zod.string(),
+  "lastSuccessAt": zod.string().nullable(),
+  "latencyMs": zod.number().nullable(),
+  "detail": zod.string().nullable()
+})),
+  "summary": zod.array(zod.object({
+  "assetClass": zod.enum(['equity', 'etf', 'crypto', 'fundamentals', 'ai']),
+  "label": zod.string(),
+  "activeProvider": zod.string().nullable(),
+  "activeProviderLabel": zod.string().nullable(),
+  "status": zod.string(),
+  "fallbackInUse": zod.boolean(),
+  "sourceLabel": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Real US equity market session + crypto status
+ */
+export const GetMarketSessionResponse = zod.object({
+  "asOf": zod.string(),
+  "equities": zod.object({
+  "state": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
+  "isOpen": zod.boolean(),
+  "label": zod.string(),
+  "timezone": zod.string().optional(),
+  "nextChange": zod.string().nullish()
+}),
+  "crypto": zod.object({
+  "state": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
+  "isOpen": zod.boolean(),
+  "label": zod.string(),
+  "timezone": zod.string().optional(),
+  "nextChange": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Test-fetch reference quotes (SPY / BTC) to verify live sources
+ */
+export const TestQuoteFetchResponse = zod.object({
+  "asOf": zod.string(),
+  "quotes": zod.array(zod.object({
+  "symbol": zod.string(),
+  "assetClass": zod.enum(['equity', 'etf', 'crypto', 'fundamentals', 'ai']),
+  "price": zod.number(),
+  "change": zod.number(),
+  "changePercent": zod.number(),
+  "provider": zod.string(),
+  "sourceLabel": zod.string(),
+  "timestamp": zod.string(),
+  "isLive": zod.boolean(),
+  "isDelayed": zod.boolean(),
+  "isStale": zod.boolean(),
+  "isFallback": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "marketSession": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
+  "confidence": zod.number(),
+  "error": zod.string().nullable()
+}))
+})
+
+

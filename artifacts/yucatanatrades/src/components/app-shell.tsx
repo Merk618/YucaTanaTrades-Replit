@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useMarketSession } from "@/hooks/use-market";
 
 // ─── Sidebar shimmer keyframe (injected once) ─────────────────────────────────
 const SHIMMER_STYLE = `
@@ -209,6 +210,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const flyoutTimeout                     = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchFocused, setSearchFocused] = React.useState(false);
   const [searchValue, setSearchValue]     = React.useState("");
+  const { data: session } = useMarketSession();
+  const equitiesOpen = session?.equities?.isOpen ?? false;
+  const statusLabel = equitiesOpen ? "DELAYED ~15m" : "MARKETS CLOSED";
+  const statusColor = equitiesOpen ? "#D4AF37" : "#94A3B8";
+  const statusBg = equitiesOpen ? "rgba(212,175,55,0.08)" : "rgba(148,163,184,0.08)";
+  const statusBorder = equitiesOpen ? "rgba(212,175,55,0.18)" : "rgba(148,163,184,0.18)";
 
   const sidebarW = isSidebarOpen ? 240 : 64;
 
@@ -487,10 +494,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 flex-shrink-0">
               <div
                 className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
-                style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.18)", color: "#22C55E" }}
+                style={{ background: statusBg, border: `1px solid ${statusBorder}`, color: statusColor }}
+                title="Equity/ETF quotes are delayed ~15min (Yahoo). Crypto is reference data (CoinGecko)."
               >
-                <span className="ai-orb-sm" style={{ background: "#22C55E" }} />
-                LIVE
+                <span className="ai-orb-sm" style={{ background: statusColor }} />
+                {statusLabel}
               </div>
 
               <Button variant="ghost" size="icon" className="relative group">

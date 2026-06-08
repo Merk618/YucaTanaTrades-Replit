@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Bot, Shield, Activity, Clock, Scan, AlertTriangle, CheckCircle, WifiOff } from "lucide-react";
 import { useGetBotsStatus } from "@workspace/api-client-react";
 import { mockBotStatus } from "@/data/mockData";
+import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 
 const LOG_ENTRIES = [
@@ -52,6 +53,7 @@ export default function Bots() {
           <div className="flex items-center gap-3">
             <Bot className="w-5 h-5 text-primary" />
             <h1 className="font-display text-3xl font-bold tracking-tight">Trading Bots</h1>
+            <DemoBadge />
           </div>
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-red-400" />
@@ -165,7 +167,7 @@ export default function Bots() {
         <div className="p-4 border-b border-border/50 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <h2 className="text-sm font-display font-semibold text-primary">Bot Activity Log</h2>
-          <span className="ml-auto text-[10px] text-muted-foreground font-mono px-2 py-0.5 rounded bg-muted/50 border border-border/40">LIVE STREAM</span>
+          <span className="ml-auto text-[10px] text-muted-foreground font-mono px-2 py-0.5 rounded bg-muted/50 border border-border/40">SAMPLE LOG</span>
         </div>
         <div className="p-4 space-y-2 font-mono text-xs max-h-64 overflow-y-auto">
           {LOG_ENTRIES.map((log, i) => (

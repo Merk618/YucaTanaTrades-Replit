@@ -13,6 +13,7 @@ import {
 import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2 } from "lucide-react";
 import { useGetPortfolioSummary } from "@workspace/api-client-react";
 import { mockPortfolioData } from "@/data/mockData";
+import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 
 // ─── Deterministic mock portfolio history (90 trading days) ─────────────────
@@ -217,8 +218,9 @@ export default function Portfolio() {
         <div className="flex items-center gap-3 mb-1">
           <Briefcase className="w-5 h-5 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">Portfolio</h1>
+          <DemoBadge />
         </div>
-        <p className="text-muted-foreground text-sm ml-8">Across Roth IRA, individual account, and crypto</p>
+        <p className="text-muted-foreground text-sm ml-8">Across Roth IRA, individual account, and crypto — holdings shown are simulated demo data</p>
       </motion.div>
 
       {/* KPI row */}
