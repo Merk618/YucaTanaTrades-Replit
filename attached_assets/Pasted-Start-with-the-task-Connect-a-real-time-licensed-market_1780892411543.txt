@@ -1,0 +1,169 @@
+Start with the task: “Connect a real-time, licensed market data feed.”
+
+Act as a senior fintech backend engineer and market-data integration specialist.
+
+Goal:
+Connect YucaTanaTrades to real provider-backed market data through the existing provider registry/data-router architecture. The app must stop relying on static mock prices for live-looking dashboard data.
+
+Important:
+
+* Do not add fake prices.
+* Do not simulate price movement.
+* Do not use AI as a market-data source.
+* Do not mark data as live unless it is actually live from a real provider.
+* Do not expose API keys to the frontend.
+* Do not add trade execution.
+* Keep all broker/exchange integrations read-only by default.
+
+Use the existing API/data trust work already started:
+
+* provider registry
+* provider health checks
+* source/freshness metadata
+* Yahoo delayed equity fallback
+* CoinGecko crypto reference data
+* Settings API connection statuses
+* source labels
+* stale/fallback detection
+
+Primary objective:
+Add support for real licensed/provider-backed data sources while keeping the current free fallback system.
+
+Market-data provider priority:
+
+Equities / ETFs:
+
+1. MooMoo/OpenD if connected and healthy
+2. Polygon.io if API key exists and health check passes
+3. Alpaca if API key exists and health check passes
+4. FMP if API key exists and health check passes
+5. Yahoo delayed fallback if no licensed provider is connected
+
+Crypto:
+
+1. Kraken if API key exists and health check passes
+2. Coinbase if API key exists and health check passes
+3. Binance/Binance.US if API key exists and health check passes
+4. CoinGecko reference fallback if no exchange provider is connected
+
+Options:
+
+1. MooMoo/OpenD if supported
+2. Polygon/Tradier/Unusual Whales if configured later
+3. Unavailable if no valid provider exists
+
+Fundamentals:
+
+1. FMP if connected
+2. SEC EDGAR where applicable
+3. Unavailable if no provider exists
+
+Requirements:
+
+1. Real health checks
+   Every provider must only show Connected if:
+
+* required key/env vars exist
+* test request succeeds
+* response format is valid
+* last health check is recent
+
+2. API key integration
+   Use the existing Settings/API key manager if present.
+   Provider keys should be stored server-side or through Replit Secrets/environment variables.
+   Never expose raw keys to the frontend.
+   Only show masked key state.
+
+3. Source metadata
+   Every quote returned by the data router must include:
+
+* symbol
+* assetClass
+* price
+* change
+* changePercent
+* provider
+* timestamp
+* isLive
+* isDelayed
+* isStale
+* isFallback
+* isDemo
+* marketSession
+* error if present
+
+4. Honest UI labeling
+   Ticker rail and market cards must show:
+
+* Live only if truly live
+* Delayed · Yahoo for Yahoo equity fallback
+* Reference · CoinGecko for CoinGecko crypto fallback
+* Stale if timestamp is too old
+* Fallback if not using primary provider
+* Unavailable if no provider can serve the symbol
+
+5. No fake connected states
+   Settings must not hardcode:
+
+* Connected
+* Today timestamps
+* LIVE badges
+* last scan timestamps
+* provider success states
+
+6. Fallback behavior
+   If primary provider fails:
+
+* try next configured provider
+* label fallback source clearly
+* record provider error
+* show warning in Source Health panel
+
+7. Test symbols
+   Add or use test quote fetch for:
+
+* SPY
+* QQQ
+* NVDA
+* MSFT
+* BTC
+* ETH
+* SOL
+* SUI
+
+8. UI updates
+   Update the dashboard/ticker/index cards to show provider and timestamp on hover or small tooltip.
+   Add or improve a Source Health panel showing:
+
+* current equity provider
+* current crypto provider
+* current options provider
+* current fundamentals provider
+* last checked time
+* status
+* fallback usage
+* errors
+
+9. Market session logic
+   Do not show equities as live outside normal/extended market hours unless the source explicitly supports it.
+   Crypto can be 24/7, but must still show provider/timestamp.
+
+10. Safety
+    Everything remains read-only.
+    No trading.
+    No order routes.
+    No portfolio mutation.
+    No AI-generated market data.
+
+Acceptance criteria:
+
+* Static mock prices are no longer used for live-looking dashboard data.
+* Equities use the best available real provider or Yahoo delayed fallback.
+* Crypto uses the best available exchange provider or CoinGecko reference fallback.
+* Every visible quote has a source and timestamp.
+* No fake live status.
+* No fake connected status.
+* Settings accurately reflects configured/missing/failing providers.
+* If no paid key exists, the app still works with clearly labeled fallback/reference data.
+* No console errors.
+* Existing UI remains intact.

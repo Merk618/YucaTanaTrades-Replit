@@ -4,19 +4,32 @@ import { quoteProvidersFor, getProvider } from "./registry";
 import { computeFreshness, computeConfidence } from "./freshness";
 import { fetchYahooQuotes } from "./providers/yahoo";
 import { fetchCoinGeckoQuotes } from "./providers/coingecko";
+import { fetchKrakenQuotes } from "./providers/kraken";
+import { fetchCoinbaseQuotes } from "./providers/coinbase";
+import { fetchPolygonQuotes } from "./providers/polygon";
+import { fetchAlpacaQuotes } from "./providers/alpaca";
+import { fetchFmpQuotes } from "./providers/fmp";
 import type { Logger } from "pino";
 
 // ─── Data router ─────────────────────────────────────────────────────────────
-// Given symbols, classifies each, groups by asset class, and fetches from the
-// highest-priority IMPLEMENTED provider for that class. Falls back to the next
-// implemented provider on failure (labeling fallback use). Never fabricates a
-// price: if every provider fails, returns an honest error quote (confidence 0).
+// Classifies symbols by asset class, routes each class to the highest-priority
+// implemented provider, then falls back sequentially if a provider fails.
+// Never fabricates a price: if every provider fails, returns an honest error
+// quote (price=0, provider="none", confidence=0).
 
 type Fetcher = (symbols: string[]) => Promise<Map<string, RawQuote | Error>>;
 
 const FETCHERS: Record<string, Fetcher> = {
-  yahoo: (symbols) => fetchYahooQuotes(symbols),
+  // Free, no-key public feeds (always available)
+  yahoo:     (symbols) => fetchYahooQuotes(symbols),
   coingecko: (symbols) => fetchCoinGeckoQuotes(symbols),
+  // Public exchange feeds — no key required, live exchange data
+  kraken:    (symbols) => fetchKrakenQuotes(symbols),
+  coinbase:  (symbols) => fetchCoinbaseQuotes(symbols),
+  // Keyed providers — adapters self-check env vars and throw if unconfigured
+  polygon:   (symbols) => fetchPolygonQuotes(symbols),
+  alpaca:    (symbols) => fetchAlpacaQuotes(symbols),
+  fmp:       (symbols) => fetchFmpQuotes(symbols),
 };
 
 function errorQuote(symbol: string, assetClass: AssetClass, message: string): Quote {
@@ -50,8 +63,9 @@ function enrich(
     assetClass: raw.assetClass,
     timestamp: raw.timestamp,
   });
-  const isLive = desc?.liveCapable ?? false; // implemented free feeds are not live
-  const isDelayed = providerId === "yahoo";
+  // isLive: provider is live-capable AND data is not inherently delayed.
+  const isLive    = !!(desc?.liveCapable && !desc?.isDelayed);
+  const isDelayed = desc?.isDelayed ?? false;
   const confidence = computeConfidence({
     implemented: desc?.implemented ?? false,
     isStale,
@@ -86,6 +100,7 @@ async function routeAssetClass(
   const out = new Map<string, Quote>();
   const remaining = new Set(symbols.map((s) => s.toUpperCase()));
 
+  // Use all implemented providers that have a fetcher wired up.
   const providers = quoteProvidersFor(assetClass).filter(
     (p) => p.implemented && FETCHERS[p.id],
   );
@@ -118,12 +133,15 @@ async function routeAssetClass(
         out.set(sym, enrich(r, provider.id, isFallback));
         remaining.delete(sym);
       } else if (r instanceof Error) {
-        log?.warn({ symbol: sym, provider: provider.id, err: r.message }, "Provider returned error for symbol");
+        log?.warn(
+          { symbol: sym, provider: provider.id, err: r.message },
+          "Provider returned error for symbol",
+        );
       }
     }
   }
 
-  // Anything still unresolved: honest error quote.
+  // Any unresolved symbols → honest error quote.
   for (const sym of remaining) {
     out.set(sym, errorQuote(sym, assetClass, "All providers failed for this symbol."));
   }

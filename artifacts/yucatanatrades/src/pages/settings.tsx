@@ -183,7 +183,7 @@ export default function SettingsPage() {
               <div>
                 <p className="text-xs font-medium text-foreground">Test Quote Fetch</p>
                 <p className="text-[10px] text-muted-foreground/60">
-                  Pull a real SPY (delayed equity) and BTC (reference crypto) quote to verify sources respond
+                  Fetch SPY, QQQ, NVDA, MSFT (equity) and BTC, ETH, SOL, SUI (crypto) from all active sources
                 </p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function SettingsPage() {
               disabled={test.isFetching}
               className="flex items-center gap-1.5 text-xs text-primary border border-primary/30 px-2.5 py-1 rounded-lg hover:bg-primary/10 transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={cn("w-3 h-3", test.isFetching && "animate-spin")} /> Run test (SPY / BTC)
+              <RefreshCw className={cn("w-3 h-3", test.isFetching && "animate-spin")} /> Run test (8 symbols)
             </button>
           </div>
           {test.isError ? (

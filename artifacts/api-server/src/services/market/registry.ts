@@ -1,15 +1,15 @@
 import type { AssetClass, ProviderDescriptor } from "./types";
 
 // ─── Provider registry ───────────────────────────────────────────────────────
-// Central, declarative description of every market-data provider the terminal
-// knows about. Two are implemented today against free, no-key public feeds
-// (Yahoo delayed equities, CoinGecko crypto). The rest are future-ready: they
-// declare their env-var requirements and capabilities so the architecture can
-// be upgraded to keyed/live feeds without a rewrite. AI providers are
-// analysis-only and must never serve prices.
+// Declarative description of every market-data provider the terminal knows.
+// Implemented adapters have real fetch code in providers/. Future-ready stubs
+// declare their requirements so the architecture can be upgraded without rewrite.
+// AI providers are analysis-only and must NEVER serve prices.
 
 export const PROVIDERS: ProviderDescriptor[] = [
-  // ── Real, implemented, no key required ──────────────────────────────────────
+
+  // ── Implemented: no key, public feeds ────────────────────────────────────────
+
   {
     id: "yahoo",
     name: "Yahoo Finance (Delayed)",
@@ -22,10 +22,10 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 20,
     liveCapable: false,
+    isDelayed: true,
     implemented: true,
     sourceLabel: "Delayed · Yahoo",
-    description:
-      "Free public delayed (~15 min) equity & ETF quotes. Never labeled live.",
+    description: "Free public delayed (~15 min) equity & ETF quotes. Never labeled live.",
   },
   {
     id: "coingecko",
@@ -39,80 +39,10 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 20,
     liveCapable: false,
+    isDelayed: false,
     implemented: true,
     sourceLabel: "CoinGecko · Reference",
-    description:
-      "Free public crypto reference prices (BTC, ETH, SOL, SUI). Near real-time, labeled reference.",
-  },
-
-  // ── Trading-capable (read-only enforced), future-ready ──────────────────────
-  {
-    id: "moomoo",
-    name: "MooMoo / OpenD",
-    assetClasses: ["equity", "etf", "crypto"],
-    capabilities: ["quotes", "trading"],
-    envVars: ["MOOMOO_OPEND_HOST", "MOOMOO_OPEND_PORT"],
-    requiresKey: false,
-    requiresGateway: true,
-    isTradingCapable: true,
-    readOnly: true,
-    priority: 5,
-    liveCapable: true,
-    implemented: false,
-    sourceLabel: "Live · MooMoo",
-    description:
-      "Live quotes via a local OpenD gateway. Trading capable but locked READ-ONLY. Requires a reachable OpenD host (not available in cloud).",
-  },
-  {
-    id: "alpaca",
-    name: "Alpaca Markets",
-    assetClasses: ["equity", "etf", "crypto"],
-    capabilities: ["quotes", "trading"],
-    envVars: ["ALPACA_API_KEY", "ALPACA_API_SECRET"],
-    requiresKey: true,
-    requiresGateway: false,
-    isTradingCapable: true,
-    readOnly: true,
-    priority: 8,
-    liveCapable: true,
-    implemented: false,
-    sourceLabel: "Live · Alpaca",
-    description:
-      "Live equity & crypto market data plus trading. Trading capable but locked READ-ONLY.",
-  },
-
-  // ── Keyed market-data providers, future-ready ───────────────────────────────
-  {
-    id: "polygon",
-    name: "Polygon.io",
-    assetClasses: ["equity", "etf", "crypto"],
-    capabilities: ["quotes"],
-    envVars: ["POLYGON_API_KEY"],
-    requiresKey: true,
-    requiresGateway: false,
-    isTradingCapable: false,
-    readOnly: true,
-    priority: 10,
-    liveCapable: true,
-    implemented: false,
-    sourceLabel: "Live · Polygon",
-    description: "Live & historical equity/crypto market data (paid tiers).",
-  },
-  {
-    id: "fmp",
-    name: "Financial Modeling Prep",
-    assetClasses: ["equity", "etf", "fundamentals"],
-    capabilities: ["quotes", "fundamentals"],
-    envVars: ["FMP_API_KEY"],
-    requiresKey: true,
-    requiresGateway: false,
-    isTradingCapable: false,
-    readOnly: true,
-    priority: 15,
-    liveCapable: false,
-    implemented: false,
-    sourceLabel: "FMP",
-    description: "Quotes plus company fundamentals and financial statements.",
+    description: "Free public crypto reference prices. Near real-time, labeled reference.",
   },
   {
     id: "kraken",
@@ -126,10 +56,10 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 12,
     liveCapable: true,
-    implemented: false,
+    isDelayed: false,
+    implemented: true,
     sourceLabel: "Live · Kraken",
-    description:
-      "Public crypto ticker (no key for market data). Future-ready fallback for crypto.",
+    description: "Public Kraken exchange ticker (no key required). Real-time crypto prices.",
   },
   {
     id: "coinbase",
@@ -143,11 +73,86 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 14,
     liveCapable: true,
-    implemented: false,
+    isDelayed: false,
+    implemented: true,
     sourceLabel: "Live · Coinbase",
-    description:
-      "Public crypto spot prices. Future-ready fallback for crypto.",
+    description: "Public Coinbase Exchange stats (no key required). Real-time crypto prices.",
   },
+
+  // ── Implemented: keyed providers ─────────────────────────────────────────────
+  // Adapters are real; fetchers self-check env vars and fall through when absent.
+
+  {
+    id: "moomoo",
+    name: "MooMoo / OpenD",
+    assetClasses: ["equity", "etf", "crypto"],
+    capabilities: ["quotes", "trading"],
+    envVars: ["MOOMOO_OPEND_HOST", "MOOMOO_OPEND_PORT"],
+    requiresKey: false,
+    requiresGateway: true,
+    isTradingCapable: true,
+    readOnly: true,
+    priority: 5,
+    liveCapable: true,
+    isDelayed: false,
+    implemented: false,
+    sourceLabel: "Live · MooMoo",
+    description: "Live quotes via local OpenD gateway. Requires reachable OpenD host. Trading locked READ-ONLY.",
+  },
+  {
+    id: "alpaca",
+    name: "Alpaca Markets",
+    assetClasses: ["equity", "etf"],
+    capabilities: ["quotes"],
+    envVars: ["ALPACA_API_KEY", "ALPACA_API_SECRET"],
+    requiresKey: true,
+    requiresGateway: false,
+    isTradingCapable: true,
+    readOnly: true,
+    priority: 8,
+    liveCapable: false,
+    isDelayed: true,
+    implemented: true,
+    sourceLabel: "Delayed · Alpaca",
+    description: "IEX-feed delayed quotes. Requires ALPACA_API_KEY + ALPACA_API_SECRET. Trading locked READ-ONLY.",
+  },
+  {
+    id: "polygon",
+    name: "Polygon.io",
+    assetClasses: ["equity", "etf"],
+    capabilities: ["quotes"],
+    envVars: ["POLYGON_API_KEY"],
+    requiresKey: true,
+    requiresGateway: false,
+    isTradingCapable: false,
+    readOnly: true,
+    priority: 10,
+    liveCapable: true,
+    isDelayed: true,
+    implemented: true,
+    sourceLabel: "Delayed · Polygon",
+    description: "Snapshot quotes (delayed free / real-time paid). Requires POLYGON_API_KEY.",
+  },
+  {
+    id: "fmp",
+    name: "Financial Modeling Prep",
+    assetClasses: ["equity", "etf", "fundamentals"],
+    capabilities: ["quotes", "fundamentals"],
+    envVars: ["FMP_API_KEY"],
+    requiresKey: true,
+    requiresGateway: false,
+    isTradingCapable: false,
+    readOnly: true,
+    priority: 15,
+    liveCapable: false,
+    isDelayed: true,
+    implemented: true,
+    sourceLabel: "Delayed · FMP",
+    description: "Quotes + fundamentals (delayed on free tier). Requires FMP_API_KEY.",
+  },
+
+  // ── Future-ready stubs ────────────────────────────────────────────────────────
+
   {
     id: "sec_edgar",
     name: "SEC EDGAR",
@@ -160,13 +165,14 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 30,
     liveCapable: false,
+    isDelayed: false,
     implemented: false,
     sourceLabel: "SEC EDGAR",
-    description:
-      "Official company filings & fundamentals. Never a price source.",
+    description: "Official company filings & fundamentals. Never a price source.",
   },
 
   // ── AI providers — ANALYSIS ONLY, never a market-data source ─────────────────
+
   {
     id: "openai",
     name: "OpenAI",
@@ -179,6 +185,7 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 100,
     liveCapable: false,
+    isDelayed: false,
     implemented: false,
     sourceLabel: "AI · OpenAI",
     description: "Analysis & summarization only. Never used as a price source.",
@@ -195,6 +202,7 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 100,
     liveCapable: false,
+    isDelayed: false,
     implemented: false,
     sourceLabel: "AI · Perplexity",
     description: "Research synthesis only. Never used as a price source.",
@@ -211,6 +219,7 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 100,
     liveCapable: false,
+    isDelayed: false,
     implemented: false,
     sourceLabel: "AI · DeepSeek",
     description: "Analysis only. Never used as a price source.",
@@ -227,6 +236,7 @@ export const PROVIDERS: ProviderDescriptor[] = [
     readOnly: true,
     priority: 100,
     liveCapable: false,
+    isDelayed: false,
     implemented: false,
     sourceLabel: "AI · Gemini",
     description: "Analysis only. Never used as a price source.",
@@ -237,7 +247,8 @@ export function getProvider(id: string): ProviderDescriptor | undefined {
   return PROVIDERS.find((p) => p.id === id);
 }
 
-// Implemented price providers for an asset class, highest priority first.
+// Providers that can serve quotes for an asset class, sorted highest-priority first.
+// Includes both implemented and unimplemented providers (router filters by implemented).
 export function quoteProvidersFor(assetClass: AssetClass): ProviderDescriptor[] {
   return PROVIDERS.filter(
     (p) =>

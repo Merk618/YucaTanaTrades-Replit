@@ -130,10 +130,11 @@ router.get("/market/session", (req, res) => {
   }
 });
 
-// GET /market/test — verify real sources with a small fetch (SPY + BTC).
+// GET /market/test — verify all implemented sources across equity + crypto symbols.
 router.get("/market/test", async (req, res) => {
   try {
-    const quotes = await getQuotes(["SPY", "BTC"], req.log);
+    const symbols = ["SPY", "QQQ", "NVDA", "MSFT", "BTC", "ETH", "SOL", "SUI"];
+    const quotes = await getQuotes(symbols, req.log);
     res.json({ asOf: new Date().toISOString(), quotes });
   } catch (err) {
     req.log.error({ err }, "Test quote fetch failed");

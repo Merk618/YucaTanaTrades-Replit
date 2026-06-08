@@ -47,6 +47,9 @@ export interface ProviderDescriptor {
   priority: number;
   // Can this source ever legitimately be labeled "LIVE"?
   liveCapable: boolean;
+  // Is the data feed inherently delayed (regulatory or tier-based)?
+  // true = show DELAYED badge; false = show LIVE or REFERENCE depending on liveCapable.
+  isDelayed: boolean;
   // Is a real adapter implemented today (vs a future-ready stub)?
   implemented: boolean;
   // Human label shown next to prices, e.g. "Delayed · Yahoo".

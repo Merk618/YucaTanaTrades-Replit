@@ -68,7 +68,7 @@ export function useForceSourceHealth() {
   });
 }
 
-// On-demand probe of real sources (SPY + BTC). Disabled until triggered.
+// On-demand probe of all active sources across SPY/QQQ/NVDA/MSFT + BTC/ETH/SOL/SUI. Disabled until triggered.
 export function useTestQuotes() {
   return useTestQuoteFetch({
     query: {
