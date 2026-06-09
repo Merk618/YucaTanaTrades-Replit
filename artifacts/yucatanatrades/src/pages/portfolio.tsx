@@ -11,7 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2 } from "lucide-react";
-import { useMarketQuotes, isQuoteUsable, quoteBadge } from "@/hooks/use-market";
+import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel } from "@/hooks/use-market";
 import { POSITIONS, POSITION_SYMBOLS } from "@/data/positions";
 import { cn } from "@/lib/utils";
 
@@ -183,11 +183,14 @@ export default function Portfolio() {
     );
     return POSITIONS.map((pos) => {
       const q = quoteMap.get(pos.ticker);
-      const price = q && isQuoteUsable(q) ? q.price : 0;
-      const dayChange = q && isQuoteUsable(q) ? (q.change ?? 0) : 0;
+      const usable = q && isQuoteUsable(q);
+      const price = usable ? q.price : 0;
+      const dayChange = usable ? (q.change ?? 0) : 0;
       const value = price * pos.shares;
-      const badge = q && isQuoteUsable(q) ? quoteBadge(q) : null;
-      return { ...pos, price, value, dayChange, badge };
+      const badge = usable ? quoteBadge(q) : null;
+      const timestamp = usable ? q.timestamp : undefined;
+      const isStale = usable ? (q.isStale ?? false) : false;
+      return { ...pos, price, value, dayChange, badge, timestamp, isStale };
     });
   }, [quotesData]);
 
@@ -243,6 +246,17 @@ export default function Portfolio() {
   const sourceSample = quotesData?.quotes[0];
   const sourceLabel = sourceSample && isQuoteUsable(sourceSample) ? sourceSample.sourceLabel : null;
 
+  // Oldest timestamp among all priced holdings — represents worst-case freshness for total value
+  const oldestTimestamp = useMemo(() => {
+    const ts = holdings
+      .map((h) => h.timestamp)
+      .filter((t): t is string => !!t)
+      .map((t) => new Date(t).getTime())
+      .filter((n) => !Number.isNaN(n));
+    if (ts.length === 0) return undefined;
+    return new Date(Math.min(...ts)).toISOString();
+  }, [holdings]);
+
   const holdingsSorted = [...holdings].sort((a, b) => b.value - a.value);
 
   return (
@@ -265,10 +279,10 @@ export default function Portfolio() {
       {/* KPI row */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.06 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Value",   value: totalValue > 0 ? `$${totalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—",    sub: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)} today`,   up: totalDayChange >= 0 },
-          { label: "Day Change",    value: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)}`,                         sub: `${(totalValue > 0 ? totalDayChange / totalValue * 100 : 0).toFixed(2)}% today`,     up: totalDayChange >= 0 },
-          { label: "Total Gain",    value: totalGain !== 0 ? `${totalGain >= 0 ? "+" : ""}$${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—", sub: `${totalGainPct.toFixed(1)}% all-time`, up: totalGain >= 0 },
-          { label: "Holdings",      value: String(POSITIONS.length),                                                                             sub: "across 3 sleeves",                                                                  up: true },
+          { label: "Total Value",   value: totalValue > 0 ? `$${totalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—",    sub: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)} today`,   up: totalDayChange >= 0, freshness: oldestTimestamp },
+          { label: "Day Change",    value: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)}`,                         sub: `${(totalValue > 0 ? totalDayChange / totalValue * 100 : 0).toFixed(2)}% today`,     up: totalDayChange >= 0, freshness: undefined },
+          { label: "Total Gain",    value: totalGain !== 0 ? `${totalGain >= 0 ? "+" : ""}$${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—", sub: `${totalGainPct.toFixed(1)}% all-time`, up: totalGain >= 0, freshness: undefined },
+          { label: "Holdings",      value: String(POSITIONS.length),                                                                             sub: "across 3 sleeves",                                                                  up: true, freshness: undefined },
         ].map((stat) => (
           <div key={stat.label} className="glass-card p-5 group cursor-default">
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
@@ -276,6 +290,11 @@ export default function Portfolio() {
             <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", stat.up ? "text-emerald-400" : "text-red-400")}>
               {stat.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}{stat.sub}
             </p>
+            {stat.freshness && (
+              <p className="text-[10px] font-mono text-muted-foreground mt-1.5">
+                as of {freshnessLabel(stat.freshness)}
+              </p>
+            )}
           </div>
         ))}
       </motion.div>
@@ -489,7 +508,8 @@ export default function Portfolio() {
                           <span className={cn("text-[8px] font-mono font-bold px-1 py-0.5 rounded", {
                             "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20": h.badge.tone === "live",
                             "text-yellow-400 bg-yellow-500/10 border border-yellow-500/20": h.badge.tone === "delayed",
-                            "text-muted-foreground bg-muted/30 border border-border/40": h.badge.tone === "ref" || h.badge.tone === "stale",
+                            "text-amber-400 bg-amber-500/10 border border-amber-500/20": h.badge.tone === "stale",
+                            "text-muted-foreground bg-muted/30 border border-border/40": h.badge.tone === "ref",
                           })}>
                             {h.badge.text}
                           </span>
@@ -502,8 +522,15 @@ export default function Portfolio() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-foreground">{h.shares}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">${h.avgCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-foreground">
-                      {h.price > 0 ? `$${h.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                    <td className="px-4 py-3">
+                      <div className="font-mono text-xs text-foreground">
+                        {h.price > 0 ? `$${h.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                      </div>
+                      {h.timestamp && (
+                        <div className={cn("font-mono text-[9px] mt-0.5", h.isStale ? "text-amber-400" : "text-muted-foreground/60")}>
+                          {freshnessLabel(h.timestamp)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-foreground">
                       {h.value > 0 ? `$${h.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
