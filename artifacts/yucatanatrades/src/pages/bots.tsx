@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Bot, Shield, Clock, Scan, CheckCircle, WifiOff } from "lucide-react";
-import { useGetBotsStatus } from "@workspace/api-client-react";
+import { useGetBotsStatus, getGetBotsStatusQueryKey } from "@workspace/api-client-react";
 import { DemoBadge } from "@/components/demo-badge";
 import { freshnessLabel } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
@@ -41,14 +41,22 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-export default function Bots() {
-  const { data: botsData, dataUpdatedAt } = useGetBotsStatus();
+const BOT_REFETCH_MS = 30_000;
 
-  const [, setTick] = useState(0);
+export default function Bots() {
+  const { data: botsData, dataUpdatedAt } = useGetBotsStatus({
+    query: { queryKey: getGetBotsStatusQueryKey(), refetchInterval: BOT_REFETCH_MS },
+  });
+
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1_000);
+    const id = setInterval(() => setNow(Date.now()), 1_000);
     return () => clearInterval(id);
   }, []);
+
+  const secsUntilRefresh = dataUpdatedAt
+    ? Math.max(0, Math.round((BOT_REFETCH_MS - (now - dataUpdatedAt)) / 1_000))
+    : null;
 
   const moomoo = botsData?.moomoo ?? { name: "MooMoo Stock Trader Bot", status: "online", lastScan: "4 min ago", scansToday: 47, isReadOnly: true, lastResult: "No signals — market conditions not optimal", health: "good" };
   const crypto = botsData?.cryptoHunter ?? { name: "Crypto Hunter Bot", status: "scanning", lastScan: "Just now", scansToday: 31, isReadOnly: true, lastResult: "BTC momentum building — monitoring for breakout confirmation", health: "good" };
@@ -131,9 +139,17 @@ export default function Bots() {
             </div>
 
             {/* Fetch freshness footer */}
-            <p className="mt-3 text-[10px] text-muted-foreground/60 font-mono text-right">
-              Data fetched {freshnessLabel(dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined)}
-            </p>
+            <div className="mt-3 flex items-center justify-between font-mono text-[10px] text-muted-foreground/60">
+              <span>
+                Data fetched {freshnessLabel(dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined, now)}
+              </span>
+              {secsUntilRefresh !== null && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-emerald-400/60 animate-pulse" />
+                  Next refresh in {secsUntilRefresh}s
+                </span>
+              )}
+            </div>
           </motion.div>
         ))}
       </div>
