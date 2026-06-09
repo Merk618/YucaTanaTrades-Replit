@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins,
+  TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins, AlertTriangle, X,
 } from "lucide-react";
 import {
   useMarketQuotes, useMarketSession,
@@ -118,10 +118,18 @@ function QuoteCard({ q, teal = false, batchFlashKey = 0 }: { q: Quote; teal?: bo
           {up ? "+" : ""}{q.change.toFixed(q.price < 1 ? 4 : 2)}
         </span>
       </div>
-      <span className={cn("inline-block mt-3 text-[9px] font-mono px-1.5 py-0.5 rounded border",
-        BADGE_TONE[badge.tone])}>
-        {badge.text}
-      </span>
+      <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+        <span className={cn("inline-block text-[9px] font-mono px-1.5 py-0.5 rounded border",
+          BADGE_TONE[badge.tone])}>
+          {badge.text}
+        </span>
+        {q.isFallback && (
+          <span className="inline-flex items-center gap-0.5 text-[9px] font-mono px-1.5 py-0.5 rounded border bg-amber-500/15 text-amber-400 border-amber-500/25">
+            <AlertTriangle className="w-2.5 h-2.5" />
+            via {q.provider}
+          </span>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -296,6 +304,20 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt 
   const label    = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
   const isLive   = quotes.some(q => q.isLive);
 
+  // Fallback outage detection: collect unique fallback providers across all crypto quotes.
+  const fallbackQuotes    = quotes.filter(q => q.isFallback);
+  const fallbackProviders = [...new Set(fallbackQuotes.map(q => q.provider))];
+  const anyFallback       = fallbackProviders.length > 0;
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  // Re-show banner when fallback state changes (new batch may restore primary source).
+  const prevFallbackKey = useRef(anyFallback);
+  useEffect(() => {
+    if (anyFallback !== prevFallbackKey.current) {
+      prevFallbackKey.current = anyFallback;
+      if (anyFallback) setBannerDismissed(false);
+    }
+  }, [anyFallback]);
+
   // Increment batchFlashKey each time a new data batch lands (dataUpdatedAt changes).
   const [batchFlashKey, setBatchFlashKey] = useState(0);
   const prevUpdatedAt = useRef(cryptoDataUpdatedAt);
@@ -322,6 +344,38 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt 
           {isLive ? "Live · Kraken exchange" : "Reference · CoinGecko"} · refreshes every {label}
         </p>
       </motion.div>
+
+      <AnimatePresence>
+        {anyFallback && !bannerDismissed && (
+          <motion.div
+            key="fallback-banner"
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="flex items-start gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/8"
+          >
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-300">Primary source unavailable</p>
+              <p className="text-xs text-amber-400/70 mt-0.5">
+                Kraken is down — prices currently served via{" "}
+                <span className="font-mono font-semibold text-amber-300">
+                  {fallbackProviders.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(", ")}
+                </span>
+                . Quotes may differ slightly from exchange prices.
+              </p>
+            </div>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="shrink-0 text-amber-400/60 hover:text-amber-300 transition-colors p-0.5 rounded"
+              aria-label="Dismiss warning"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {quotes.length === 0 ? (
         <div className="glass-card p-12 text-center text-sm text-muted-foreground/60 font-mono">
