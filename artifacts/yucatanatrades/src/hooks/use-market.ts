@@ -10,11 +10,17 @@ import {
   type Quote,
 } from "@workspace/api-client-react";
 
-// Symbols shown in the scrolling ticker tape.
+// Equity and crypto symbols shown in the scrolling ticker tape.
+// Kept separate so each subset can poll at its own cadence.
+export const EQUITY_TICKER_SYMBOLS = [
+  "SPY", "QQQ", "IWM", "DIA", "MSFT", "NVDA", "AVGO",
+] as const;
+export const CRYPTO_TICKER_SYMBOLS = ["BTC", "ETH", "SOL", "SUI"] as const;
+
+// Full ordered list (equities first, then crypto) — used for display ordering.
 export const TICKER_SYMBOLS = [
-  "SPY", "QQQ", "IWM", "DIA",
-  "BTC", "ETH", "SOL", "SUI",
-  "MSFT", "NVDA", "AVGO",
+  ...EQUITY_TICKER_SYMBOLS,
+  ...CRYPTO_TICKER_SYMBOLS,
 ] as const;
 
 // Symbols shown in the Command Center "Index Overview" grid.
@@ -43,6 +49,37 @@ export function useMarketSession(refetchMs = 60_000) {
       staleTime: 30_000,
     },
   });
+}
+
+/**
+ * Ticker-tape aware quotes hook — 3-state cadence:
+ *   equities open          → 30 s  for both equities and crypto
+ *   equities closed + crypto open → 5 min for equities, 60 s for crypto
+ *   both closed            → 5 min for both
+ *
+ * Session is polled every 2 minutes so cadence transitions happen within 2
+ * minutes of an actual market open/close event.
+ */
+export function useTickerQuotes() {
+  const { data: session } = useMarketSession(2 * 60_000);
+  const equitiesOpen = session?.equities?.isOpen ?? false;
+  // Crypto markets are 24/7; default to open when session hasn't loaded yet.
+  const cryptoOpen = session?.crypto?.isOpen ?? true;
+
+  const equityRefetchMs = equitiesOpen ? 30_000 : 5 * 60_000;
+  const cryptoRefetchMs = equitiesOpen ? 30_000 : cryptoOpen ? 60_000 : 5 * 60_000;
+
+  const equityResult = useMarketQuotes(EQUITY_TICKER_SYMBOLS, equityRefetchMs);
+  const cryptoResult = useMarketQuotes(CRYPTO_TICKER_SYMBOLS, cryptoRefetchMs);
+
+  return {
+    quotes: [
+      ...(equityResult.data?.quotes ?? []),
+      ...(cryptoResult.data?.quotes ?? []),
+    ],
+    isError: equityResult.isError && cryptoResult.isError,
+    equitiesOpen,
+  };
 }
 
 export function useSourceHealth(refetchMs = 60_000) {
