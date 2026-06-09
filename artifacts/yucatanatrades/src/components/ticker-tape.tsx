@@ -68,6 +68,9 @@ export function TickerTape() {
 
   const { secondsLeft, progressPercent } = useRefreshCountdown(lastFetchedAt, nextRefetchMs);
 
+  // Pause scroll on hover — declared before any early returns to satisfy Rules of Hooks.
+  const [isPaused, setIsPaused] = React.useState(false);
+
   // Track previous prices so we can detect changes and fire flash animations.
   const prevPricesRef = React.useRef<Record<string, number>>({});
   const [flashes, setFlashes] = React.useState<FlashMap>({});
@@ -106,7 +109,11 @@ export function TickerTape() {
   }
 
   return (
-    <div className="relative flex overflow-hidden border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm">
+    <div
+      className="relative flex overflow-hidden border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {/* Gold gradient fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-background to-transparent" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-background to-transparent" />
@@ -147,7 +154,10 @@ export function TickerTape() {
         </span>
       </div>
 
-      <div className="flex animate-[ticker_35s_linear_infinite]">
+      <div
+        className="flex animate-[ticker_35s_linear_infinite]"
+        style={{ animationPlayState: isPaused ? "paused" : "running" }}
+      >
         {[...quotes, ...quotes, ...quotes].map((item, i) => {
           const flash = flashes[item.symbol];
           const badge = quoteBadge(item);
