@@ -137,7 +137,7 @@ function LogoMark({ expanded }: { expanded: boolean }) {
                 background: "linear-gradient(135deg, #67E8F9 0%, #14B8A6 60%, #0D9488 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               }}
-            >YucaTana</span>
+            >YucaTanaTrades</span>
             <span className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.18em] block">
               Meridian Intelligence
             </span>
