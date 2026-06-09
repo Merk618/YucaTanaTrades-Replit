@@ -6,6 +6,7 @@ import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
 import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
+import { RISK_CONFIG } from "@/data/riskConfig";
 
 // Estimated metrics that cannot be derived from spot quotes alone
 const ESTIMATED_METRICS = [
@@ -51,12 +52,18 @@ export default function Risk() {
 
     const sizing = enriched
       .filter((h) => h.value > 0 && total > 0)
-      .map((h) => ({
-        ticker: h.ticker,
-        allocation: (h.value / total) * 100,
-        limit: h.sleeve === "Crypto" ? 10 : h.value / total > 0.1 ? 15 : 15,
-        risk: h.value / total > 0.15 ? "HIGH" : h.value / total > 0.08 ? "OK" : "LOW",
-      }))
+      .map((h) => {
+        const pct = (h.value / total) * 100;
+        const limit = h.sleeve === "Crypto"
+          ? RISK_CONFIG.cryptoPositionLimit
+          : RISK_CONFIG.singlePositionLimit;
+        return {
+          ticker: h.ticker,
+          allocation: pct,
+          limit,
+          risk: pct > RISK_CONFIG.singlePositionLimit ? "HIGH" : pct > 8 ? "OK" : "LOW",
+        };
+      })
       .sort((a, b) => b.allocation - a.allocation)
       .slice(0, 8);
 
@@ -69,22 +76,26 @@ export default function Risk() {
   // ── Largest single-name concentration ───────────────────────────────────────
   const topPosition = positionSizing[0];
   const singleNameConc = topPosition ? topPosition.allocation : 0;
-  const singleNameStatus = singleNameConc > 15 ? "warn" : "ok";
+  const singleNameStatus = singleNameConc > RISK_CONFIG.singlePositionLimit ? "warn" : "ok";
 
   // ── Computed metrics (from real quotes) ─────────────────────────────────────
   const computedMetrics = hasRealData ? [
     {
       label: "Crypto Allocation",
       value: `${cryptoPct.toFixed(1)}%`,
-      status: cryptoPct > 20 ? "warn" : "ok",
-      note: cryptoPct > 20 ? "Exceeds 20% limit" : "Below 20% limit",
+      status: cryptoPct > RISK_CONFIG.cryptoAllocationLimit ? "warn" : "ok",
+      note: cryptoPct > RISK_CONFIG.cryptoAllocationLimit
+        ? `Exceeds ${RISK_CONFIG.cryptoAllocationLimit}% limit`
+        : `Below ${RISK_CONFIG.cryptoAllocationLimit}% limit`,
       isReal: true,
     },
     {
       label: "Single-Name Concentration",
       value: singleNameConc > 0 ? `${singleNameConc.toFixed(1)}%` : "—",
       status: singleNameStatus,
-      note: topPosition ? `${topPosition.ticker} ${singleNameConc > 15 ? "> 15% threshold" : "within limit"}` : "Computing…",
+      note: topPosition
+        ? `${topPosition.ticker} ${singleNameConc > RISK_CONFIG.singlePositionLimit ? `> ${RISK_CONFIG.singlePositionLimit}% threshold` : "within limit"}`
+        : "Computing…",
       isReal: true,
     },
   ] : [
@@ -109,7 +120,7 @@ export default function Risk() {
   const sectorMetric = {
     label: "Sector Concentration",
     value: hasRealData ? `${techSemisPct.toFixed(0)}%` : "—",
-    status: techSemisPct > 40 ? "warn" : "ok",
+    status: techSemisPct > RISK_CONFIG.sectorConcentrationLimit ? "warn" : "ok",
     note: "Tech/Semis combined",
     isReal: hasRealData,
   };
@@ -119,7 +130,13 @@ export default function Risk() {
   const overallStatus = warningCount === 0 ? "ok" : warningCount <= 2 ? "moderate" : "high";
 
   // Simple risk score: 50 baseline + penalty for each warning
-  const riskScore = Math.min(100, 50 + warningCount * 8 + (singleNameConc > 18 ? 4 : 0) + (cryptoPct > 15 ? 3 : 0));
+  const riskScore = Math.min(
+    100,
+    50
+      + warningCount * 8
+      + (singleNameConc > RISK_CONFIG.singlePositionLimit * 1.2 ? 4 : 0)
+      + (cryptoPct > RISK_CONFIG.cryptoAllocationLimit * 0.75 ? 3 : 0),
+  );
 
   const sourceLabel = quotesData?.quotes.find((q) => isQuoteUsable(q))?.sourceLabel ?? null;
 

@@ -6,6 +6,7 @@ import {
   ChevronDown, Key, Lock, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RISK_CONFIG } from "@/data/riskConfig";
 import {
   useSourceHealth, useForceSourceHealth, useTestQuotes,
   isQuoteUsable, formatPrice, quoteBadge,
@@ -71,10 +72,11 @@ const NOTIFICATION_SETTINGS = [
 ];
 
 const RISK_SETTINGS = [
-  { label: "Max Single Position",       value: "15%", desc: "Triggers alert when exceeded" },
-  { label: "Max Sector Concentration",  value: "40%", desc: "Per sector limit"             },
-  { label: "Max Drawdown Alert",        value: "15%", desc: "From recent highs"            },
-  { label: "Crypto Allocation Limit",   value: "20%", desc: "Of total portfolio"           },
+  { label: "Max Single Position",       value: `${RISK_CONFIG.singlePositionLimit}%`,      desc: "Triggers alert when exceeded" },
+  { label: "Max Crypto Position",       value: `${RISK_CONFIG.cryptoPositionLimit}%`,       desc: "Per individual crypto holding" },
+  { label: "Crypto Allocation Limit",   value: `${RISK_CONFIG.cryptoAllocationLimit}%`,    desc: "Of total portfolio"           },
+  { label: "Max Sector Concentration",  value: `${RISK_CONFIG.sectorConcentrationLimit}%`, desc: "Per sector limit"             },
+  { label: "Max Drawdown Alert",        value: `${RISK_CONFIG.maxDrawdownAlert}%`,          desc: "From recent highs"            },
 ];
 
 export default function SettingsPage() {
