@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2, Upload, FileText, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2, Upload, FileText, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, TrendingUp, TrendingDown, DollarSign, ArrowUp, ArrowDown, ArrowUpDown, Layers } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
@@ -987,6 +987,120 @@ function CsvImportModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+type SortKey = "ticker" | "sleeve" | "sector" | "shares" | "avgCost" | "costBasis" | "price" | "value" | "gain" | "gainPct";
+type SortDir = "asc" | "desc";
+type GroupBy = "none" | "sleeve" | "sector";
+
+type EnrichedHolding = Omit<PortfolioPosition, "sleeve"> & {
+  sleeve: string;
+  price: number;
+  value: number;
+  dayChange: number;
+  badge: { text: string; tone: "live" | "delayed" | "ref" | "stale" } | null;
+  timestamp: string | undefined;
+  isStale: boolean;
+  gain: number;
+  gainPct: number;
+  costBasis: number;
+};
+
+function HoldingRow({
+  h, i, rawPosition, now, onEdit, onDelete, grouped = false,
+}: {
+  h: EnrichedHolding;
+  i: number;
+  rawPosition: PortfolioPosition;
+  now: number;
+  onEdit: (p: PortfolioPosition) => void;
+  onDelete: (p: PortfolioPosition) => void;
+  grouped?: boolean;
+}) {
+  return (
+    <motion.tr
+      key={h.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: i * 0.03 }}
+      className={cn(
+        "border-b border-border/30 hover:bg-primary/5 transition-colors group",
+        grouped && "bg-muted/5",
+      )}
+    >
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono font-bold text-primary group-hover:text-primary/80">{h.ticker}</span>
+          {h.badge && (
+            <span className={cn("text-[8px] font-mono font-bold px-1 py-0.5 rounded", {
+              "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20": h.badge.tone === "live",
+              "text-yellow-400 bg-yellow-500/10 border border-yellow-500/20": h.badge.tone === "delayed",
+              "text-amber-400 bg-amber-500/10 border border-amber-500/20": h.badge.tone === "stale",
+              "text-muted-foreground bg-muted/30 border border-border/40": h.badge.tone === "ref",
+            })}>
+              {h.badge.text}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3 text-xs text-foreground/70">{h.name}</td>
+      <td className="px-4 py-3 text-xs">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-muted/50 border border-border/50 text-muted-foreground">{h.sleeve}</span>
+      </td>
+      <td className="px-4 py-3 text-xs text-muted-foreground">{h.sector}</td>
+      <td className="px-4 py-3 font-mono text-xs text-foreground">{h.shares}</td>
+      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+        ${h.avgCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </td>
+      <td className="px-4 py-3 font-mono text-xs text-foreground/80">
+        ${h.costBasis.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+      </td>
+      <td className="px-4 py-3">
+        <div className="font-mono text-xs text-foreground">
+          {h.price > 0 ? `$${h.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+        </div>
+        {h.timestamp && (
+          <div className={cn("font-mono text-[9px] mt-0.5", h.isStale ? "text-amber-400" : "text-muted-foreground/60")}>
+            {freshnessLabel(h.timestamp, now)}
+          </div>
+        )}
+      </td>
+      <td className="px-4 py-3 font-mono text-xs font-semibold text-foreground">
+        {h.value > 0 ? `$${h.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
+      </td>
+      <td className={cn("px-4 py-3 font-mono text-xs font-semibold", h.gain >= 0 ? "text-emerald-400" : "text-red-400")}>
+        {h.price > 0 ? `${h.gain >= 0 ? "+" : ""}$${Math.abs(h.gain).toFixed(0)}` : "—"}
+      </td>
+      <td className={cn("px-4 py-3 font-mono text-xs font-semibold", h.gainPct >= 0 ? "text-emerald-400" : "text-red-400")}>
+        {h.price > 0 ? `${h.gainPct >= 0 ? "+" : ""}${h.gainPct.toFixed(1)}%` : "—"}
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(rawPosition)}
+            title="Edit position"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(rawPosition)}
+            title="Remove position"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </td>
+    </motion.tr>
+  );
+}
+
+function SortIcon({ col, active, dir }: { col: SortKey; active: SortKey; dir: SortDir }) {
+  if (col !== active) return <ArrowUpDown className="w-3 h-3 opacity-30 ml-1 flex-shrink-0" />;
+  return dir === "asc"
+    ? <ArrowUp className="w-3 h-3 text-primary ml-1 flex-shrink-0" />
+    : <ArrowDown className="w-3 h-3 text-primary ml-1 flex-shrink-0" />;
+}
+
 export default function Portfolio() {
   const now = useNow();
   const { data: positionsData, isLoading: positionsLoading } = useListPositions();
@@ -1000,6 +1114,29 @@ export default function Portfolio() {
   // Gain breakdown state
   const [showGainBreakdown, setShowGainBreakdown] = useState(false);
   const { data: journalEntries = [] } = useListJournalEntries();
+
+  // Sort & group state
+  const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [groupBy, setGroupBy] = useState<GroupBy>("none");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "ticker" || key === "sleeve" || key === "sector" ? "asc" : "desc");
+    }
+  }
+
+  function toggleGroup(key: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   // Modal state
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
@@ -1106,15 +1243,38 @@ export default function Portfolio() {
     return new Date(Math.min(...ts)).toISOString();
   }, [holdings]);
 
-  const holdingsSorted = [...holdings].sort((a, b) => b.value - a.value);
-
-  // Per-position cost basis for the breakdown panel
-  const positionCostBasis = holdingsSorted.map((h) => ({
+  // Enrich holdings with pre-computed fields used for sorting and display
+  const holdingsEnriched = useMemo(() => holdings.map((h) => ({
     ...h,
-    costBasis: h.avgCost * h.shares,
     gain:      h.price > 0 ? (h.price - h.avgCost) * h.shares : 0,
     gainPct:   h.price > 0 && h.avgCost > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0,
-  }));
+    costBasis: h.avgCost * h.shares,
+  })), [holdings]);
+
+  const holdingsSorted = useMemo(() => [...holdingsEnriched].sort((a, b) => {
+    let av: string | number;
+    let bv: string | number;
+    switch (sortKey) {
+      case "ticker":    av = a.ticker;    bv = b.ticker;    break;
+      case "sleeve":    av = a.sleeve;    bv = b.sleeve;    break;
+      case "sector":    av = a.sector;    bv = b.sector;    break;
+      case "shares":    av = a.shares;    bv = b.shares;    break;
+      case "avgCost":   av = a.avgCost;   bv = b.avgCost;   break;
+      case "costBasis": av = a.costBasis; bv = b.costBasis; break;
+      case "price":     av = a.price;     bv = b.price;     break;
+      case "value":     av = a.value;     bv = b.value;     break;
+      case "gain":      av = a.gain;      bv = b.gain;      break;
+      case "gainPct":   av = a.gainPct;   bv = b.gainPct;   break;
+      default:          av = a.value;     bv = b.value;
+    }
+    if (typeof av === "string" && typeof bv === "string") {
+      return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
+  }), [holdingsEnriched, sortKey, sortDir]);
+
+  // Per-position cost basis for the breakdown panel (fields already computed above)
+  const positionCostBasis = holdingsSorted;
 
   const isDataStale = useMemo(() => {
     if (!oldestTimestamp) return false;
@@ -1620,12 +1780,34 @@ export default function Portfolio() {
 
       {/* Holdings table */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-border/50 flex items-center justify-between">
-          <h2 className="text-sm font-display font-semibold text-primary">All Holdings</h2>
+        {/* Table toolbar */}
+        <div className="p-4 border-b border-border/50 flex flex-wrap items-center gap-3 justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-muted-foreground font-mono">
-              Sorted by value · {positions.length} positions · {sourceLabel ?? "Loading prices…"}
+            <h2 className="text-sm font-display font-semibold text-primary">All Holdings</h2>
+            <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">
+              {positions.length} positions · {sourceLabel ?? "Loading prices…"}
             </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Group-by control */}
+            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-border/50 bg-muted/30">
+              <Layers className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden sm:inline">Group</span>
+              {(["none", "sleeve", "sector"] as GroupBy[]).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => { setGroupBy(g); setCollapsedGroups(new Set()); }}
+                  className={cn(
+                    "px-2 py-0.5 rounded text-[10px] font-semibold transition-colors",
+                    groupBy === g
+                      ? "bg-primary/20 border border-primary/40 text-primary"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {g === "none" ? "None" : g === "sleeve" ? "Sleeve" : "Sector"}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setShowCsvImport(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/60 border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
@@ -1642,102 +1824,144 @@ export default function Portfolio() {
             </button>
           </div>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">
-                {["Ticker", "Name", "Sleeve", "Shares", "Avg Cost", "Cost Basis", "Price", "Value", "Gain $", "Gain %", ""].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider last:w-20">{h}</th>
-                ))}
+                {/* Sortable headers — click to sort, click again to flip direction */}
+                {(
+                  [
+                    { key: "ticker" as SortKey, label: "Ticker" },
+                    { key: null, label: "Name" },
+                    { key: "sleeve" as SortKey, label: "Sleeve" },
+                    { key: "sector" as SortKey, label: "Sector" },
+                    { key: "shares" as SortKey, label: "Shares" },
+                    { key: "avgCost" as SortKey, label: "Avg Cost" },
+                    { key: "costBasis" as SortKey, label: "Cost Basis" },
+                    { key: "price" as SortKey, label: "Price" },
+                    { key: "value" as SortKey, label: "Value" },
+                    { key: "gain" as SortKey, label: "Gain $" },
+                    { key: "gainPct" as SortKey, label: "Gain %" },
+                    { key: null, label: "" },
+                  ] as { key: SortKey | null; label: string }[]
+                ).map(({ key, label }) =>
+                  key ? (
+                    <th
+                      key={label}
+                      onClick={() => handleSort(key)}
+                      className={cn(
+                        "text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer select-none last:w-20 whitespace-nowrap",
+                        sortKey === key ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span className="inline-flex items-center">
+                        {label}
+                        <SortIcon col={key} active={sortKey} dir={sortDir} />
+                      </span>
+                    </th>
+                  ) : (
+                    <th key={label} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider last:w-20">
+                      {label}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
-              {holdingsSorted.map((h, i) => {
-                const gain    = h.price > 0 ? (h.price - h.avgCost) * h.shares : 0;
-                const gainPct = h.price > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0;
-                const rawPosition = positions.find((p) => p.id === h.id)!;
-                return (
-                  <motion.tr
-                    key={h.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="border-b border-border/30 hover:bg-primary/5 transition-colors group"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-primary group-hover:text-primary/80">{h.ticker}</span>
-                        {h.badge && (
-                          <span className={cn("text-[8px] font-mono font-bold px-1 py-0.5 rounded", {
-                            "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20": h.badge.tone === "live",
-                            "text-yellow-400 bg-yellow-500/10 border border-yellow-500/20": h.badge.tone === "delayed",
-                            "text-amber-400 bg-amber-500/10 border border-amber-500/20": h.badge.tone === "stale",
-                            "text-muted-foreground bg-muted/30 border border-border/40": h.badge.tone === "ref",
-                          })}>
-                            {h.badge.text}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-foreground/70">{h.name}</td>
-                    <td className="px-4 py-3 text-xs">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-muted/50 border border-border/50 text-muted-foreground">{h.sleeve}</span>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-foreground">{h.shares}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">${h.avgCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-foreground/80">
-                      ${(h.avgCost * h.shares).toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-mono text-xs text-foreground">
-                        {h.price > 0 ? `$${h.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                      </div>
-                      {h.timestamp && (
-                        <div className={cn("font-mono text-[9px] mt-0.5", h.isStale ? "text-amber-400" : "text-muted-foreground/60")}>
-                          {freshnessLabel(h.timestamp, now)}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-foreground">
-                      {h.value > 0 ? `$${h.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
-                    </td>
-                    <td className={cn("px-4 py-3 font-mono text-xs font-semibold", gain >= 0 ? "text-emerald-400" : "text-red-400")}>
-                      {h.price > 0 ? `${gain >= 0 ? "+" : ""}$${Math.abs(gain).toFixed(0)}` : "—"}
-                    </td>
-                    <td className={cn("px-4 py-3 font-mono text-xs font-semibold", gainPct >= 0 ? "text-emerald-400" : "text-red-400")}>
-                      {h.price > 0 ? `${gainPct >= 0 ? "+" : ""}${gainPct.toFixed(1)}%` : "—"}
-                    </td>
-                    {/* Action icons */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(rawPosition)}
-                          title="Edit position"
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => openDelete(rawPosition)}
-                          title="Remove position"
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-              {holdingsSorted.length === 0 && !isLoading && (
+              {holdingsSorted.length === 0 && !isLoading ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-12 text-center text-sm text-muted-foreground">
                     No positions yet.{" "}
                     <button onClick={openAdd} className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
                       Add your first position
                     </button>
                   </td>
                 </tr>
+              ) : groupBy === "none" ? (
+                /* ── Flat rows ── */
+                holdingsSorted.map((h, i) => {
+                  const rawPosition = positions.find((p) => p.id === h.id)!;
+                  return (
+                    <HoldingRow
+                      key={h.id}
+                      h={h}
+                      i={i}
+                      rawPosition={rawPosition}
+                      now={now}
+                      onEdit={openEdit}
+                      onDelete={openDelete}
+                    />
+                  );
+                })
+              ) : (
+                /* ── Grouped rows ── */
+                (() => {
+                  const groupKey = groupBy === "sleeve" ? "sleeve" : "sector";
+                  // Preserve order of first appearance of each group in the sorted list
+                  const groupOrder: string[] = [];
+                  const groupMap: Record<string, typeof holdingsSorted> = {};
+                  for (const h of holdingsSorted) {
+                    const k = h[groupKey] as string;
+                    if (!groupMap[k]) { groupOrder.push(k); groupMap[k] = []; }
+                    groupMap[k]!.push(h);
+                  }
+                  return groupOrder.flatMap((groupName) => {
+                    const items = groupMap[groupName]!;
+                    const isCollapsed = collapsedGroups.has(groupName);
+                    const subtotalValue    = items.reduce((s, h) => s + h.value, 0);
+                    const subtotalGain     = items.reduce((s, h) => s + h.gain, 0);
+                    const subtotalCost     = items.reduce((s, h) => s + h.costBasis, 0);
+                    const subtotalGainPct  = subtotalCost > 0 ? (subtotalGain / subtotalCost) * 100 : 0;
+                    return [
+                      /* Group header row */
+                      <tr
+                        key={`group-${groupName}`}
+                        className="border-b border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+                        onClick={() => toggleGroup(groupName)}
+                      >
+                        <td colSpan={4} className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <ChevronRight className={cn("w-3.5 h-3.5 text-primary transition-transform duration-150", !isCollapsed && "rotate-90")} />
+                            <span className="font-display font-semibold text-sm text-foreground">{groupName}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {items.length} position{items.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </td>
+                        <td colSpan={4} />
+                        <td className="px-4 py-2.5 font-mono text-xs font-bold text-foreground">
+                          {subtotalValue > 0 ? `$${subtotalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
+                        </td>
+                        <td className={cn("px-4 py-2.5 font-mono text-xs font-bold", subtotalGain >= 0 ? "text-emerald-400" : "text-red-400")}>
+                          {subtotalCost > 0 ? `${subtotalGain >= 0 ? "+" : ""}$${Math.abs(subtotalGain).toFixed(0)}` : "—"}
+                        </td>
+                        <td className={cn("px-4 py-2.5 font-mono text-xs font-bold", subtotalGainPct >= 0 ? "text-emerald-400" : "text-red-400")}>
+                          {subtotalCost > 0 ? `${subtotalGainPct >= 0 ? "+" : ""}${subtotalGainPct.toFixed(1)}%` : "—"}
+                        </td>
+                        <td />
+                      </tr>,
+                      /* Item rows (hidden when collapsed) */
+                      ...(isCollapsed
+                        ? []
+                        : items.map((h, i) => {
+                            const rawPosition = positions.find((p) => p.id === h.id)!;
+                            return (
+                              <HoldingRow
+                                key={h.id}
+                                h={h}
+                                i={i}
+                                rawPosition={rawPosition}
+                                now={now}
+                                onEdit={openEdit}
+                                onDelete={openDelete}
+                                grouped
+                              />
+                            );
+                          })),
+                    ];
+                  });
+                })()
               )}
             </tbody>
           </table>
