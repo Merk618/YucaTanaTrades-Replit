@@ -231,6 +231,48 @@ function GainerLoserRow({ q, isGainer }: { q: Quote; isGainer: boolean }) {
   );
 }
 
+// ─── Relative Strength row with price-flash animation ─────────────────────────
+const MEDALS = ["🥇", "🥈", "🥉", ""];
+function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
+  const up       = q.changePercent >= 0;
+  const width    = Math.min(100, Math.abs(q.changePercent) * 14);
+  const prev     = usePrevPrice(q.price);
+  const changed  = prev !== 0 && prev !== q.price;
+  const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
+  const flashKey = useRef(0);
+  if (changed) flashKey.current += 1;
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs w-5 text-center">{MEDALS[rank] ?? ""}</span>
+      <span className="font-mono text-sm font-bold w-12" style={{ color: "#22D3EE" }}>{q.symbol}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }} animate={{ width: `${width}%` }}
+          transition={{ delay: rank * 0.08 + 0.2, duration: 0.6, ease: "easeOut" }}
+          className="h-full rounded-full"
+          style={{ background: up ? "rgba(20,184,166,0.75)" : "rgba(239,68,68,0.60)" }}
+        />
+      </div>
+      <span className={cn("font-mono text-xs font-semibold w-16 text-right",
+        up ? "text-emerald-400" : "text-red-400")}>
+        {up ? "+" : ""}{q.changePercent.toFixed(2)}%
+      </span>
+      <span
+        key={flashKey.current}
+        className={cn(
+          "font-mono text-xs w-24 text-right tabular-nums rounded px-0.5 transition-colors",
+          flashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+          flashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+          !flashDir           && "text-muted-foreground/50",
+        )}
+      >
+        ${formatPrice(q.price)}
+      </span>
+    </div>
+  );
+}
+
 // ─── Symbol placeholder when quote not yet loaded or unavailable ───────────────
 function SymbolPlaceholder({ symbol, label }: { symbol: string; label?: string }) {
   return (
@@ -676,32 +718,9 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
               <span className="text-[10px] text-muted-foreground/50 font-mono">ranked by session change</span>
             </div>
             <div className="space-y-3">
-              {byChange.map((q, i) => {
-                const up    = q.changePercent >= 0;
-                const width = Math.min(100, Math.abs(q.changePercent) * 14);
-                const medals = ["🥇", "🥈", "🥉", ""];
-                return (
-                  <div key={q.symbol} className="flex items-center gap-3">
-                    <span className="text-xs w-5 text-center">{medals[i] ?? ""}</span>
-                    <span className="font-mono text-sm font-bold w-12" style={{ color: "#22D3EE" }}>{q.symbol}</span>
-                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }} animate={{ width: `${width}%` }}
-                        transition={{ delay: i * 0.08 + 0.2, duration: 0.6, ease: "easeOut" }}
-                        className="h-full rounded-full"
-                        style={{ background: up ? "rgba(20,184,166,0.75)" : "rgba(239,68,68,0.60)" }}
-                      />
-                    </div>
-                    <span className={cn("font-mono text-xs font-semibold w-16 text-right",
-                      up ? "text-emerald-400" : "text-red-400")}>
-                      {up ? "+" : ""}{q.changePercent.toFixed(2)}%
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground/50 w-24 text-right">
-                      ${formatPrice(q.price)}
-                    </span>
-                  </div>
-                );
-              })}
+              {byChange.map((q, i) => (
+                <RelStrengthRow key={q.symbol} q={q} rank={i} />
+              ))}
             </div>
           </motion.section>
 
