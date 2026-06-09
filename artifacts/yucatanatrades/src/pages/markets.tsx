@@ -1,4 +1,4 @@
-import { useLocation, Link } from "wouter";
+import { useLocation, useSearch, Link } from "wouter";
 import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -46,8 +46,8 @@ function usePrevPrice(price: number) {
 
 // ─── Full-size QuoteCard ───────────────────────────────────────────────────────
 function QuoteCard({
-  q, teal = false, batchFlashKey = 0,
-}: { q: Quote; teal?: boolean; batchFlashKey?: number }) {
+  q, teal = false, batchFlashKey = 0, isHighlighted = false,
+}: { q: Quote; teal?: boolean; batchFlashKey?: number; isHighlighted?: boolean }) {
   const up       = q.change >= 0;
   const badge    = quoteBadge(q);
   const prev     = usePrevPrice(q.price);
@@ -73,6 +73,7 @@ function QuoteCard({
       className={cn(
         "glass-card p-5 cursor-help transition-all relative overflow-hidden",
         teal ? "hover:border-teal-500/40" : up ? "hover:border-emerald-500/30" : "hover:border-red-500/30",
+        isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_20px_hsl(43_63%_52%/0.35)]",
       )}
       style={teal ? { borderColor: "rgba(20,184,166,0.20)" } : undefined}
     >
@@ -138,7 +139,7 @@ function QuoteCard({
 }
 
 // ─── Compact MiniQuoteCard (mega-caps, sector ETFs, crypto watch) ──────────────
-function MiniQuoteCard({ q, label, teal = false }: { q: Quote; label?: string; teal?: boolean }) {
+function MiniQuoteCard({ q, label, teal = false, isHighlighted = false }: { q: Quote; label?: string; teal?: boolean; isHighlighted?: boolean }) {
   const up       = q.changePercent >= 0;
   const badge    = quoteBadge(q);
   const prev     = usePrevPrice(q.price);
@@ -154,6 +155,7 @@ function MiniQuoteCard({ q, label, teal = false }: { q: Quote; label?: string; t
       className={cn(
         "glass-card px-3 py-2.5 cursor-help transition-all relative overflow-hidden",
         teal ? "hover:border-teal-500/40" : "hover:border-primary/30",
+        isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_16px_hsl(43_63%_52%/0.30)]",
       )}
       style={teal ? { borderColor: "rgba(20,184,166,0.18)" } : undefined}
     >
@@ -268,11 +270,21 @@ function useMarketsQuotes() {
 }
 
 // ─── Stock Market subview ─────────────────────────────────────────────────────
-function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt }: {
-  allQuotes: Quote[]; isFetching: boolean; equitiesOpen: boolean; equityDataUpdatedAt: number;
+function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, highlightSymbol }: {
+  allQuotes: Quote[]; isFetching: boolean; equitiesOpen: boolean; equityDataUpdatedAt: number; highlightSymbol?: string | null;
 }) {
   const now     = useNow();
   const usable  = allQuotes.filter(isQuoteUsable);
+
+  const [pulseSymbol, setPulseSymbol] = useState<string | null>(null);
+  useEffect(() => {
+    if (!highlightSymbol) return;
+    setPulseSymbol(highlightSymbol);
+    const el = document.getElementById(`mkt-${highlightSymbol}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setPulseSymbol(null), 3000);
+    return () => clearTimeout(t);
+  }, [highlightSymbol]);
 
   const indexQ  = INDEX_SYMS.map(s   => usable.find(q => q.symbol === s));
   const megaQ   = MEGACAP_SYMS.map(s => usable.find(q => q.symbol === s));
@@ -325,8 +337,8 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt }
           {INDEX_SYMS.map((sym, i) => {
             const q = indexQ[i];
             return (
-              <motion.div key={sym} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                {q ? <QuoteCard q={q} /> : <SymbolPlaceholder symbol={sym} />}
+              <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                {q ? <QuoteCard q={q} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
               </motion.div>
             );
           })}
@@ -343,8 +355,8 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt }
           {MEGACAP_SYMS.map((sym, i) => {
             const q = megaQ[i];
             return (
-              <motion.div key={sym} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                {q ? <MiniQuoteCard q={q} /> : <SymbolPlaceholder symbol={sym} />}
+              <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                {q ? <MiniQuoteCard q={q} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
               </motion.div>
             );
           })}
@@ -361,8 +373,8 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt }
           {SECTOR_SYMS.map((sym, i) => {
             const q = sectQ[i];
             return (
-              <motion.div key={sym} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                {q ? <MiniQuoteCard q={q} label={SECTOR_LABELS[sym]} /> : <SymbolPlaceholder symbol={sym} label={SECTOR_LABELS[sym]} />}
+              <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                {q ? <MiniQuoteCard q={q} label={SECTOR_LABELS[sym]} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} label={SECTOR_LABELS[sym]} />}
               </motion.div>
             );
           })}
@@ -498,11 +510,21 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt }
 }
 
 // ─── Crypto Market subview ────────────────────────────────────────────────────
-function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt }: {
-  allQuotes: Quote[]; isFetching: boolean; cryptoRefetch: number; cryptoDataUpdatedAt: number;
+function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt, highlightSymbol }: {
+  allQuotes: Quote[]; isFetching: boolean; cryptoRefetch: number; cryptoDataUpdatedAt: number; highlightSymbol?: string | null;
 }) {
   const now    = useNow();
   const usable = allQuotes.filter(isQuoteUsable);
+
+  const [pulseSymbol, setPulseSymbol] = useState<string | null>(null);
+  useEffect(() => {
+    if (!highlightSymbol) return;
+    setPulseSymbol(highlightSymbol);
+    const el = document.getElementById(`mkt-${highlightSymbol}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setPulseSymbol(null), 3000);
+    return () => clearTimeout(t);
+  }, [highlightSymbol]);
 
   const majorQ = CRYPTO_MAJOR_SYMS.map(s => usable.find(q => q.symbol === s)).filter(Boolean) as Quote[];
   const watchQ = CRYPTO_WATCH_SYMS.map(s => usable.find(q => q.symbol === s));
@@ -617,8 +639,8 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt 
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {byChange.map((q, i) => (
-                <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                  <QuoteCard q={q} teal batchFlashKey={batchFlashKey} />
+                <motion.div key={q.symbol} id={`mkt-${q.symbol}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                  <QuoteCard q={q} teal batchFlashKey={batchFlashKey} isHighlighted={pulseSymbol === q.symbol} />
                 </motion.div>
               ))}
             </div>
@@ -675,8 +697,8 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt 
               {CRYPTO_WATCH_SYMS.map((sym, i) => {
                 const q = watchQ[i];
                 return (
-                  <motion.div key={sym} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                    {q ? <MiniQuoteCard q={q} teal /> : <SymbolPlaceholder symbol={sym} />}
+                  <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                    {q ? <MiniQuoteCard q={q} teal isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
                   </motion.div>
                 );
               })}
@@ -821,14 +843,18 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt 
 // ─── Markets root ─────────────────────────────────────────────────────────────
 export default function Markets() {
   const [location] = useLocation();
+  const search = useSearch();
   const { allQuotes, cryptoRefetch, equitiesOpen, isFetching, cryptoDataUpdatedAt, equityDataUpdatedAt } = useMarketsQuotes();
   const isCrypto = location === "/markets/crypto";
+
+  const highlightSymbol = new URLSearchParams(search).get("symbol") ?? null;
 
   if (isCrypto) {
     return (
       <CryptoView
         allQuotes={allQuotes} isFetching={isFetching}
         cryptoRefetch={cryptoRefetch} cryptoDataUpdatedAt={cryptoDataUpdatedAt}
+        highlightSymbol={highlightSymbol}
       />
     );
   }
@@ -836,6 +862,7 @@ export default function Markets() {
     <StocksView
       allQuotes={allQuotes} isFetching={isFetching}
       equitiesOpen={equitiesOpen} equityDataUpdatedAt={equityDataUpdatedAt}
+      highlightSymbol={highlightSymbol}
     />
   );
 }

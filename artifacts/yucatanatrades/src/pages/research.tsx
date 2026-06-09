@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearch } from "wouter";
 import { motion } from "framer-motion";
 import { TerminalSquare, Send, Sparkles, TrendingUp, FileText, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,11 +27,18 @@ const MOCK_RESPONSES: Record<string, string> = {
 };
 
 export default function Research() {
+  const search = useSearch();
+
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", content: "Welcome to the AI Research Terminal. Ask me anything about stocks, crypto, trading strategies, or market analysis. I can help with fundamental analysis, technical setups, and position sizing." },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    const sym = new URLSearchParams(search).get("symbol");
+    if (sym) setInput(`What is the analysis for $${sym}?`);
+  }, [search]);
 
   const send = (text?: string) => {
     const msg = text ?? input;

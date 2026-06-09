@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   useTickerQuotes,
@@ -47,6 +48,8 @@ function formatCountdown(seconds: number): string {
 }
 
 export function TickerTape() {
+  const [, navigate] = useLocation();
+
   const {
     quotes: rawQuotes,
     isError,
@@ -193,15 +196,23 @@ export function TickerTape() {
           const itemKey = `${item.symbol}-${i}`;
           const isHovered = hoveredKey === itemKey;
           const isDimmed = hoveredKey !== null && !isHovered;
+          const targetPath = item.assetClass === "crypto"
+            ? `/markets/crypto?symbol=${item.symbol}`
+            : `/markets?symbol=${item.symbol}`;
 
           return (
             <div
               key={itemKey}
               title={quoteTooltip(item)}
+              role="button"
+              tabIndex={0}
+              aria-label={`View ${item.symbol} on Markets page`}
               onMouseEnter={() => setHoveredKey(itemKey)}
               onMouseLeave={() => setHoveredKey(null)}
+              onClick={() => { setIsPaused(false); setHoveredKey(null); navigate(targetPath); }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsPaused(false); setHoveredKey(null); navigate(targetPath); } }}
               className={cn(
-                "flex items-center mx-5 gap-2 group cursor-help rounded px-1.5 -mx-0.5 transition-all duration-200",
+                "flex items-center mx-5 gap-2 group cursor-pointer rounded px-1.5 -mx-0.5 transition-all duration-200",
                 isHovered && "bg-primary/10 ring-1 ring-primary/20 shadow-[0_0_8px_hsl(43_63%_52%/0.15)]",
                 isDimmed && "opacity-35",
               )}
