@@ -11,7 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2 } from "lucide-react";
-import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel } from "@/hooks/use-market";
+import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -173,6 +173,7 @@ function SectorAllocation({ holdings }: { holdings: { sector: string; value: num
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Portfolio() {
+  const now = useNow();
   const { data: positionsData, isLoading: positionsLoading } = useListPositions();
   const positions = positionsData ?? [];
   const positionSymbols = useMemo(() => positions.map((p) => p.ticker), [positions]);
@@ -298,7 +299,7 @@ export default function Portfolio() {
             </p>
             {stat.freshness && (
               <p className="text-[10px] font-mono text-muted-foreground mt-1.5">
-                as of {freshnessLabel(stat.freshness)}
+                as of {freshnessLabel(stat.freshness, now)}
               </p>
             )}
           </div>
@@ -534,7 +535,7 @@ export default function Portfolio() {
                       </div>
                       {h.timestamp && (
                         <div className={cn("font-mono text-[9px] mt-0.5", h.isStale ? "text-amber-400" : "text-muted-foreground/60")}>
-                          {freshnessLabel(h.timestamp)}
+                          {freshnessLabel(h.timestamp, now)}
                         </div>
                       )}
                     </td>

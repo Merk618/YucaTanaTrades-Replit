@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   useGetMarketQuotes,
   useGetMarketSession,
@@ -146,10 +147,25 @@ export function quoteBadge(q: Quote): { text: string; tone: "live" | "delayed" |
   return { text: q.sourceLabel || "REFERENCE", tone: "ref" };
 }
 
+/**
+ * Returns the current time as a number (ms since epoch) and re-renders
+ * the calling component once per second. Use this to keep freshness labels
+ * ticking live without triggering any additional network requests.
+ */
+export function useNow(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 // Human-readable freshness, e.g. "12s ago" / "3m ago".
-export function freshnessLabel(iso: string | undefined): string {
+// Pass `now` (from useNow()) to keep the label ticking every second.
+export function freshnessLabel(iso: string | undefined, now: number = Date.now()): string {
   if (!iso) return "unknown";
-  const diff = Date.now() - new Date(iso).getTime();
+  const diff = now - new Date(iso).getTime();
   if (Number.isNaN(diff)) return "unknown";
   const s = Math.round(diff / 1000);
   if (s < 60) return `${Math.max(s, 0)}s ago`;
