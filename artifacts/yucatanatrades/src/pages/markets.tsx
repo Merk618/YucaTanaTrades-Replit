@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins,
@@ -31,7 +31,7 @@ function usePrevPrice(price: number) {
   return prev;
 }
 
-function QuoteCard({ q, teal = false }: { q: Quote; teal?: boolean }) {
+function QuoteCard({ q, teal = false, batchFlashKey = 0 }: { q: Quote; teal?: boolean; batchFlashKey?: number }) {
   const up    = q.change >= 0;
   const badge = quoteBadge(q);
   const prev  = usePrevPrice(q.price);
@@ -39,6 +39,18 @@ function QuoteCard({ q, teal = false }: { q: Quote; teal?: boolean }) {
   const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
   const flashKey = useRef(0);
   if (changed) flashKey.current += 1;
+
+  // Batch-refresh shimmer: fires a teal ring whenever a new data batch lands.
+  // Uses local state so AnimatePresence can mount → animate → unmount cleanly.
+  const [batchFlashId, setBatchFlashId] = useState(0);
+  const [isBatchFlashing, setIsBatchFlashing] = useState(false);
+  useEffect(() => {
+    if (batchFlashKey <= 0) return;
+    setBatchFlashId(id => id + 1);
+    setIsBatchFlashing(true);
+    const t = setTimeout(() => setIsBatchFlashing(false), 750);
+    return () => clearTimeout(t);
+  }, [batchFlashKey]);
 
   return (
     <motion.div
@@ -58,6 +70,17 @@ function QuoteCard({ q, teal = false }: { q: Quote; teal?: boolean }) {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className={cn("absolute inset-0 rounded-[inherit] pointer-events-none",
               flashDir === "up" ? "bg-emerald-500/20" : "bg-red-500/20")}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isBatchFlashing && (
+          <motion.div
+            key={batchFlashId}
+            initial={{ opacity: 0.6 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="absolute inset-0 rounded-[inherit] pointer-events-none"
+            style={{ background: "rgba(20,184,166,0.14)", boxShadow: "inset 0 0 0 1.5px rgba(20,184,166,0.60)" }}
           />
         )}
       </AnimatePresence>
@@ -122,6 +145,7 @@ function useMarketsQuotes() {
     cryptoRefetch,
     equitiesOpen,
     isFetching: equityResult.isFetching || cryptoResult.isFetching,
+    cryptoDataUpdatedAt: cryptoResult.dataUpdatedAt,
   };
 }
 
@@ -263,14 +287,24 @@ function StocksView({ allQuotes, isFetching, equitiesOpen }: {
 }
 
 // ─── Crypto Market subview ────────────────────────────────────────────────────
-function CryptoView({ allQuotes, isFetching, cryptoRefetch }: {
-  allQuotes: Quote[]; isFetching: boolean; cryptoRefetch: number;
+function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt }: {
+  allQuotes: Quote[]; isFetching: boolean; cryptoRefetch: number; cryptoDataUpdatedAt: number;
 }) {
   const quotes   = allQuotes.filter(isQuoteUsable).filter(q => (CRYPTO_SYMBOLS as readonly string[]).includes(q.symbol));
   const byChange = [...quotes].sort((a, b) => b.changePercent - a.changePercent);
   const best     = byChange[0];
   const label    = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
   const isLive   = quotes.some(q => q.isLive);
+
+  // Increment batchFlashKey each time a new data batch lands (dataUpdatedAt changes).
+  const [batchFlashKey, setBatchFlashKey] = useState(0);
+  const prevUpdatedAt = useRef(cryptoDataUpdatedAt);
+  useEffect(() => {
+    if (cryptoDataUpdatedAt !== prevUpdatedAt.current && cryptoDataUpdatedAt > 0) {
+      prevUpdatedAt.current = cryptoDataUpdatedAt;
+      setBatchFlashKey(k => k + 1);
+    }
+  }, [cryptoDataUpdatedAt]);
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -307,7 +341,7 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch }: {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {byChange.map((q, i) => (
                 <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                  <QuoteCard q={q} teal />
+                  <QuoteCard q={q} teal batchFlashKey={batchFlashKey} />
                 </motion.div>
               ))}
             </div>
@@ -375,11 +409,11 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch }: {
 // ─── Markets root ─────────────────────────────────────────────────────────────
 export default function Markets() {
   const [location] = useLocation();
-  const { allQuotes, cryptoRefetch, equitiesOpen, isFetching } = useMarketsQuotes();
+  const { allQuotes, cryptoRefetch, equitiesOpen, isFetching, cryptoDataUpdatedAt } = useMarketsQuotes();
   const isCrypto = location === "/markets/crypto";
 
   if (isCrypto) {
-    return <CryptoView allQuotes={allQuotes} isFetching={isFetching} cryptoRefetch={cryptoRefetch} />;
+    return <CryptoView allQuotes={allQuotes} isFetching={isFetching} cryptoRefetch={cryptoRefetch} cryptoDataUpdatedAt={cryptoDataUpdatedAt} />;
   }
   return <StocksView allQuotes={allQuotes} isFetching={isFetching} equitiesOpen={equitiesOpen} />;
 }
