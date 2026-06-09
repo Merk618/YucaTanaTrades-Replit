@@ -235,6 +235,44 @@ export interface PortfolioSummary {
   crypto: number;
 }
 
+export type PortfolioPositionSleeve = typeof PortfolioPositionSleeve[keyof typeof PortfolioPositionSleeve];
+
+
+export const PortfolioPositionSleeve = {
+  rothIra: 'rothIra',
+  individual: 'individual',
+  crypto: 'crypto',
+} as const;
+
+export interface PortfolioPosition {
+  id: number;
+  ticker: string;
+  name: string;
+  shares: number;
+  avgCost: number;
+  sleeve: PortfolioPositionSleeve;
+  sector: string;
+  createdAt: string;
+}
+
+export interface PortfolioPositionInput {
+  ticker: string;
+  name: string;
+  shares: number;
+  avgCost: number;
+  sleeve: PortfolioPositionSleeve;
+  sector: string;
+}
+
+export interface PortfolioPositionUpdate {
+  ticker?: string;
+  name?: string;
+  shares?: number;
+  avgCost?: number;
+  sleeve?: PortfolioPositionSleeve;
+  sector?: string;
+}
+
 export type QuoteAssetClass = typeof QuoteAssetClass[keyof typeof QuoteAssetClass];
 
 

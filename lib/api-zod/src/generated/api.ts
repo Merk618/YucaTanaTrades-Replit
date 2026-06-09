@@ -230,6 +230,90 @@ export const GetPortfolioSummaryResponse = zod.object({
 
 
 /**
+ * @summary List all portfolio positions
+ */
+export const ListPositionsResponseItem = zod.object({
+  "id": zod.number(),
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "shares": zod.number(),
+  "avgCost": zod.number(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']),
+  "sector": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListPositionsResponse = zod.array(ListPositionsResponseItem)
+
+
+/**
+ * @summary Create a new portfolio position
+ */
+export const CreatePositionBody = zod.object({
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "shares": zod.number(),
+  "avgCost": zod.number(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']),
+  "sector": zod.string()
+})
+
+
+/**
+ * @summary Get a position by ID
+ */
+export const GetPositionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetPositionResponse = zod.object({
+  "id": zod.number(),
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "shares": zod.number(),
+  "avgCost": zod.number(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']),
+  "sector": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a portfolio position
+ */
+export const UpdatePositionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdatePositionBody = zod.object({
+  "ticker": zod.string().optional(),
+  "name": zod.string().optional(),
+  "shares": zod.number().optional(),
+  "avgCost": zod.number().optional(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']).optional(),
+  "sector": zod.string().optional()
+})
+
+export const UpdatePositionResponse = zod.object({
+  "id": zod.number(),
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "shares": zod.number(),
+  "avgCost": zod.number(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']),
+  "sector": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a portfolio position
+ */
+export const DeletePositionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Batch quotes with source + freshness metadata
  */
 export const GetMarketQuotesQueryParams = zod.object({

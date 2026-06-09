@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, AlertTriangle, CheckCircle, TrendingDown } from "lucide-react";
 import { useMarketQuotes, isQuoteUsable } from "@/hooks/use-market";
-import { POSITIONS, POSITION_SYMBOLS } from "@/data/positions";
+import { sleeveLabel } from "@/data/positions";
+import { useListPositions } from "@workspace/api-client-react";
 import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 
@@ -27,17 +28,21 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 export default function Risk() {
-  const { data: quotesData } = useMarketQuotes(POSITION_SYMBOLS, 60_000);
+  const { data: positionsData } = useListPositions();
+  const positions = positionsData ?? [];
+  const positionSymbols = useMemo(() => positions.map((p) => p.ticker), [positions]);
+  const { data: quotesData } = useMarketQuotes(positionSymbols, 60_000);
 
   // ── Compute real allocations from live quotes × shares ──────────────────────
   const { holdings, totalValue, cryptoValue, positionSizing } = useMemo(() => {
     const quoteMap = new Map(
       (quotesData?.quotes ?? []).map((q) => [q.symbol, q]),
     );
-    const enriched = POSITIONS.map((pos) => {
+    const enriched = positions.map((pos) => {
       const q = quoteMap.get(pos.ticker);
       const price = q && isQuoteUsable(q) ? q.price : 0;
-      return { ...pos, price, value: price * pos.shares };
+      const displaySleeve = sleeveLabel(pos.sleeve);
+      return { ...pos, sleeve: displaySleeve, price, value: price * pos.shares };
     });
     const total = enriched.reduce((s, h) => s + h.value, 0);
     const crypto = enriched
@@ -56,7 +61,7 @@ export default function Risk() {
       .slice(0, 8);
 
     return { holdings: enriched, totalValue: total, cryptoValue: crypto, positionSizing: sizing };
-  }, [quotesData]);
+  }, [quotesData, positions]);
 
   const hasRealData = totalValue > 0;
   const cryptoPct   = hasRealData ? (cryptoValue / totalValue) * 100 : 0;

@@ -1,30 +1,28 @@
 import { Router, type IRouter } from "express";
+import { db, positionsTable } from "@workspace/db";
 import { getQuotes } from "../services/market/router";
 
 const router: IRouter = Router();
 
-interface Position {
-  ticker: string;
-  shares: number;
-  avgCost: number;
-  sleeve: "rothIra" | "individual" | "crypto";
-}
-
-const POSITIONS: Position[] = [
-  { ticker: "NVDA", shares: 12,   avgCost: 650.00,   sleeve: "rothIra" },
-  { ticker: "AVGO", shares: 5,    avgCost: 1100.00,  sleeve: "rothIra" },
-  { ticker: "ASTS", shares: 200,  avgCost: 10.50,    sleeve: "rothIra" },
-  { ticker: "MSFT", shares: 18,   avgCost: 340.00,   sleeve: "individual" },
-  { ticker: "SMR",  shares: 400,  avgCost: 5.50,     sleeve: "individual" },
-  { ticker: "KTOS", shares: 150,  avgCost: 18.00,    sleeve: "individual" },
-  { ticker: "BTC",  shares: 0.28, avgCost: 42000.00, sleeve: "crypto" },
-  { ticker: "ETH",  shares: 2.1,  avgCost: 2100.00,  sleeve: "crypto" },
-  { ticker: "SOL",  shares: 8.5,  avgCost: 100.00,   sleeve: "crypto" },
-];
-
 router.get("/portfolio/summary", async (req, res) => {
   try {
-    const symbols = POSITIONS.map((p) => p.ticker);
+    const rows = await db.select().from(positionsTable);
+
+    if (rows.length === 0) {
+      res.json({
+        totalValue: 0,
+        dayChange: 0,
+        dayChangePct: 0,
+        totalGain: 0,
+        totalGainPct: 0,
+        rothIra: 0,
+        individual: 0,
+        crypto: 0,
+      });
+      return;
+    }
+
+    const symbols = rows.map((r) => r.ticker);
     const quotes = await getQuotes(symbols, req.log);
     const priceMap = new Map(quotes.map((q) => [q.symbol, q]));
 
@@ -35,14 +33,16 @@ router.get("/portfolio/summary", async (req, res) => {
     let totalGain = 0;
     let totalCost = 0;
 
-    for (const pos of POSITIONS) {
+    for (const pos of rows) {
+      const shares = Number(pos.shares);
+      const avgCost = Number(pos.avgCost);
       const q = priceMap.get(pos.ticker);
       const price = q && q.price > 0 ? q.price : null;
       if (price === null) continue;
 
-      const value = price * pos.shares;
-      const posChange = (q?.change ?? 0) * pos.shares;
-      const cost = pos.avgCost * pos.shares;
+      const value = price * shares;
+      const posChange = (q?.change ?? 0) * shares;
+      const cost = avgCost * shares;
 
       dayChange += posChange;
       totalGain += value - cost;

@@ -29,6 +29,9 @@ import type {
   JournalEntryUpdate,
   JournalSummary,
   MarketSession,
+  PortfolioPosition,
+  PortfolioPositionInput,
+  PortfolioPositionUpdate,
   PortfolioSummary,
   QuoteList,
   SourceHealth,
@@ -940,6 +943,373 @@ export function useGetPortfolioSummary<TData = Awaited<ReturnType<typeof getPort
 
 
 
+
+export const getListPositionsUrl = () => {
+
+
+
+
+  return `/api/positions`
+}
+
+/**
+ * @summary List all portfolio positions
+ */
+export const listPositions = async ( options?: RequestInit): Promise<PortfolioPosition[]> => {
+
+  return customFetch<PortfolioPosition[]>(getListPositionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPositionsQueryKey = () => {
+    return [
+    `/api/positions`
+    ] as const;
+    }
+
+
+export const getListPositionsQueryOptions = <TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPositionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPositions>>> = ({ signal }) => listPositions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPositionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPositions>>>
+export type ListPositionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all portfolio positions
+ */
+
+export function useListPositions<TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPositionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreatePositionUrl = () => {
+
+
+
+
+  return `/api/positions`
+}
+
+/**
+ * @summary Create a new portfolio position
+ */
+export const createPosition = async (portfolioPositionInput: PortfolioPositionInput, options?: RequestInit): Promise<PortfolioPosition> => {
+
+  return customFetch<PortfolioPosition>(getCreatePositionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      portfolioPositionInput,)
+  }
+);}
+
+
+
+
+export const getCreatePositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext> => {
+
+const mutationKey = ['createPosition'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPosition>>, {data: BodyType<PortfolioPositionInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPosition(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePositionMutationResult = NonNullable<Awaited<ReturnType<typeof createPosition>>>
+    export type CreatePositionMutationBody = BodyType<PortfolioPositionInput>
+    export type CreatePositionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a new portfolio position
+ */
+export const useCreatePosition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPosition>>,
+        TError,
+        {data: BodyType<PortfolioPositionInput>},
+        TContext
+      > => {
+      return useMutation(getCreatePositionMutationOptions(options));
+    }
+
+export const getGetPositionUrl = (id: number,) => {
+
+
+
+
+  return `/api/positions/${id}`
+}
+
+/**
+ * @summary Get a position by ID
+ */
+export const getPosition = async (id: number, options?: RequestInit): Promise<PortfolioPosition> => {
+
+  return customFetch<PortfolioPosition>(getGetPositionUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPositionQueryKey = (id: number,) => {
+    return [
+    `/api/positions/${id}`
+    ] as const;
+    }
+
+
+export const getGetPositionQueryOptions = <TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPositionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPosition>>> = ({ signal }) => getPosition(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPositionQueryResult = NonNullable<Awaited<ReturnType<typeof getPosition>>>
+export type GetPositionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a position by ID
+ */
+
+export function useGetPosition<TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPositionQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdatePositionUrl = (id: number,) => {
+
+
+
+
+  return `/api/positions/${id}`
+}
+
+/**
+ * @summary Update a portfolio position
+ */
+export const updatePosition = async (id: number,
+    portfolioPositionUpdate: PortfolioPositionUpdate, options?: RequestInit): Promise<PortfolioPosition> => {
+
+  return customFetch<PortfolioPosition>(getUpdatePositionUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      portfolioPositionUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdatePositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext> => {
+
+const mutationKey = ['updatePosition'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePosition>>, {id: number;data: BodyType<PortfolioPositionUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePosition(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePositionMutationResult = NonNullable<Awaited<ReturnType<typeof updatePosition>>>
+    export type UpdatePositionMutationBody = BodyType<PortfolioPositionUpdate>
+    export type UpdatePositionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a portfolio position
+ */
+export const useUpdatePosition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePosition>>,
+        TError,
+        {id: number;data: BodyType<PortfolioPositionUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdatePositionMutationOptions(options));
+    }
+
+export const getDeletePositionUrl = (id: number,) => {
+
+
+
+
+  return `/api/positions/${id}`
+}
+
+/**
+ * @summary Delete a portfolio position
+ */
+export const deletePosition = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeletePositionUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deletePosition'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePosition>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePosition(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePositionMutationResult = NonNullable<Awaited<ReturnType<typeof deletePosition>>>
+
+    export type DeletePositionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a portfolio position
+ */
+export const useDeletePosition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePosition>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeletePositionMutationOptions(options));
+    }
 
 export const getGetMarketQuotesUrl = (params: GetMarketQuotesParams,) => {
   const normalizedParams = new URLSearchParams();

@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedPositionsIfEmpty } from "./seed-positions";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  seedPositionsIfEmpty().catch((e) =>
+    logger.error({ err: e }, "Seed positions failed"),
+  );
 });

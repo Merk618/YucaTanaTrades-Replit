@@ -208,6 +208,95 @@ paths:
               schema:
                 $ref: "#/components/schemas/PortfolioSummary"
 
+  /positions:
+    get:
+      operationId: listPositions
+      tags: [portfolio]
+      summary: List all portfolio positions
+      responses:
+        "200":
+          description: List of positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioPosition"
+    post:
+      operationId: createPosition
+      tags: [portfolio]
+      summary: Create a new portfolio position
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioPositionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioPosition"
+
+  /positions/{id}:
+    get:
+      operationId: getPosition
+      tags: [portfolio]
+      summary: Get a position by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Position
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioPosition"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePosition
+      tags: [portfolio]
+      summary: Update a portfolio position
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioPositionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioPosition"
+    delete:
+      operationId: deletePosition
+      tags: [portfolio]
+      summary: Delete a portfolio position
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /market/quotes:
     get:
       operationId: getMarketQuotes
@@ -497,6 +586,64 @@ components:
           type: number
         crypto:
           type: number
+
+    PortfolioPositionSleeve:
+      type: string
+      enum: [rothIra, individual, crypto]
+
+    PortfolioPosition:
+      type: object
+      required: [id, ticker, name, shares, avgCost, sleeve, sector, createdAt]
+      properties:
+        id:
+          type: integer
+        ticker:
+          type: string
+        name:
+          type: string
+        shares:
+          type: number
+        avgCost:
+          type: number
+        sleeve:
+          $ref: "#/components/schemas/PortfolioPositionSleeve"
+        sector:
+          type: string
+        createdAt:
+          type: string
+
+    PortfolioPositionInput:
+      type: object
+      required: [ticker, name, shares, avgCost, sleeve, sector]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        shares:
+          type: number
+        avgCost:
+          type: number
+        sleeve:
+          $ref: "#/components/schemas/PortfolioPositionSleeve"
+        sector:
+          type: string
+
+    PortfolioPositionUpdate:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        shares:
+          type: number
+        avgCost:
+          type: number
+        sleeve:
+          $ref: "#/components/schemas/PortfolioPositionSleeve"
+        sector:
+          type: string
 
     Quote:
       type: object

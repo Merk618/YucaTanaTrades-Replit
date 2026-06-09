@@ -12,7 +12,8 @@ import {
 } from "recharts";
 import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2 } from "lucide-react";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel } from "@/hooks/use-market";
-import { POSITIONS, POSITION_SYMBOLS } from "@/data/positions";
+import { sleeveLabel } from "@/data/positions";
+import { useListPositions } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 
 // ─── Deterministic performance history (90 trading days) ─────────────────────
@@ -172,7 +173,11 @@ function SectorAllocation({ holdings }: { holdings: { sector: string; value: num
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Portfolio() {
-  const { data: quotesData, isLoading } = useMarketQuotes(POSITION_SYMBOLS, 60_000);
+  const { data: positionsData, isLoading: positionsLoading } = useListPositions();
+  const positions = positionsData ?? [];
+  const positionSymbols = useMemo(() => positions.map((p) => p.ticker), [positions]);
+  const { data: quotesData, isLoading: quotesLoading } = useMarketQuotes(positionSymbols, 60_000);
+  const isLoading = positionsLoading || quotesLoading;
   const [period, setPeriod] = useState<Period>("3M");
   const [chartView, setChartView] = useState<"total" | "sleeves">("total");
 
@@ -181,7 +186,7 @@ export default function Portfolio() {
     const quoteMap = new Map(
       (quotesData?.quotes ?? []).map((q) => [q.symbol, q]),
     );
-    return POSITIONS.map((pos) => {
+    return positions.map((pos) => {
       const q = quoteMap.get(pos.ticker);
       const usable = q && isQuoteUsable(q);
       const price = usable ? q.price : 0;
@@ -190,9 +195,10 @@ export default function Portfolio() {
       const badge = usable ? quoteBadge(q) : null;
       const timestamp = usable ? q.timestamp : undefined;
       const isStale = usable ? (q.isStale ?? false) : false;
-      return { ...pos, price, value, dayChange, badge, timestamp, isStale };
+      const displaySleeve = sleeveLabel(pos.sleeve);
+      return { ...pos, sleeve: displaySleeve, price, value, dayChange, badge, timestamp, isStale };
     });
-  }, [quotesData]);
+  }, [quotesData, positions]);
 
   // Sleeve totals derived from real quote-priced holdings
   const sleeveData = useMemo(() => {
@@ -282,7 +288,7 @@ export default function Portfolio() {
           { label: "Total Value",   value: totalValue > 0 ? `$${totalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—",    sub: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)} today`,   up: totalDayChange >= 0, freshness: oldestTimestamp },
           { label: "Day Change",    value: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)}`,                         sub: `${(totalValue > 0 ? totalDayChange / totalValue * 100 : 0).toFixed(2)}% today`,     up: totalDayChange >= 0, freshness: undefined },
           { label: "Total Gain",    value: totalGain !== 0 ? `${totalGain >= 0 ? "+" : ""}$${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—", sub: `${totalGainPct.toFixed(1)}% all-time`, up: totalGain >= 0, freshness: undefined },
-          { label: "Holdings",      value: String(POSITIONS.length),                                                                             sub: "across 3 sleeves",                                                                  up: true, freshness: undefined },
+          { label: "Holdings",      value: String(positions.length),                                                                              sub: "across 3 sleeves",                                                                  up: true, freshness: undefined },
         ].map((stat) => (
           <div key={stat.label} className="glass-card p-5 group cursor-default">
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
@@ -477,7 +483,7 @@ export default function Portfolio() {
         <div className="p-4 border-b border-border/50 flex items-center justify-between">
           <h2 className="text-sm font-display font-semibold text-primary">All Holdings</h2>
           <span className="text-[10px] text-muted-foreground font-mono">
-            Sorted by value · {POSITIONS.length} positions · {sourceLabel ?? "Loading prices…"}
+            Sorted by value · {positions.length} positions · {sourceLabel ?? "Loading prices…"}
           </span>
         </div>
         <div className="overflow-x-auto">
