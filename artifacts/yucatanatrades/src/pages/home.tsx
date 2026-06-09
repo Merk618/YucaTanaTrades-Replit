@@ -122,6 +122,20 @@ function IndexCard({ symbol, price, change, changePercent, tooltip }: {
   const isUp = change >= 0;
   const sparkData = TICKER_SPARKLINES[symbol] ?? [price * 0.96, price * 0.98, price];
 
+  const prevPriceRef = React.useRef<number>(price);
+  const [flashDir, setFlashDir] = React.useState<"up" | "down" | null>(null);
+  const flashKeyRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const prev = prevPriceRef.current;
+    prevPriceRef.current = price;
+    if (prev === price) return;
+    flashKeyRef.current += 1;
+    setFlashDir(price > prev ? "up" : "down");
+    const t = setTimeout(() => setFlashDir(null), 900);
+    return () => clearTimeout(t);
+  }, [price]);
+
   return (
     <div
       title={tooltip}
@@ -144,7 +158,15 @@ function IndexCard({ symbol, price, change, changePercent, tooltip }: {
           />
         </div>
       </div>
-      <p className="font-mono text-sm font-semibold text-foreground tabular-nums">
+      <p
+        key={flashKeyRef.current}
+        className={cn(
+          "font-mono text-sm font-semibold tabular-nums rounded px-0.5 transition-colors",
+          flashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+          flashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+          !flashDir           && "text-foreground",
+        )}
+      >
         {price >= 1000
           ? `$${price.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
           : `$${price.toFixed(2)}`

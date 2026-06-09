@@ -73,10 +73,15 @@ function QuoteCard({ q, teal = false }: { q: Quote; teal?: boolean }) {
       </div>
 
       <motion.p
-        key={q.price}
+        key={`${q.symbol}-${flashKey.current}`}
         initial={{ scale: 1.05 }} animate={{ scale: 1 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="font-mono text-2xl font-bold text-foreground mb-1"
+        className={cn(
+          "font-mono text-2xl font-bold mb-1 tabular-nums rounded px-0.5 transition-colors",
+          flashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+          flashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+          !flashDir           && "text-foreground",
+        )}
       >
         ${formatPrice(q.price)}
       </motion.p>

@@ -227,14 +227,6 @@ export function TickerTape() {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
         }
-        @keyframes price-flash-up {
-          0%   { color: rgb(110 231 183); background-color: rgb(52 211 153 / 0.18); }
-          100% { color: inherit; background-color: transparent; }
-        }
-        @keyframes price-flash-down {
-          0%   { color: rgb(252 165 165); background-color: rgb(248 113 113 / 0.18); }
-          100% { color: inherit; background-color: transparent; }
-        }
         @media (prefers-reduced-motion: reduce) {
           .animate-\\[ticker_35s_linear_infinite\\]   { animation: none; }
           .animate-\\[price-flash-up_0\\.9s_ease-out\\]   { animation: none; }
