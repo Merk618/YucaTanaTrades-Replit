@@ -1,0 +1,326 @@
+Task: YucaTanaTrades post-update verification and final fix pass
+
+Act as a senior QA engineer, fintech reliability reviewer, frontend engineer, and TypeScript reviewer.
+
+Do not add new features in this pass.
+Do not redesign the UI.
+Do not add new providers.
+Do not add Robinhood MCP.
+Do not add fake prices.
+Do not simulate price movement.
+Do not add trading execution.
+
+This is a verification and fix pass for the most recent update.
+
+Review the completed changes and verify that all requested items are actually working in the app.
+
+==================================================
+
+1. VERIFY BRANDING / LOGO
+   ==================================================
+
+Check that the old YucaTanaTrades logo was replaced with the new teal/cyan circular energy-ring logo inspired by the attached image.
+
+Verify:
+
+* The new logo appears where the old logo was.
+* The logo looks crisp and not pixelated.
+* The logo blends well with the dark/gold premium UI.
+* The logo rotates slowly and smoothly.
+* The glow/pulse is subtle and premium.
+* Reduced-motion settings disable or reduce the animation.
+* The logo does not clutter the top bar or sidebar.
+* No broken image icon appears.
+
+If the logo does not display correctly, fix it.
+
+==================================================
+2. VERIFY HERO TITLE
+====================
+
+Confirm that the main hero/header title now says:
+
+“Meridian Intelligence Center”
+
+Make sure:
+
+* “AI Market Command Center” is removed from the visible hero.
+* The new title uses the same premium typography/layout.
+* The surrounding hero layout is not broken.
+* Spacing remains clean.
+* Mobile layout still works.
+
+If old title text still appears in the main UI, replace it.
+
+==================================================
+3. VERIFY PARTICLE BACKGROUND IS ACTUALLY VISIBLE
+=================================================
+
+The particle/wallpaper effect was previously not visible.
+
+Verify that the particles are now actually visible behind the dashboard content.
+
+Check:
+
+* Command Center / Meridian Intelligence Center page
+* Settings page
+* Markets page if present
+* Research page if present
+* Portfolio page if present
+* Risk page if present
+
+Particles should:
+
+* be visible in dark empty background areas
+* not cover text
+* not block clicks
+* feel smooth and premium
+* include finance/AI/ticker-themed symbols where possible
+* respect reduced-motion settings
+* reduce or disable on mobile
+* not create performance issues
+
+Specifically diagnose:
+
+* z-index
+* opacity
+* canvas mounting
+* container clipping
+* route/tab theme logic
+* reduced-motion false positives
+* background layers covering particles
+* canvas sizing
+
+If particles are still too subtle, increase visibility intelligently:
+
+* slightly higher opacity
+* slightly higher count
+* better contrast
+* corrected z-index/layering
+* better placement behind content
+
+Do not overdo it. The goal is visible, premium, smooth wallpaper atmosphere.
+
+==================================================
+4. VERIFY SETTINGS API INPUT EXPANDERS
+======================================
+
+In Settings, each API/software/provider row should be clickable or have a Connect/Edit button.
+
+When clicked, an inline panel should open underneath that provider row.
+
+Verify the expanded panel includes:
+
+* “Enter your API key”
+* “Enter your API secret” where needed
+* Save button
+* Test Connection button
+* Remove/Clear button
+* status/error area
+* last tested timestamp area if available
+* masked key display after save if implemented
+
+Provider rows to verify:
+
+* MooMoo / OpenD
+* Alpaca
+* Interactive Brokers
+* Polygon
+* FMP
+* Twelve Data
+* Tradier
+* Unusual Whales
+* Yahoo fallback
+* Kraken
+* Coinbase
+* Binance / Binance.US
+* CoinGecko
+* CoinMarketCap
+* OpenAI
+* DeepSeek
+* Gemini
+* Perplexity
+* SEC EDGAR
+* Crypto Hunter
+* MooMoo Stock Bot
+
+Rules:
+
+* Yahoo should show no key required / delayed fallback.
+* CoinGecko can show no key required or optional key depending implementation.
+* Alpaca should remain optional/future-ready, not required.
+* Saving a key must not automatically mark provider Connected.
+* Connected only means a real health check passed.
+* Do not expose full API keys in frontend responses.
+* Do not store raw keys in insecure localStorage.
+* Do not log API keys.
+
+If Settings does not clearly allow API key input and saving, fix it.
+
+==================================================
+5. VERIFY MARKET-DATA TRUST LABELS
+==================================
+
+Verify that visible market data is honest.
+
+Equities / ETFs:
+
+* Yahoo data must be labeled “Delayed · Yahoo” or “Yahoo fallback · Delayed.”
+* Yahoo must never show as Live.
+* isLive must be false.
+* isDelayed must be true.
+
+Crypto:
+
+* CoinGecko must be labeled “CoinGecko · Reference” or “Reference · CoinGecko.”
+* CoinGecko must not show as Live.
+* It should show provider and timestamp where possible.
+
+Alpaca:
+
+* Alpaca remains optional/future-ready.
+* Alpaca is not required.
+* Alpaca is not called unless explicitly enabled later.
+
+MooMoo/OpenD:
+
+* MooMoo/OpenD remains future primary for equities/options when connected and healthy.
+* It must not show Connected unless a real health check passes.
+
+Global status badge:
+
+* Do not show generic “LIVE” if visible data is Yahoo delayed and CoinGecko reference.
+* Use an honest label such as:
+  “DATA ACTIVE”
+  “DELAYED DATA”
+  “SOURCES ONLINE”
+  or another truthful label.
+* Only show “LIVE” if true live provider data powers the visible values.
+
+==================================================
+6. VERIFY NO MOCK DATA IS PRESENTED AS REAL
+===========================================
+
+Audit remaining mock/static data paths.
+
+Check:
+
+* ticker rail
+* index cards
+* market cards
+* scanners
+* portfolio
+* risk
+* watchlist
+* market regime
+* bot status
+* AI Daily Briefing
+
+If mock/demo/static data remains:
+
+* label it clearly as Demo/Example
+* or quarantine it away from production-looking UI
+* or replace it with data-router output
+
+Do not allow static mock prices, fake timestamps, fake connected statuses, or fake live labels to appear as real.
+
+==================================================
+7. VERIFY PAGES DO NOT INVENT DATA
+==================================
+
+Scanners:
+
+* Do not invent scanner signals.
+* If unavailable, show unavailable/insufficient data.
+* If demo, label demo.
+
+Portfolio:
+
+* Do not invent holdings, cost basis, P&L, allocation, or portfolio value.
+* If no real holdings source exists, show empty/setup state or clearly labeled demo.
+
+Risk:
+
+* Do not invent risk metrics.
+* If insufficient data, show “Insufficient data.”
+
+Market Regime:
+
+* Do not show fake scores as real.
+* If illustrative, label as demo/example.
+
+Bot Status:
+
+* Do not hardcode fake last scan timestamps.
+* Only show online/scanning if real status exists.
+
+AI Daily Briefing:
+
+* AI can summarize real app data only.
+* It must not invent prices, confidence, or market status.
+
+==================================================
+8. RUN VALIDATION
+=================
+
+Run available checks:
+
+* typecheck
+* lint if available
+* tests if available
+* build if available
+
+Also manually verify:
+
+* no console errors
+* Settings expanders work
+* logo displays
+* particles display
+* hero title changed
+* dashboard still loads
+* mobile layout is not broken
+
+==================================================
+9. RETURN FINAL SUMMARY
+=======================
+
+Return a concise report with:
+
+1. Files changed.
+2. Whether the new logo is working.
+3. Whether the logo animation is working.
+4. Whether “Meridian Intelligence Center” is showing.
+5. Why particles were previously not visible.
+6. What was changed to make particles visible.
+7. Whether Settings API input expanders work.
+8. How API keys are stored/masked.
+9. Current source/label for:
+
+   * SPY
+   * QQQ
+   * NVDA
+   * MSFT
+   * BTC
+   * ETH
+   * SOL
+   * SUI
+10. Any remaining demo/mock data.
+11. Any remaining issues.
+12. Whether typecheck/build passed.
+
+Acceptance criteria:
+
+* Logo appears and animates smoothly.
+* Hero title says “Meridian Intelligence Center.”
+* Particles are visible in the background.
+* Settings provider rows expand with API key inputs.
+* API key save/test/remove controls exist.
+* Yahoo is delayed, not live.
+* CoinGecko is reference, not live.
+* Alpaca is optional/future-ready only.
+* No fake prices.
+* No fake timestamps.
+* No fake connected states.
+* No fake LIVE badge.
+* No console errors.
+* Typecheck/build passes.

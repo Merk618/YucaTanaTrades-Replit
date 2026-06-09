@@ -44,6 +44,9 @@ const SHIMMER_STYLE = `
     0%, 100% { opacity: 0.50; transform: scale(1.0); }
     50%       { opacity: 0.90; transform: scale(1.15); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    img[alt="Meridian orb"] { animation: none !important; }
+  }
 `;
 
 // ─── Per-tab accent colors ────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ import {
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
   useMarketQuotes, useMarketSession, INDEX_SYMBOLS,
-  isQuoteUsable, quoteTooltip, type Quote,
+  isQuoteUsable, quoteTooltip, freshnessLabel, type Quote,
 } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
@@ -662,7 +662,7 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="flex justify-between text-[10px] text-muted-foreground/50 font-mono">
-                      <span>Last scan: {bot.lastScan}</span>
+                      <span>Last scan: {bot.lastScan ? freshnessLabel(bot.lastScan) : "—"}</span>
                       <span>{bot.scansToday} today</span>
                     </div>
                   </div>
