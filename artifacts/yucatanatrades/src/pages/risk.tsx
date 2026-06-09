@@ -58,13 +58,16 @@ export default function Risk() {
       .filter((h) => h.value > 0 && total > 0)
       .map((h) => {
         const pct = (h.value / total) * 100;
-        const limit = h.sleeve === "Crypto"
+        const isCrypto = h.sleeve === "Crypto";
+        const limit = isCrypto
           ? riskConfig.cryptoPositionLimit
           : riskConfig.singlePositionLimit;
+        const ruleLabel = isCrypto ? "crypto position limit" : "single-name limit";
         return {
           ticker: h.ticker,
           allocation: pct,
           limit,
+          ruleLabel,
           risk: pct > riskConfig.singlePositionLimit ? "HIGH" : pct > 8 ? "OK" : "LOW",
         };
       })
@@ -318,30 +321,68 @@ export default function Risk() {
             {positionSizing.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6">Loading positions…</p>
             )}
-            {positionSizing.map((pos, i) => (
-              <div key={pos.ticker}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-primary">{pos.ticker}</span>
-                    {pos.allocation > pos.limit && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/20">OVER</span>
+            {positionSizing.map((pos, i) => {
+              const isOver = pos.allocation > pos.limit;
+              const overage = pos.allocation - pos.limit;
+              // Scale bar so overflow is always visible; add 10% headroom when over
+              const displayMax = isOver ? pos.allocation * 1.1 : pos.limit;
+              const limitPct   = (pos.limit       / displayMax) * 100;
+              const allocPct   = (pos.allocation  / displayMax) * 100;
+
+              return (
+                <div key={pos.ticker}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-primary">{pos.ticker}</span>
+                      {isOver && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 font-semibold tracking-wide">
+                          OVER
+                        </span>
+                      )}
+                    </div>
+                    <span className={cn("font-mono text-xs font-semibold", isOver ? "text-orange-400" : "text-foreground")}>
+                      {pos.allocation.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {/* Bar with overflow segment and limit marker */}
+                  <div className="h-2 rounded-full bg-muted relative">
+                    {/* Within-limit fill */}
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${isOver ? limitPct : allocPct}%` }}
+                      transition={{ duration: 0.8, delay: 0.3 + i * 0.06 }}
+                      className="absolute inset-y-0 left-0 rounded-l-full bg-primary"
+                    />
+                    {/* Overflow fill (orange segment beyond the limit) */}
+                    {isOver && (
+                      <motion.div
+                        initial={{ width: 0, left: `${limitPct}%` }}
+                        animate={{ width: `${allocPct - limitPct}%`, left: `${limitPct}%` }}
+                        transition={{ duration: 0.6, delay: 0.5 + i * 0.06 }}
+                        className="absolute inset-y-0 rounded-r-full bg-orange-400"
+                      />
+                    )}
+                    {/* Limit marker — vertical rule */}
+                    {isOver && (
+                      <div
+                        className="absolute inset-y-[-2px] w-0.5 rounded-full bg-orange-500 z-10"
+                        style={{ left: `${limitPct}%` }}
+                      />
                     )}
                   </div>
-                  <span className={cn("font-mono text-xs font-semibold", pos.allocation > pos.limit ? "text-orange-400" : "text-foreground")}>
-                    {pos.allocation.toFixed(1)}%
-                  </span>
+
+                  {/* Footer label */}
+                  {isOver ? (
+                    <p className="text-[9px] text-orange-400/80 mt-0.5 font-mono">
+                      +{overage.toFixed(1)}% over limit · {pos.ruleLabel} ({pos.limit}%)
+                    </p>
+                  ) : (
+                    <p className="text-[9px] text-muted-foreground mt-0.5">Limit: {pos.limit}%</p>
+                  )}
                 </div>
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((pos.allocation / pos.limit) * 100, 100)}%` }}
-                    transition={{ duration: 0.8, delay: 0.3 + i * 0.06 }}
-                    className={cn("h-full rounded-full", pos.allocation > pos.limit ? "bg-orange-400" : "bg-primary")}
-                  />
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-0.5">Limit: {pos.limit}%</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </div>
