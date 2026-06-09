@@ -105,4 +105,51 @@ describe("market router — crypto fallback chain", () => {
     expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
     expect(vi.mocked(fetchCoinGeckoQuotes)).toHaveBeenCalledOnce();
   });
+
+  it("falls back to Coinbase when Kraken resolves but maps AVAX to a per-symbol Error", async () => {
+    // Kraken succeeds at the network level but signals AVAX is unavailable via an
+    // Error value in its result map (e.g. the pair is halted).
+    // Use AVAX — a symbol not touched by prior tests — to avoid a stale cache hit.
+    vi.mocked(fetchKrakenQuotes).mockResolvedValue(errorMap("AVAX"));
+    vi.mocked(fetchCoinbaseQuotes).mockResolvedValue(rawMap("AVAX"));
+    // CoinGecko should not be reached — Coinbase resolved the symbol.
+    vi.mocked(fetchCoinGeckoQuotes).mockResolvedValue(new Map());
+
+    const quotes = await getQuotes(["AVAX"]);
+
+    expect(quotes).toHaveLength(1);
+    const avax = quotes[0]!;
+    expect(avax.symbol).toBe("AVAX");
+    expect(avax.provider).toBe("coinbase");
+    expect(avax.isFallback).toBe(true);
+    expect(avax.price).toBe(50_000);
+    expect(avax.error).toBeNull();
+
+    expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinGeckoQuotes)).not.toHaveBeenCalled();
+  });
+
+  it("falls back to CoinGecko when both Kraken and Coinbase return per-symbol errors for SOL", async () => {
+    // Both primary providers resolve successfully but each maps SOL to an Error.
+    // CoinGecko is the last-resort fallback and should serve the quote.
+    vi.mocked(fetchKrakenQuotes).mockResolvedValue(errorMap("SOL"));
+    vi.mocked(fetchCoinbaseQuotes).mockResolvedValue(errorMap("SOL"));
+    vi.mocked(fetchCoinGeckoQuotes).mockResolvedValue(rawMap("SOL"));
+
+    const quotes = await getQuotes(["SOL"]);
+
+    expect(quotes).toHaveLength(1);
+    const sol = quotes[0]!;
+    expect(sol.symbol).toBe("SOL");
+    expect(sol.provider).toBe("coingecko");
+    expect(sol.isFallback).toBe(true);
+    expect(sol.price).toBe(50_000);
+    expect(sol.error).toBeNull();
+
+    // All three providers were attempted in priority order.
+    expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinGeckoQuotes)).toHaveBeenCalledOnce();
+  });
 });
