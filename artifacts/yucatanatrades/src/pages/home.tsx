@@ -832,7 +832,7 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="flex justify-between text-[10px] text-muted-foreground/50 font-mono">
-                      <span>Last scan: {bot.lastScan ? freshnessLabel(bot.lastScan) : "—"}</span>
+                      <span>Last scan: {bot.lastScan ? freshnessLabel(bot.lastScan, now) : "—"}</span>
                       <span>{bot.scansToday} today</span>
                     </div>
                   </div>
