@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Bot, Zap, Shield, Activity,
   ArrowUpRight, ArrowDownRight, Newspaper, Brain, Target,
-  Clock, Flame, BarChart2, Lock,
+  Clock, Flame, BarChart2, Lock, PieChart,
 } from "lucide-react";
 import {
   mockScannerResults,
@@ -373,6 +373,9 @@ export default function Home() {
     dayChangePct: 0,
     totalGain:    0,
     totalGainPct: 0,
+    rothIra:      0,
+    individual:   0,
+    crypto:       0,
   };
 
   const bots   = botStatus ?? mockBotStatus;
@@ -511,6 +514,109 @@ export default function Home() {
           up
           icon={Bot}
         />
+      </motion.div>
+
+      {/* ── Sleeve Breakdown ───────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="glass-card p-4"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <PieChart className="w-3.5 h-3.5" style={{ color: "rgba(212,175,55,0.7)" }} />
+          <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: "rgba(212,175,55,0.55)" }}>
+            Sleeve Allocation
+          </span>
+        </div>
+        {portfolioLoading ? (
+          <div className="grid grid-cols-3 gap-4">
+            {(["Roth IRA", "Individual", "Crypto"] as const).map((label) => (
+              <div key={label} className="space-y-2">
+                <div className="h-3 w-16 rounded animate-pulse" style={{ background: "rgba(212,175,55,0.10)" }} />
+                <div className="h-5 w-24 rounded animate-pulse" style={{ background: "rgba(212,175,55,0.10)" }} />
+                <div className="h-1.5 w-full rounded-full animate-pulse" style={{ background: "rgba(212,175,55,0.08)" }} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          (() => {
+            const sleeveTotal = portfolio.rothIra + portfolio.individual + portfolio.crypto;
+            const sleeves = [
+              {
+                label: "Roth IRA",
+                value: portfolio.rothIra,
+                icon: Shield,
+                color: "rgba(212,175,55,1)",
+                trackColor: "rgba(212,175,55,0.15)",
+                glowColor: "rgba(212,175,55,0.35)",
+              },
+              {
+                label: "Individual",
+                value: portfolio.individual,
+                icon: TrendingUp,
+                color: "rgba(16,185,129,1)",
+                trackColor: "rgba(16,185,129,0.12)",
+                glowColor: "rgba(16,185,129,0.30)",
+              },
+              {
+                label: "Crypto",
+                value: portfolio.crypto,
+                icon: Zap,
+                color: "rgba(139,92,246,1)",
+                trackColor: "rgba(139,92,246,0.12)",
+                glowColor: "rgba(139,92,246,0.30)",
+              },
+            ];
+            return (
+              <div className="grid grid-cols-3 gap-4">
+                {sleeves.map((s) => {
+                  const pct = sleeveTotal > 0 ? (s.value / sleeveTotal) * 100 : 0;
+                  const Icon = s.icon;
+                  return (
+                    <div key={s.label} className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className="w-3 h-3 flex-shrink-0" style={{ color: s.color }} />
+                        <span className="text-[11px] font-medium" style={{ color: "rgba(148,163,184,0.8)" }}>
+                          {s.label}
+                        </span>
+                      </div>
+                      <div
+                        className="font-mono text-base font-semibold leading-none"
+                        style={{ color: s.color, fontFamily: "JetBrains Mono, monospace" }}
+                      >
+                        ${s.value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex-1 h-1.5 rounded-full overflow-hidden"
+                          style={{ background: s.trackColor }}
+                        >
+                          <motion.div
+                            className="h-full rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ delay: 0.5, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                            style={{
+                              background: `linear-gradient(90deg, ${s.color} 0%, ${s.glowColor} 100%)`,
+                              boxShadow: `0 0 6px ${s.glowColor}`,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className="text-[10px] font-mono tabular-nums flex-shrink-0"
+                          style={{ color: "rgba(148,163,184,0.55)" }}
+                        >
+                          {pct.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        )}
       </motion.div>
 
       {/* ── Main grid ──────────────────────────────────────────────────────── */}
