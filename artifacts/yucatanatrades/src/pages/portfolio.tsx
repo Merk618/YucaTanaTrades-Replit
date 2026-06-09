@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart,
@@ -586,6 +586,14 @@ export default function Portfolio() {
     return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
   }, [oldestTimestamp, now]);
 
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Reset dismissed state whenever fresh quotes arrive so the banner
+  // reappears if data goes stale again after the next successful refresh.
+  useEffect(() => {
+    if (!isDataStale) setBannerDismissed(false);
+  }, [isDataStale]);
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       {/* Modals */}
@@ -624,7 +632,7 @@ export default function Portfolio() {
 
       {/* Freshness warning banner */}
       <AnimatePresence>
-        {isDataStale && oldestTimestamp && (
+        {isDataStale && !bannerDismissed && oldestTimestamp && (
           <motion.div
             key="freshness-banner"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -645,6 +653,13 @@ export default function Portfolio() {
                   Portfolio values may not reflect current market conditions.
                 </span>
               </div>
+              <button
+                onClick={() => setBannerDismissed(true)}
+                aria-label="Dismiss stale-data warning"
+                className="flex-shrink-0 p-1 rounded text-amber-400/60 hover:text-amber-300 hover:bg-amber-500/15 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}
