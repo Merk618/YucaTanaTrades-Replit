@@ -1,12 +1,14 @@
 import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, AlertTriangle, CheckCircle, TrendingDown } from "lucide-react";
-import { useMarketQuotes, isQuoteUsable } from "@/hooks/use-market";
+import { useMarketQuotes, isQuoteUsable, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
 import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 import { RISK_CONFIG } from "@/data/riskConfig";
+
+const FRESHNESS_WARNING_MS = 15 * 60 * 1000;
 
 // Estimated metrics that cannot be derived from spot quotes alone
 const ESTIMATED_METRICS = [
@@ -140,6 +142,24 @@ export default function Risk() {
 
   const sourceLabel = quotesData?.quotes.find((q) => isQuoteUsable(q))?.sourceLabel ?? null;
 
+  const now = useNow();
+
+  const oldestTimestamp = useMemo(() => {
+    const ts = (quotesData?.quotes ?? [])
+      .filter(isQuoteUsable)
+      .map((q) => q.timestamp)
+      .filter((t): t is string => !!t)
+      .map((t) => new Date(t).getTime())
+      .filter((n) => !Number.isNaN(n));
+    if (ts.length === 0) return undefined;
+    return new Date(Math.min(...ts)).toISOString();
+  }, [quotesData]);
+
+  const isDataStale = useMemo(() => {
+    if (!oldestTimestamp) return false;
+    return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
+  }, [oldestTimestamp, now]);
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -156,6 +176,34 @@ export default function Risk() {
           Allocations computed from real market prices · Beta and drawdown are estimated
         </p>
       </motion.div>
+
+      {/* Freshness warning banner */}
+      <AnimatePresence>
+        {isDataStale && oldestTimestamp && (
+          <motion.div
+            key="freshness-banner"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-amber-300">
+                  Markets may be closed —{" "}
+                </span>
+                <span className="text-sm text-amber-300/80">
+                  prices last updated{" "}
+                  <span className="font-mono font-semibold">{freshnessLabel(oldestTimestamp, now)}</span>.
+                  Risk metrics may not reflect current market conditions.
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Overall risk banner */}
       <motion.div

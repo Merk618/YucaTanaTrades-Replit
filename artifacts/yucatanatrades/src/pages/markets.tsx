@@ -1,5 +1,5 @@
 import { useLocation, useSearch, Link } from "wouter";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins, AlertTriangle, X,
@@ -12,6 +12,8 @@ import {
   type Quote,
 } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
+
+const FRESHNESS_WARNING_MS = 15 * 60 * 1000;
 
 // ─── Symbol groups ─────────────────────────────────────────────────────────────
 const INDEX_SYMS   = ["SPY", "QQQ", "IWM", "DIA"] as const;
@@ -384,6 +386,22 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
     ? freshnessLabel(new Date(equityDataUpdatedAt).toISOString(), now)
     : "—";
 
+  const oldestTimestamp = useMemo(() => {
+    const ts = usable
+      .filter((q) => (EQUITY_SYMBOLS as readonly string[]).includes(q.symbol))
+      .map((q) => q.timestamp)
+      .filter((t): t is string => !!t)
+      .map((t) => new Date(t).getTime())
+      .filter((n) => !Number.isNaN(n));
+    if (ts.length === 0) return undefined;
+    return new Date(Math.min(...ts)).toISOString();
+  }, [usable]);
+
+  const isDataStale = useMemo(() => {
+    if (!oldestTimestamp) return false;
+    return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
+  }, [oldestTimestamp, now]);
+
   const statusClass = equitiesOpen
     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
     : "bg-muted/40 text-muted-foreground border-border/40";
@@ -412,6 +430,34 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
           )}
         </div>
       </motion.div>
+
+      {/* Freshness warning banner */}
+      <AnimatePresence>
+        {isDataStale && oldestTimestamp && (
+          <motion.div
+            key="freshness-banner"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-amber-300">
+                  Markets may be closed —{" "}
+                </span>
+                <span className="text-sm text-amber-300/80">
+                  prices last updated{" "}
+                  <span className="font-mono font-semibold">{freshnessLabel(oldestTimestamp, now)}</span>.
+                  Displayed quotes may not reflect current market conditions.
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Index Overview */}
       <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -608,6 +654,22 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
   const label    = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
   const isLive   = majorQ.some(q => q.isLive);
 
+  const oldestTimestamp = useMemo(() => {
+    const allCrypto = [...majorQ, ...usable.filter(q => (CRYPTO_WATCH_SYMS as readonly string[]).includes(q.symbol))];
+    const ts = allCrypto
+      .map((q) => q.timestamp)
+      .filter((t): t is string => !!t)
+      .map((t) => new Date(t).getTime())
+      .filter((n) => !Number.isNaN(n));
+    if (ts.length === 0) return undefined;
+    return new Date(Math.min(...ts)).toISOString();
+  }, [majorQ, usable]);
+
+  const isDataStale = useMemo(() => {
+    if (!oldestTimestamp) return false;
+    return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
+  }, [oldestTimestamp, now]);
+
   // Freshness from oldest quote timestamp
   const timestamps = majorQ.map(q => q.timestamp).filter(Boolean) as string[];
   const oldest     = timestamps.length > 0
@@ -691,6 +753,34 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
               aria-label="Dismiss warning">
               <X className="w-4 h-4" />
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Freshness warning banner */}
+      <AnimatePresence>
+        {isDataStale && oldestTimestamp && (
+          <motion.div
+            key="crypto-freshness-banner"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-amber-300">
+                  Markets may be closed —{" "}
+                </span>
+                <span className="text-sm text-amber-300/80">
+                  prices last updated{" "}
+                  <span className="font-mono font-semibold">{freshnessLabel(oldestTimestamp, now)}</span>.
+                  Displayed quotes may not reflect current market conditions.
+                </span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
