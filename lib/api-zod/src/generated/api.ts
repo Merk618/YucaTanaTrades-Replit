@@ -332,6 +332,54 @@ export const DeletePositionParams = zod.object({
 
 
 /**
+ * @summary Get the active risk threshold configuration
+ */
+export const GetRiskConfigResponse = zod.object({
+  "singlePositionLimit": zod.number().describe('Max % of total portfolio in any single non-crypto holding'),
+  "cryptoPositionLimit": zod.number().describe('Max % of total portfolio in any single crypto holding'),
+  "cryptoAllocationLimit": zod.number().describe('Max % of total portfolio in the crypto sleeve'),
+  "sectorConcentrationLimit": zod.number().describe('Max % of total portfolio in any one sector'),
+  "maxDrawdownAlert": zod.number().describe('Max drawdown % before alert fires'),
+  "isDefault": zod.boolean().describe('True when no user row exists and defaults are returned'),
+  "updatedAt": zod.string().nullable().describe('ISO timestamp of last user update, null when using defaults')
+})
+
+
+/**
+ * @summary Update risk threshold configuration
+ */
+export const updateRiskConfigBodySinglePositionLimitMax = 100;
+
+export const updateRiskConfigBodyCryptoPositionLimitMax = 100;
+
+export const updateRiskConfigBodyCryptoAllocationLimitMax = 100;
+
+export const updateRiskConfigBodySectorConcentrationLimitMax = 100;
+
+export const updateRiskConfigBodyMaxDrawdownAlertMax = 100;
+
+
+
+export const UpdateRiskConfigBody = zod.object({
+  "singlePositionLimit": zod.number().min(1).max(updateRiskConfigBodySinglePositionLimitMax),
+  "cryptoPositionLimit": zod.number().min(1).max(updateRiskConfigBodyCryptoPositionLimitMax),
+  "cryptoAllocationLimit": zod.number().min(1).max(updateRiskConfigBodyCryptoAllocationLimitMax),
+  "sectorConcentrationLimit": zod.number().min(1).max(updateRiskConfigBodySectorConcentrationLimitMax),
+  "maxDrawdownAlert": zod.number().min(1).max(updateRiskConfigBodyMaxDrawdownAlertMax)
+})
+
+export const UpdateRiskConfigResponse = zod.object({
+  "singlePositionLimit": zod.number().describe('Max % of total portfolio in any single non-crypto holding'),
+  "cryptoPositionLimit": zod.number().describe('Max % of total portfolio in any single crypto holding'),
+  "cryptoAllocationLimit": zod.number().describe('Max % of total portfolio in the crypto sleeve'),
+  "sectorConcentrationLimit": zod.number().describe('Max % of total portfolio in any one sector'),
+  "maxDrawdownAlert": zod.number().describe('Max drawdown % before alert fires'),
+  "isDefault": zod.boolean().describe('True when no user row exists and defaults are returned'),
+  "updatedAt": zod.string().nullable().describe('ISO timestamp of last user update, null when using defaults')
+})
+
+
+/**
  * @summary Batch quotes with source + freshness metadata
  */
 export const GetMarketQuotesQueryParams = zod.object({

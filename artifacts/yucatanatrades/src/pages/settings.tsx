@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, CheckCircle, Bell, Shield, ChevronRight, RefreshCw,
   Clock, KeyRound, Plug, AlertTriangle, Ban, Sparkles, Activity, Layers,
-  ChevronDown, Key, Lock, X,
+  ChevronDown, Key, Lock, X, Save, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RISK_CONFIG } from "@/data/riskConfig";
@@ -11,6 +11,7 @@ import {
   useSourceHealth, useForceSourceHealth, useTestQuotes,
   isQuoteUsable, formatPrice, quoteBadge,
 } from "@/hooks/use-market";
+import { useRiskConfig, useUpdateRiskConfigMutation } from "@/hooks/use-risk-config";
 import type { ProviderStatus, SourceHealthSummary } from "@workspace/api-client-react";
 
 function statusView(p: ProviderStatus): {
@@ -71,12 +72,19 @@ const NOTIFICATION_SETTINGS = [
   { label: "Weekly Summary Email",    desc: "Performance summary every Sunday",                 on: false },
 ];
 
-const RISK_SETTINGS = [
-  { label: "Max Single Position",       value: `${RISK_CONFIG.singlePositionLimit}%`,      desc: "Triggers alert when exceeded" },
-  { label: "Max Crypto Position",       value: `${RISK_CONFIG.cryptoPositionLimit}%`,       desc: "Per individual crypto holding" },
-  { label: "Crypto Allocation Limit",   value: `${RISK_CONFIG.cryptoAllocationLimit}%`,    desc: "Of total portfolio"           },
-  { label: "Max Sector Concentration",  value: `${RISK_CONFIG.sectorConcentrationLimit}%`, desc: "Per sector limit"             },
-  { label: "Max Drawdown Alert",        value: `${RISK_CONFIG.maxDrawdownAlert}%`,          desc: "From recent highs"            },
+type RiskFieldKey =
+  | "singlePositionLimit"
+  | "cryptoPositionLimit"
+  | "cryptoAllocationLimit"
+  | "sectorConcentrationLimit"
+  | "maxDrawdownAlert";
+
+const RISK_FIELDS: { key: RiskFieldKey; label: string; desc: string }[] = [
+  { key: "singlePositionLimit",      label: "Max Single Position",      desc: "Triggers alert when exceeded" },
+  { key: "cryptoPositionLimit",      label: "Max Crypto Position",      desc: "Per individual crypto holding" },
+  { key: "cryptoAllocationLimit",    label: "Crypto Allocation Limit",  desc: "Of total portfolio" },
+  { key: "sectorConcentrationLimit", label: "Max Sector Concentration", desc: "Per sector limit" },
+  { key: "maxDrawdownAlert",         label: "Max Drawdown Alert",       desc: "From recent highs" },
 ];
 
 export default function SettingsPage() {
@@ -101,6 +109,81 @@ export default function SettingsPage() {
   const providers  = health?.providers ?? [];
   const summary: SourceHealthSummary[] = health?.summary ?? [];
   const testQuotes = (test.data?.quotes ?? []).filter(isQuoteUsable);
+
+  // ── Risk thresholds state ─────────────────────────────────────────────────
+  const { config: riskConfig, isLoading: riskLoading } = useRiskConfig();
+  const updateRisk = useUpdateRiskConfigMutation();
+  const [riskDraft, setRiskDraft] = useState<Record<RiskFieldKey, string>>({
+    singlePositionLimit:      "",
+    cryptoPositionLimit:      "",
+    cryptoAllocationLimit:    "",
+    sectorConcentrationLimit: "",
+    maxDrawdownAlert:         "",
+  });
+  const [riskEditing, setRiskEditing] = useState(false);
+  const [riskMsg, setRiskMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Populate draft when config loads
+  useEffect(() => {
+    setRiskDraft({
+      singlePositionLimit:      String(riskConfig.singlePositionLimit),
+      cryptoPositionLimit:      String(riskConfig.cryptoPositionLimit),
+      cryptoAllocationLimit:    String(riskConfig.cryptoAllocationLimit),
+      sectorConcentrationLimit: String(riskConfig.sectorConcentrationLimit),
+      maxDrawdownAlert:         String(riskConfig.maxDrawdownAlert),
+    });
+  }, [
+    riskConfig.singlePositionLimit,
+    riskConfig.cryptoPositionLimit,
+    riskConfig.cryptoAllocationLimit,
+    riskConfig.sectorConcentrationLimit,
+    riskConfig.maxDrawdownAlert,
+  ]);
+
+  function riskDraftValue(key: RiskFieldKey): number {
+    const n = parseInt(riskDraft[key], 10);
+    return Number.isNaN(n) ? 0 : n;
+  }
+
+  function isDraftValid(): boolean {
+    return RISK_FIELDS.every(({ key }) => {
+      const n = riskDraftValue(key);
+      return n >= 1 && n <= 100;
+    });
+  }
+
+  async function saveRiskConfig() {
+    if (!isDraftValid()) {
+      setRiskMsg({ ok: false, text: "All values must be between 1 and 100" });
+      return;
+    }
+    setRiskMsg({ ok: true, text: "Saving…" });
+    try {
+      await updateRisk.mutateAsync({
+        data: {
+          singlePositionLimit:      riskDraftValue("singlePositionLimit"),
+          cryptoPositionLimit:      riskDraftValue("cryptoPositionLimit"),
+          cryptoAllocationLimit:    riskDraftValue("cryptoAllocationLimit"),
+          sectorConcentrationLimit: riskDraftValue("sectorConcentrationLimit"),
+          maxDrawdownAlert:         riskDraftValue("maxDrawdownAlert"),
+        },
+      });
+      setRiskMsg({ ok: true, text: "Thresholds saved · Risk page will use updated values" });
+      setRiskEditing(false);
+    } catch {
+      setRiskMsg({ ok: false, text: "Save failed — is the API server running?" });
+    }
+  }
+
+  function resetRiskToDefaults() {
+    setRiskDraft({
+      singlePositionLimit:      String(RISK_CONFIG.singlePositionLimit),
+      cryptoPositionLimit:      String(RISK_CONFIG.cryptoPositionLimit),
+      cryptoAllocationLimit:    String(RISK_CONFIG.cryptoAllocationLimit),
+      sectorConcentrationLimit: String(RISK_CONFIG.sectorConcentrationLimit),
+      maxDrawdownAlert:         String(RISK_CONFIG.maxDrawdownAlert),
+    });
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function envVarToLabel(v: string): string {
@@ -514,32 +597,137 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Risk thresholds */}
+        {/* Risk thresholds — editable */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           className="col-span-12 md:col-span-6 glass-card overflow-hidden"
         >
-          <div className="p-4 border-b border-border/50 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-display font-semibold text-foreground">Risk Thresholds</h2>
-            <span className="text-[10px] text-muted-foreground/50">Local preferences</span>
+          <div className="p-4 border-b border-border/50 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Shield className="w-4 h-4 text-primary flex-shrink-0" />
+              <h2 className="text-sm font-display font-semibold text-foreground">Risk Thresholds</h2>
+              {riskConfig.isDefault ? (
+                <span className="text-[10px] text-muted-foreground/50 truncate">Defaults</span>
+              ) : (
+                <span className="text-[10px] text-emerald-400/70 truncate">
+                  Saved {timeAgo(riskConfig.updatedAt ?? null)}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setRiskEditing((e) => !e);
+                setRiskMsg(null);
+              }}
+              className={cn(
+                "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all duration-200 flex-shrink-0",
+                riskEditing
+                  ? "text-primary border-primary/35 bg-primary/10"
+                  : "text-muted-foreground border-border/50 hover:text-primary hover:border-primary/30"
+              )}
+            >
+              <motion.div animate={{ rotate: riskEditing ? 45 : 0 }} transition={{ duration: 0.18 }}>
+                <ChevronRight className="w-3 h-3" />
+              </motion.div>
+              {riskEditing ? "Cancel" : "Edit"}
+            </button>
           </div>
-          <div className="divide-y divide-border/30">
-            {RISK_SETTINGS.map((r) => (
-              <div key={r.label} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{r.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{r.desc}</p>
+
+          {riskLoading ? (
+            <div className="p-6 text-center text-xs text-muted-foreground/60">Loading thresholds…</div>
+          ) : (
+            <div className="divide-y divide-border/30">
+              {RISK_FIELDS.map((field) => {
+                const current = riskConfig[field.key];
+                const draftStr = riskDraft[field.key];
+                const draftNum = parseInt(draftStr, 10);
+                const isInvalid = riskEditing && (Number.isNaN(draftNum) || draftNum < 1 || draftNum > 100);
+                const isDirty   = riskEditing && draftNum !== current;
+
+                return (
+                  <div key={field.key} className="flex items-center justify-between p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{field.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{field.desc}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                      {riskEditing ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={draftStr}
+                            onChange={(e) =>
+                              setRiskDraft((prev) => ({ ...prev, [field.key]: e.target.value }))
+                            }
+                            className={cn(
+                              "w-16 rounded-lg px-2 py-1 text-sm font-mono text-right bg-background/80 border focus:outline-none focus:ring-1 transition-colors",
+                              isInvalid
+                                ? "border-red-500/50 text-red-400 focus:ring-red-500/20 focus:border-red-500/50"
+                                : isDirty
+                                ? "border-primary/50 text-primary focus:ring-primary/20 focus:border-primary/60"
+                                : "border-border/50 text-foreground focus:ring-primary/20 focus:border-primary/40"
+                            )}
+                          />
+                          <span className={cn("text-sm font-mono", isDirty ? "text-primary" : "text-muted-foreground")}>%</span>
+                        </div>
+                      ) : (
+                        <span className="font-mono text-sm font-bold text-primary">{current}%</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Edit footer */}
+          <AnimatePresence>
+            {riskEditing && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="p-4 border-t border-border/40 bg-background/30 space-y-3">
+                  {riskMsg && (
+                    <p className={cn("text-[11px] font-mono leading-relaxed", riskMsg.ok ? "text-emerald-400" : "text-red-400/80")}>
+                      {riskMsg.ok ? "✓ " : "✗ "}{riskMsg.text}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => void saveRiskConfig()}
+                      disabled={updateRisk.isPending || !isDraftValid()}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    >
+                      {updateRisk.isPending
+                        ? <RefreshCw className="w-3 h-3 animate-spin" />
+                        : <Save className="w-3 h-3" />}
+                      Save Thresholds
+                    </button>
+                    <button
+                      onClick={resetRiskToDefaults}
+                      disabled={updateRisk.isPending}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Reset to Defaults
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                    Changes persist to the database and apply immediately to the Risk page.
+                    Values must be between 1–100%.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-bold text-primary">{r.value}</span>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                </div>
-              </div>
-            ))}
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
 

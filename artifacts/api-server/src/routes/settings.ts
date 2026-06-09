@@ -1,4 +1,14 @@
 import { Router } from "express";
+import { db, riskConfigTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+
+const RISK_DEFAULTS = {
+  singlePositionLimit: 15,
+  cryptoPositionLimit: 10,
+  cryptoAllocationLimit: 20,
+  sectorConcentrationLimit: 40,
+  maxDrawdownAlert: 15,
+} as const;
 
 const router = Router();
 
@@ -93,6 +103,85 @@ router.get("/settings/credentials/status", (_req, res) => {
   }
 
   res.json({ status });
+});
+
+// GET /api/settings/risk
+// Returns the persisted risk config row, or hardcoded defaults when no row exists.
+router.get("/settings/risk", async (req, res) => {
+  try {
+    const rows = await db.select().from(riskConfigTable).where(eq(riskConfigTable.id, 1));
+    if (rows.length > 0) {
+      const row = rows[0];
+      res.json({
+        singlePositionLimit:    row.singlePositionLimit,
+        cryptoPositionLimit:    row.cryptoPositionLimit,
+        cryptoAllocationLimit:  row.cryptoAllocationLimit,
+        sectorConcentrationLimit: row.sectorConcentrationLimit,
+        maxDrawdownAlert:       row.maxDrawdownAlert,
+        isDefault: false,
+        updatedAt: row.updatedAt?.toISOString() ?? null,
+      });
+    } else {
+      res.json({
+        ...RISK_DEFAULTS,
+        isDefault: true,
+        updatedAt: null,
+      });
+    }
+  } catch (err) {
+    req.log.error({ err }, "GET /settings/risk failed");
+    res.status(500).json({ error: "Failed to fetch risk config" });
+  }
+});
+
+// PUT /api/settings/risk
+// Body: RiskConfigInput — upserts the singleton risk_config row (id=1).
+router.put("/settings/risk", async (req, res) => {
+  const body = req.body as Record<string, unknown>;
+
+  const fields = [
+    "singlePositionLimit",
+    "cryptoPositionLimit",
+    "cryptoAllocationLimit",
+    "sectorConcentrationLimit",
+    "maxDrawdownAlert",
+  ] as const;
+
+  const parsed: Record<string, number> = {};
+  for (const field of fields) {
+    const raw = body[field];
+    const n = typeof raw === "number" ? raw : Number(raw);
+    if (!Number.isInteger(n) || n < 1 || n > 100) {
+      res.status(400).json({ error: `${field} must be an integer between 1 and 100` });
+      return;
+    }
+    parsed[field] = n;
+  }
+
+  try {
+    await db
+      .insert(riskConfigTable)
+      .values({ id: 1, ...parsed })
+      .onConflictDoUpdate({
+        target: riskConfigTable.id,
+        set: { ...parsed, updatedAt: new Date() },
+      });
+
+    const rows = await db.select().from(riskConfigTable).where(eq(riskConfigTable.id, 1));
+    const row = rows[0];
+    res.json({
+      singlePositionLimit:    row.singlePositionLimit,
+      cryptoPositionLimit:    row.cryptoPositionLimit,
+      cryptoAllocationLimit:  row.cryptoAllocationLimit,
+      sectorConcentrationLimit: row.sectorConcentrationLimit,
+      maxDrawdownAlert:       row.maxDrawdownAlert,
+      isDefault: false,
+      updatedAt: row.updatedAt?.toISOString() ?? null,
+    });
+  } catch (err) {
+    req.log.error({ err }, "PUT /settings/risk failed");
+    res.status(500).json({ error: "Failed to save risk config" });
+  }
 });
 
 export default router;

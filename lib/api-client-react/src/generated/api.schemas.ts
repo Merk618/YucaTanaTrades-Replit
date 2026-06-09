@@ -450,6 +450,54 @@ export interface MarketSession {
   crypto: MarketSessionSegment;
 }
 
+export interface RiskConfig {
+  /** Max % of total portfolio in any single non-crypto holding */
+  singlePositionLimit: number;
+  /** Max % of total portfolio in any single crypto holding */
+  cryptoPositionLimit: number;
+  /** Max % of total portfolio in the crypto sleeve */
+  cryptoAllocationLimit: number;
+  /** Max % of total portfolio in any one sector */
+  sectorConcentrationLimit: number;
+  /** Max drawdown % before alert fires */
+  maxDrawdownAlert: number;
+  /** True when no user row exists and defaults are returned */
+  isDefault: boolean;
+  /**
+     * ISO timestamp of last user update, null when using defaults
+     * @nullable
+     */
+  updatedAt: string | null;
+}
+
+export interface RiskConfigInput {
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  singlePositionLimit: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  cryptoPositionLimit: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  cryptoAllocationLimit: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  sectorConcentrationLimit: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  maxDrawdownAlert: number;
+}
+
 export type GetMarketQuotesParams = {
 /**
  * Comma-separated ticker symbols (e.g. SPY,BTC,NVDA)

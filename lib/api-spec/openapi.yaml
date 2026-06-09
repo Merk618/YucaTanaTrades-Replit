@@ -19,6 +19,8 @@ tags:
     description: Portfolio data
   - name: market
     description: Market quotes, source health, and session status
+  - name: settings
+    description: App settings and user preferences
 paths:
   /healthz:
     get:
@@ -315,6 +317,38 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /settings/risk:
+    get:
+      operationId: getRiskConfig
+      tags: [settings]
+      summary: Get the active risk threshold configuration
+      responses:
+        "200":
+          description: Active risk config (DB row or hardcoded defaults)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskConfig"
+    put:
+      operationId: updateRiskConfig
+      tags: [settings]
+      summary: Update risk threshold configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RiskConfigInput"
+      responses:
+        "200":
+          description: Updated risk config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskConfig"
+        "400":
+          description: Validation error
 
   /market/quotes:
     get:
@@ -845,3 +879,54 @@ components:
           $ref: "#/components/schemas/MarketSessionSegment"
         crypto:
           $ref: "#/components/schemas/MarketSessionSegment"
+
+    RiskConfig:
+      type: object
+      required: [singlePositionLimit, cryptoPositionLimit, cryptoAllocationLimit, sectorConcentrationLimit, maxDrawdownAlert, isDefault, updatedAt]
+      properties:
+        singlePositionLimit:
+          type: integer
+          description: Max % of total portfolio in any single non-crypto holding
+        cryptoPositionLimit:
+          type: integer
+          description: Max % of total portfolio in any single crypto holding
+        cryptoAllocationLimit:
+          type: integer
+          description: Max % of total portfolio in the crypto sleeve
+        sectorConcentrationLimit:
+          type: integer
+          description: Max % of total portfolio in any one sector
+        maxDrawdownAlert:
+          type: integer
+          description: Max drawdown % before alert fires
+        isDefault:
+          type: boolean
+          description: True when no user row exists and defaults are returned
+        updatedAt:
+          type: ["string", "null"]
+          description: ISO timestamp of last user update, null when using defaults
+
+    RiskConfigInput:
+      type: object
+      required: [singlePositionLimit, cryptoPositionLimit, cryptoAllocationLimit, sectorConcentrationLimit, maxDrawdownAlert]
+      properties:
+        singlePositionLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        cryptoPositionLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        cryptoAllocationLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        sectorConcentrationLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        maxDrawdownAlert:
+          type: integer
+          minimum: 1
+          maximum: 100

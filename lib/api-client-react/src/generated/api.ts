@@ -36,6 +36,8 @@ import type {
   PortfolioPositionUpdate,
   PortfolioSummary,
   QuoteList,
+  RiskConfig,
+  RiskConfigInput,
   SourceHealth,
   WatchlistItem,
   WatchlistItemInput
@@ -1382,6 +1384,154 @@ export const useDeletePosition = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeletePositionMutationOptions(options));
+    }
+
+export const getGetRiskConfigUrl = () => {
+
+
+
+
+  return `/api/settings/risk`
+}
+
+/**
+ * @summary Get the active risk threshold configuration
+ */
+export const getRiskConfig = async ( options?: RequestInit): Promise<RiskConfig> => {
+
+  return customFetch<RiskConfig>(getGetRiskConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRiskConfigQueryKey = () => {
+    return [
+    `/api/settings/risk`
+    ] as const;
+    }
+
+
+export const getGetRiskConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRiskConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRiskConfig>>> = ({ signal }) => getRiskConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRiskConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getRiskConfig>>>
+export type GetRiskConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the active risk threshold configuration
+ */
+
+export function useGetRiskConfig<TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRiskConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateRiskConfigUrl = () => {
+
+
+
+
+  return `/api/settings/risk`
+}
+
+/**
+ * @summary Update risk threshold configuration
+ */
+export const updateRiskConfig = async (riskConfigInput: RiskConfigInput, options?: RequestInit): Promise<RiskConfig> => {
+
+  return customFetch<RiskConfig>(getUpdateRiskConfigUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      riskConfigInput,)
+  }
+);}
+
+
+
+
+export const getUpdateRiskConfigMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext> => {
+
+const mutationKey = ['updateRiskConfig'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRiskConfig>>, {data: BodyType<RiskConfigInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateRiskConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRiskConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updateRiskConfig>>>
+    export type UpdateRiskConfigMutationBody = BodyType<RiskConfigInput>
+    export type UpdateRiskConfigMutationError = ErrorType<void>
+
+    /**
+ * @summary Update risk threshold configuration
+ */
+export const useUpdateRiskConfig = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRiskConfig>>,
+        TError,
+        {data: BodyType<RiskConfigInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateRiskConfigMutationOptions(options));
     }
 
 export const getGetMarketQuotesUrl = (params: GetMarketQuotesParams,) => {

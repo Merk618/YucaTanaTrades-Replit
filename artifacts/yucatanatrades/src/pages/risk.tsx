@@ -6,7 +6,7 @@ import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
 import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
-import { RISK_CONFIG } from "@/data/riskConfig";
+import { useRiskConfig } from "@/hooks/use-risk-config";
 
 const FRESHNESS_WARNING_MS = 15 * 60 * 1000;
 
@@ -31,6 +31,8 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 export default function Risk() {
+  const { config: riskConfig } = useRiskConfig();
+
   const { data: positionsData } = useListPositions();
   const positions = positionsData ?? [];
   const positionSymbols = useMemo(() => positions.map((p) => p.ticker), [positions]);
@@ -57,20 +59,20 @@ export default function Risk() {
       .map((h) => {
         const pct = (h.value / total) * 100;
         const limit = h.sleeve === "Crypto"
-          ? RISK_CONFIG.cryptoPositionLimit
-          : RISK_CONFIG.singlePositionLimit;
+          ? riskConfig.cryptoPositionLimit
+          : riskConfig.singlePositionLimit;
         return {
           ticker: h.ticker,
           allocation: pct,
           limit,
-          risk: pct > RISK_CONFIG.singlePositionLimit ? "HIGH" : pct > 8 ? "OK" : "LOW",
+          risk: pct > riskConfig.singlePositionLimit ? "HIGH" : pct > 8 ? "OK" : "LOW",
         };
       })
       .sort((a, b) => b.allocation - a.allocation)
       .slice(0, 8);
 
     return { holdings: enriched, totalValue: total, cryptoValue: crypto, positionSizing: sizing };
-  }, [quotesData, positions]);
+  }, [quotesData, positions, riskConfig]);
 
   const hasRealData = totalValue > 0;
   const cryptoPct   = hasRealData ? (cryptoValue / totalValue) * 100 : 0;
@@ -78,17 +80,17 @@ export default function Risk() {
   // ── Largest single-name concentration ───────────────────────────────────────
   const topPosition = positionSizing[0];
   const singleNameConc = topPosition ? topPosition.allocation : 0;
-  const singleNameStatus = singleNameConc > RISK_CONFIG.singlePositionLimit ? "warn" : "ok";
+  const singleNameStatus = singleNameConc > riskConfig.singlePositionLimit ? "warn" : "ok";
 
   // ── Computed metrics (from real quotes) ─────────────────────────────────────
   const computedMetrics = hasRealData ? [
     {
       label: "Crypto Allocation",
       value: `${cryptoPct.toFixed(1)}%`,
-      status: cryptoPct > RISK_CONFIG.cryptoAllocationLimit ? "warn" : "ok",
-      note: cryptoPct > RISK_CONFIG.cryptoAllocationLimit
-        ? `Exceeds ${RISK_CONFIG.cryptoAllocationLimit}% limit`
-        : `Below ${RISK_CONFIG.cryptoAllocationLimit}% limit`,
+      status: cryptoPct > riskConfig.cryptoAllocationLimit ? "warn" : "ok",
+      note: cryptoPct > riskConfig.cryptoAllocationLimit
+        ? `Exceeds ${riskConfig.cryptoAllocationLimit}% limit`
+        : `Below ${riskConfig.cryptoAllocationLimit}% limit`,
       isReal: true,
     },
     {
@@ -96,7 +98,7 @@ export default function Risk() {
       value: singleNameConc > 0 ? `${singleNameConc.toFixed(1)}%` : "—",
       status: singleNameStatus,
       note: topPosition
-        ? `${topPosition.ticker} ${singleNameConc > RISK_CONFIG.singlePositionLimit ? `> ${RISK_CONFIG.singlePositionLimit}% threshold` : "within limit"}`
+        ? `${topPosition.ticker} ${singleNameConc > riskConfig.singlePositionLimit ? `> ${riskConfig.singlePositionLimit}% threshold` : "within limit"}`
         : "Computing…",
       isReal: true,
     },
@@ -122,7 +124,7 @@ export default function Risk() {
   const sectorMetric = {
     label: "Sector Concentration",
     value: hasRealData ? `${techSemisPct.toFixed(0)}%` : "—",
-    status: techSemisPct > RISK_CONFIG.sectorConcentrationLimit ? "warn" : "ok",
+    status: techSemisPct > riskConfig.sectorConcentrationLimit ? "warn" : "ok",
     note: "Tech/Semis combined",
     isReal: hasRealData,
   };
@@ -136,8 +138,8 @@ export default function Risk() {
     100,
     50
       + warningCount * 8
-      + (singleNameConc > RISK_CONFIG.singlePositionLimit * 1.2 ? 4 : 0)
-      + (cryptoPct > RISK_CONFIG.cryptoAllocationLimit * 0.75 ? 3 : 0),
+      + (singleNameConc > riskConfig.singlePositionLimit * 1.2 ? 4 : 0)
+      + (cryptoPct > riskConfig.cryptoAllocationLimit * 0.75 ? 3 : 0),
   );
 
   const sourceLabel = quotesData?.quotes.find((q) => isQuoteUsable(q))?.sourceLabel ?? null;

@@ -41,6 +41,8 @@ export * from './quote';
 export * from './quoteAssetClass';
 export * from './quoteList';
 export * from './quoteMarketSession';
+export * from './riskConfig';
+export * from './riskConfigInput';
 export * from './sourceHealth';
 export * from './sourceHealthSummary';
 export * from './sourceHealthSummaryAssetClass';
