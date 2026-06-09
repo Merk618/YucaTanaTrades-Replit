@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Globe } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, TrendingDown, Globe, RefreshCw } from "lucide-react";
 import {
   useMarketQuotes,
   useMarketSession,
@@ -15,14 +15,8 @@ import { cn } from "@/lib/utils";
 
 const TABS = ["All", "Stocks", "Crypto", "ETFs", "Watchlist"];
 
-// Symbols the Markets page tracks. Equities/ETFs resolve via Yahoo (delayed),
-// crypto via CoinGecko (reference). Only symbols backed by a real source are
-// requested — nothing fabricated.
-const MARKET_SYMBOLS = [
-  "SPY", "QQQ", "IWM", "DIA",
-  "MSFT", "NVDA", "AVGO",
-  "BTC", "ETH", "SOL", "SUI",
-] as const;
+const EQUITY_SYMBOLS = ["SPY", "QQQ", "IWM", "DIA", "MSFT", "NVDA", "AVGO"] as const;
+const CRYPTO_SYMBOLS = ["BTC", "ETH", "SOL", "SUI"] as const;
 
 const CATEGORY: Record<string, string[]> = {
   Stocks: ["MSFT", "NVDA", "AVGO"],
@@ -38,20 +32,71 @@ const BADGE_TONE: Record<string, string> = {
   stale: "bg-red-500/15 text-red-400 border-red-500/20",
 };
 
+// Track the previous value of a quoted field to detect changes.
+function usePrevPrice(price: number) {
+  const ref = useRef<number>(price);
+  const prev = ref.current;
+  useEffect(() => {
+    ref.current = price;
+  });
+  return prev;
+}
+
 function QuoteCard({ q }: { q: Quote }) {
   const up = q.change >= 0;
   const badge = quoteBadge(q);
+
+  // Detect price changes to trigger flash animation.
+  const prevPrice = usePrevPrice(q.price);
+  const priceChanged = prevPrice !== 0 && prevPrice !== q.price;
+  const flashDir = priceChanged ? (q.price > prevPrice ? "up" : "down") : null;
+
+  // Each time price changes we bump a key so AnimatePresence remounts flash.
+  const flashKey = useRef(0);
+  if (priceChanged) flashKey.current += 1;
+
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -2 }}
       title={quoteTooltip(q)}
-      className={cn("glass-card p-5 cursor-help transition-all", up ? "hover:border-emerald-500/30" : "hover:border-red-500/30")}
+      className={cn(
+        "glass-card p-5 cursor-help transition-all relative overflow-hidden",
+        up ? "hover:border-emerald-500/30" : "hover:border-red-500/30"
+      )}
     >
+      {/* Price-change flash overlay */}
+      <AnimatePresence>
+        {flashDir && (
+          <motion.div
+            key={flashKey.current}
+            initial={{ opacity: 0.35 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className={cn(
+              "absolute inset-0 rounded-[inherit] pointer-events-none",
+              flashDir === "up" ? "bg-emerald-500/20" : "bg-red-500/20"
+            )}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="flex items-start justify-between mb-3">
         <span className="font-mono font-bold text-primary text-base">{q.symbol}</span>
         {up ? <TrendingUp className="w-4 h-4 text-emerald-400" /> : <TrendingDown className="w-4 h-4 text-red-400" />}
       </div>
-      <p className="font-mono text-2xl font-bold text-foreground mb-1">${formatPrice(q.price)}</p>
+
+      {/* Price with subtle scale animation on change */}
+      <motion.p
+        key={q.price}
+        initial={{ scale: 1.05 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="font-mono text-2xl font-bold text-foreground mb-1"
+      >
+        ${formatPrice(q.price)}
+      </motion.p>
+
       <div className="flex items-center gap-2 mt-1">
         <span className={cn("font-mono text-xs font-semibold px-1.5 py-0.5 rounded", up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400")}>
           {up ? "+" : ""}{q.changePercent.toFixed(2)}%
@@ -67,18 +112,44 @@ function QuoteCard({ q }: { q: Quote }) {
   );
 }
 
+// Session-aware quotes hook for the Markets page.
+// Crypto refreshes at 30 s when equities are open (high-activity period),
+// 60 s when equities are closed. Equities use 30 s / 5 min cadence.
+function useMarketsQuotes() {
+  const { data: session } = useMarketSession(2 * 60_000);
+  const equitiesOpen = session?.equities?.isOpen ?? false;
+  const cryptoOpen = session?.crypto?.isOpen ?? true;
+
+  const equityRefetch = equitiesOpen ? 30_000 : 5 * 60_000;
+  const cryptoRefetch = equitiesOpen ? 30_000 : cryptoOpen ? 60_000 : 5 * 60_000;
+
+  const equityResult = useMarketQuotes(EQUITY_SYMBOLS, equityRefetch);
+  const cryptoResult = useMarketQuotes(CRYPTO_SYMBOLS, cryptoRefetch);
+
+  return {
+    quotes: [
+      ...(equityResult.data?.quotes ?? []),
+      ...(cryptoResult.data?.quotes ?? []),
+    ] as Quote[],
+    cryptoRefetch,
+    equitiesOpen,
+    isFetching: equityResult.isFetching || cryptoResult.isFetching,
+  };
+}
+
 export default function Markets() {
   const [activeTab, setActiveTab] = useState("All");
-  const { data: quoteData } = useMarketQuotes(MARKET_SYMBOLS);
+  const { quotes: allQuotes, cryptoRefetch, equitiesOpen, isFetching } = useMarketsQuotes();
   const { data: session } = useMarketSession();
 
-  const quotes: Quote[] = (quoteData?.quotes ?? []).filter(isQuoteUsable);
+  const quotes = allQuotes.filter(isQuoteUsable);
 
-  const equitiesOpen = session?.equities?.isOpen ?? false;
-  const statusLabel = equitiesOpen ? "EQUITIES OPEN" : "EQUITIES CLOSED";
+  const equitiesStatusLabel = equitiesOpen ? "EQUITIES OPEN" : "EQUITIES CLOSED";
   const statusClass = equitiesOpen
     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
     : "bg-muted/40 text-muted-foreground border-border/40";
+
+  const cryptoRefetchLabel = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
 
   const filtered = quotes.filter((q) => {
     if (activeTab === "All") return true;
@@ -95,10 +166,15 @@ export default function Markets() {
         <div className="flex items-center gap-3 mb-1">
           <Globe className="w-5 h-5 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">Markets</h1>
-          <span className={cn("px-2 py-0.5 rounded-full border text-xs font-semibold ml-2", statusClass)}>{statusLabel}</span>
+          <span className={cn("px-2 py-0.5 rounded-full border text-xs font-semibold ml-2", statusClass)}>
+            {equitiesStatusLabel}
+          </span>
+          {isFetching && (
+            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground/50 animate-spin ml-1" />
+          )}
         </div>
         <p className="text-muted-foreground text-sm ml-8">
-          Equities &amp; ETFs delayed ~15min (Yahoo) · Crypto reference (CoinGecko)
+          Equities &amp; ETFs delayed ~15min (Yahoo Finance) · Crypto refreshes every {cryptoRefetchLabel}
         </p>
       </motion.div>
 

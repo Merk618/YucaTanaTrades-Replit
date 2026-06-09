@@ -133,11 +133,13 @@ export function isQuoteUsable(q: Quote | undefined): q is Quote {
 }
 
 // Short trust badge derived from the quote's own source metadata.
+// For live quotes the sourceLabel already encodes the provider name
+// (e.g. "Live · Kraken", "Live · Coinbase"), so we use it verbatim.
 export function quoteBadge(q: Quote): { text: string; tone: "live" | "delayed" | "ref" | "stale" } {
   if (q.isStale) return { text: "STALE", tone: "stale" };
-  if (q.isLive) return { text: "LIVE", tone: "live" };
-  if (q.isDelayed) return { text: "DELAYED", tone: "delayed" };
-  return { text: "REFERENCE", tone: "ref" };
+  if (q.isLive) return { text: q.sourceLabel, tone: "live" };
+  if (q.isDelayed) return { text: q.sourceLabel, tone: "delayed" };
+  return { text: q.sourceLabel || "REFERENCE", tone: "ref" };
 }
 
 // Human-readable freshness, e.g. "12s ago" / "3m ago".
