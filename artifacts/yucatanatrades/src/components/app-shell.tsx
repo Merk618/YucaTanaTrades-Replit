@@ -36,6 +36,14 @@ const SHIMMER_STYLE = `
     0%, 100% { transform: scale(0.82); opacity: 0.70; }
     50%       { transform: scale(1.20); opacity: 1.0;  }
   }
+  @keyframes orb-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes orb-halo-pulse {
+    0%, 100% { opacity: 0.50; transform: scale(1.0); }
+    50%       { opacity: 0.90; transform: scale(1.15); }
+  }
 `;
 
 // ─── Per-tab accent colors ────────────────────────────────────────────────────
@@ -88,71 +96,25 @@ function LogoMark({ expanded }: { expanded: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", !expanded && "justify-center")}>
       <div className="relative flex-shrink-0 w-10 h-10">
-
-        {/* Ambient glow halo */}
+        {/* Pulsing outer halo */}
         <div
-          className="absolute inset-0 rounded-full"
+          className="absolute rounded-full pointer-events-none"
           style={{
-            background: "radial-gradient(circle, rgba(20,184,166,0.22) 0%, transparent 68%)",
-            animation: "logo-glow-pulse 3.2s ease-in-out infinite",
+            inset: "-6px",
+            background: "radial-gradient(circle, rgba(20,184,166,0.28) 0%, transparent 70%)",
+            animation: "orb-halo-pulse 3s ease-in-out infinite",
           }}
         />
-
-        {/* Outer ring — slow 28s clockwise spin */}
-        <div
-          className="absolute inset-0"
-          style={{ animation: "logo-ring-spin 28s linear infinite", transformOrigin: "center" }}
-        >
-          <svg viewBox="0 0 40 40" className="w-10 h-10">
-            <circle cx="20" cy="20" r="17.5" fill="none" stroke="rgba(20,184,166,0.15)" strokeWidth="1" />
-            <circle cx="20" cy="20" r="17.5" fill="none"
-              stroke="rgba(20,184,166,0.80)" strokeWidth="1.5"
-              strokeDasharray="7 53" strokeLinecap="round"
-            />
-          </svg>
-          {/* Orbiting bead */}
-          <div
-            className="absolute rounded-full"
-            style={{
-              width: 5, height: 5,
-              top: "1px", left: "calc(50% - 2.5px)",
-              background: "radial-gradient(circle, #A5F3FC, #14B8A6)",
-              boxShadow: "0 0 6px rgba(165,243,252,0.90)",
-            }}
-          />
-        </div>
-
-        {/* Middle ring — counter-rotating 18s */}
-        <div
-          className="absolute inset-[5px]"
-          style={{ animation: "logo-ring-spin-rev 18s linear infinite", transformOrigin: "center" }}
-        >
-          <svg viewBox="0 0 30 30" className="w-full h-full">
-            <circle cx="15" cy="15" r="12" fill="none"
-              stroke="rgba(6,182,212,0.40)" strokeWidth="0.75"
-              strokeDasharray="3 8" strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        {/* Inner glowing core */}
-        <div
-          className="absolute inset-[8px] rounded-full flex items-center justify-center"
+        {/* Spinning plasma orb image */}
+        <img
+          src="/meridian-orb.png"
+          alt="Meridian orb"
+          className="w-10 h-10 rounded-full object-cover"
           style={{
-            background: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(8,10,20,0.92) 100%)",
-            border: "1px solid rgba(20,184,166,0.52)",
-            boxShadow: "0 0 14px rgba(20,184,166,0.28), inset 0 0 8px rgba(20,184,166,0.08)",
+            animation: "orb-spin 12s linear infinite",
+            filter: "drop-shadow(0 0 8px rgba(20,184,166,0.75)) drop-shadow(0 0 3px rgba(165,243,252,0.55))",
           }}
-        >
-          <div
-            style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: "radial-gradient(circle, #A5F3FC 0%, #14B8A6 70%)",
-              boxShadow: "0 0 8px rgba(165,243,252,0.85), 0 0 16px rgba(20,184,166,0.45)",
-              animation: "logo-core-pulse 2.8s ease-in-out infinite",
-            }}
-          />
-        </div>
+        />
       </div>
 
       <AnimatePresence>
