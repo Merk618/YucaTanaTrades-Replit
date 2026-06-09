@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, CheckCircle, Bell, Shield, ChevronRight, RefreshCw,
   Clock, KeyRound, Plug, AlertTriangle, Ban, Sparkles, Activity, Layers,
+  ChevronDown, Key, Lock, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -11,8 +12,6 @@ import {
 } from "@/hooks/use-market";
 import type { ProviderStatus, SourceHealthSummary } from "@workspace/api-client-react";
 
-// Map a provider health status to an honest visual treatment.
-// We only ever show an affirmative "reachable" state when a real probe succeeded.
 function statusView(p: ProviderStatus): {
   label: string; color: string; Icon: typeof CheckCircle; positive: boolean;
 } {
@@ -42,20 +41,13 @@ function statusView(p: ProviderStatus): {
   }
 }
 
-// Honest color for an asset-class summary row. Affirmative only when a real
-// source is actively serving that class.
 function summaryTone(status: string): { color: string; label: string } {
   switch (status) {
-    case "connected":
-      return { color: "#22C55E", label: "Connected" };
-    case "delayed":
-      return { color: "#34d399", label: "Delayed" };
-    case "read_only":
-      return { color: "#22C55E", label: "Connected" };
-    case "analysis_only":
-      return { color: "#94a3b8", label: "Analysis only" };
-    default:
-      return { color: "#94a3b8", label: "No live source" };
+    case "connected":   return { color: "#22C55E", label: "Connected" };
+    case "delayed":     return { color: "#34d399", label: "Delayed" };
+    case "read_only":   return { color: "#22C55E", label: "Connected" };
+    case "analysis_only": return { color: "#94a3b8", label: "Analysis only" };
+    default:            return { color: "#94a3b8", label: "No live source" };
   }
 }
 
@@ -67,42 +59,106 @@ function timeAgo(iso: string | null): string {
   if (s < 60) return `${s}s ago`;
   const m = Math.round(s / 60);
   if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  return `${h}h ago`;
+  return `${Math.round(m / 60)}h ago`;
 }
 
 const NOTIFICATION_SETTINGS = [
-  { label: "Bot Signal Alerts", desc: "Notify when a bot detects a trading signal", on: true },
-  { label: "Risk Threshold Breached", desc: "Alert when a position exceeds size limit", on: true },
-  { label: "Price Alerts", desc: "Custom ticker price level alerts", on: true },
-  { label: "Journal Reminder", desc: "Daily reminder to log your trades", on: false },
-  { label: "Weekly Summary Email", desc: "Performance summary every Sunday", on: false },
+  { label: "Bot Signal Alerts",       desc: "Notify when a bot detects a trading signal",     on: true  },
+  { label: "Risk Threshold Breached", desc: "Alert when a position exceeds size limit",        on: true  },
+  { label: "Price Alerts",            desc: "Custom ticker price level alerts",                 on: true  },
+  { label: "Journal Reminder",        desc: "Daily reminder to log your trades",                on: false },
+  { label: "Weekly Summary Email",    desc: "Performance summary every Sunday",                 on: false },
 ];
 
 const RISK_SETTINGS = [
-  { label: "Max Single Position", value: "15%", desc: "Triggers alert when exceeded" },
-  { label: "Max Sector Concentration", value: "40%", desc: "Per sector limit" },
-  { label: "Max Drawdown Alert", value: "15%", desc: "From recent highs" },
-  { label: "Crypto Allocation Limit", value: "20%", desc: "Of total portfolio" },
+  { label: "Max Single Position",       value: "15%", desc: "Triggers alert when exceeded" },
+  { label: "Max Sector Concentration",  value: "40%", desc: "Per sector limit"             },
+  { label: "Max Drawdown Alert",        value: "15%", desc: "From recent highs"            },
+  { label: "Crypto Allocation Limit",   value: "20%", desc: "Of total portfolio"           },
 ];
 
 export default function SettingsPage() {
   const [notifs, setNotifs] = useState(NOTIFICATION_SETTINGS.map((n) => n.on));
-  const cached = useSourceHealth();
-  const forced = useForceSourceHealth();
-  const test = useTestQuotes();
 
-  // Show whichever snapshot is freshest by fetch time, so cached auto-refresh
-  // keeps updating the view after a one-off forced probe.
-  const useForced = !!forced.data && forced.dataUpdatedAt >= cached.dataUpdatedAt;
-  const health = useForced ? forced.data : cached.data;
-  const isLoading = cached.isLoading && !forced.data;
-  const isError = cached.isError && !forced.data;
+  // ── Credential management state ──────────────────────────────────────────
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [keyValues,  setKeyValues]  = useState<Record<string, string>>({});
+  const [credMsg,    setCredMsg]    = useState<Record<string, { ok: boolean; text: string }>>({});
+  const [credLoading, setCredLoading] = useState<Record<string, boolean>>({});
+
+  const cached  = useSourceHealth();
+  const forced  = useForceSourceHealth();
+  const test    = useTestQuotes();
+
+  const useForced  = !!forced.data && forced.dataUpdatedAt >= cached.dataUpdatedAt;
+  const health     = useForced ? forced.data : cached.data;
+  const isLoading  = cached.isLoading && !forced.data;
+  const isError    = cached.isError && !forced.data;
   const isFetching = cached.isFetching || forced.isFetching;
 
-  const providers = health?.providers ?? [];
+  const providers  = health?.providers ?? [];
   const summary: SourceHealthSummary[] = health?.summary ?? [];
   const testQuotes = (test.data?.quotes ?? []).filter(isQuoteUsable);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function envVarToLabel(v: string): string {
+    if (v.includes("SECRET")) return "API Secret";
+    if (v.includes("KEY"))    return "API Key";
+    return v;
+  }
+
+  async function saveCredentials(providerId: string, envVars: string[]) {
+    setCredLoading((p) => ({ ...p, [providerId]: true }));
+    setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Saving…" } }));
+    try {
+      const credentials: Record<string, string> = {};
+      for (const envVar of envVars) {
+        const val = keyValues[`${providerId}::${envVar}`];
+        if (val?.trim()) credentials[envVar] = val.trim();
+      }
+      if (Object.keys(credentials).length === 0) {
+        setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Enter at least one key value first" } }));
+        return;
+      }
+      const resp = await fetch("/api/settings/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credentials }),
+      });
+      if (resp.ok) {
+        setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Key saved · run health check to verify connection" } }));
+        setKeyValues((p) => {
+          const next = { ...p };
+          for (const envVar of envVars) delete next[`${providerId}::${envVar}`];
+          return next;
+        });
+        setTimeout(() => { void forced.refetch(); }, 700);
+      } else {
+        setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Save failed — server returned an error" } }));
+      }
+    } catch {
+      setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Network error — is the API server running?" } }));
+    } finally {
+      setCredLoading((p) => ({ ...p, [providerId]: false }));
+    }
+  }
+
+  async function removeCredentials(providerId: string, envVars: string[]) {
+    setCredLoading((p) => ({ ...p, [providerId]: true }));
+    try {
+      await fetch("/api/settings/credentials", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ envVars }),
+      });
+      setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Keys removed · health status will update on next check" } }));
+      setTimeout(() => { void forced.refetch(); }, 700);
+    } catch {
+      setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Remove failed" } }));
+    } finally {
+      setCredLoading((p) => ({ ...p, [providerId]: false }));
+    }
+  }
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -114,8 +170,13 @@ export default function SettingsPage() {
         <p className="text-muted-foreground text-sm ml-8">Live data sources, alerts, risk thresholds, and preferences</p>
       </motion.div>
 
-      {/* Data Sources — REAL health */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card overflow-hidden">
+      {/* Data Sources — real health probes */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="glass-card overflow-hidden"
+      >
         <div className="p-4 border-b border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Plug className="w-4 h-4 text-primary" />
@@ -125,7 +186,7 @@ export default function SettingsPage() {
             </span>
           </div>
           <button
-            onClick={() => forced.refetch()}
+            onClick={() => void forced.refetch()}
             disabled={isFetching}
             className="flex items-center gap-1.5 text-xs text-muted-foreground border border-border/50 px-2.5 py-1 rounded-lg hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50"
           >
@@ -133,14 +194,12 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {/* Source health summary — active source per asset class */}
+        {/* Source health summary */}
         {summary.length > 0 && (
           <div className="p-4 border-b border-border/40 bg-background/30">
             <div className="flex items-center gap-2 mb-3">
               <Layers className="w-3.5 h-3.5 text-primary" />
-              <h3 className="text-[11px] font-display font-semibold text-foreground uppercase tracking-widest">
-                Source Health
-              </h3>
+              <h3 className="text-[11px] font-display font-semibold text-foreground uppercase tracking-widest">Source Health</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {summary.map((s) => {
@@ -168,14 +227,13 @@ export default function SettingsPage() {
             </div>
             {health && (
               <p className="text-[10px] text-muted-foreground/50 mt-2.5">
-                Last checked {timeAgo(health.asOf)}
-                {useForced ? " · forced probe" : " · cached"}
+                Last checked {timeAgo(health.asOf)}{useForced ? " · forced probe" : " · cached"}
               </p>
             )}
           </div>
         )}
 
-        {/* Test quote fetch — verify real sources on demand */}
+        {/* Test quote fetch */}
         <div className="p-4 border-b border-border/40 bg-background/20">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
@@ -188,7 +246,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <button
-              onClick={() => test.refetch()}
+              onClick={() => void test.refetch()}
               disabled={test.isFetching}
               className="flex items-center gap-1.5 text-xs text-primary border border-primary/30 px-2.5 py-1 rounded-lg hover:bg-primary/10 transition-colors disabled:opacity-50"
             >
@@ -199,9 +257,7 @@ export default function SettingsPage() {
             <p className="text-[11px] text-red-400/80 mt-3">Test fetch failed — sources did not respond.</p>
           ) : test.data ? (
             testQuotes.length === 0 ? (
-              <p className="text-[11px] text-amber-400/80 mt-3 font-mono">
-                No usable quotes returned — sources unavailable right now.
-              </p>
+              <p className="text-[11px] text-amber-400/80 mt-3 font-mono">No usable quotes returned — sources unavailable.</p>
             ) : (
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {testQuotes.map((q) => {
@@ -224,6 +280,7 @@ export default function SettingsPage() {
           ) : null}
         </div>
 
+        {/* Provider list */}
         {isLoading ? (
           <div className="p-6 text-center text-xs text-muted-foreground/60">Running health checks…</div>
         ) : isError ? (
@@ -232,50 +289,176 @@ export default function SettingsPage() {
           <div className="divide-y divide-border/30">
             {providers.map((p, i) => {
               const v = statusView(p);
+              const isExpanded  = expandedId === p.id;
+              const hasEnvVars  = p.envVars.length > 0;
+              const msg         = credMsg[p.id];
+              const provLoading = credLoading[p.id] ?? false;
+
               return (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="flex items-start gap-4 p-4 hover:bg-primary/5 transition-colors"
-                >
-                  <v.Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: v.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-foreground">{p.name}</p>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground font-mono">
-                        {p.sourceLabel}
-                      </span>
-                      {p.isTradingCapable && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border font-bold bg-red-500/10 text-red-400 border-red-500/20">
-                          READ-ONLY
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{p.message}</p>
-                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground/60">
-                        {p.assetClasses.join(" · ")}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/50">
-                        Checked {timeAgo(p.lastCheckedAt)}
-                        {p.latencyMs != null ? ` · ${p.latencyMs}ms` : ""}
-                      </span>
-                      {p.envVars.length > 0 && !v.positive && (
-                        <span className="text-[10px] text-muted-foreground/50 font-mono">
-                          needs {p.envVars.join(", ")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className="flex items-center gap-1 text-xs font-semibold flex-shrink-0"
-                    style={{ color: v.color }}
+                <div key={p.id}>
+                  {/* ── Provider row header ───────────────────────────────── */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="flex items-start gap-4 p-4 hover:bg-primary/5 transition-colors"
                   >
-                    {v.label}
-                  </span>
-                </motion.div>
+                    <v.Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: v.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-foreground">{p.name}</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground font-mono">
+                          {p.sourceLabel}
+                        </span>
+                        {p.isTradingCapable && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border font-bold bg-red-500/10 text-red-400 border-red-500/20">
+                            READ-ONLY
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{p.message}</p>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        <span className="text-[10px] text-muted-foreground/60">
+                          {p.assetClasses.join(" · ")}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/50">
+                          Checked {timeAgo(p.lastCheckedAt)}
+                          {p.latencyMs != null ? ` · ${p.latencyMs}ms` : ""}
+                        </span>
+                        {hasEnvVars && !v.positive && (
+                          <span className="text-[10px] text-muted-foreground/50 font-mono">
+                            needs {p.envVars.join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: v.color }}>
+                        {v.label}
+                      </span>
+                      {hasEnvVars && (
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                          title={isExpanded ? "Close" : "Configure API key"}
+                          className={cn(
+                            "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all duration-200",
+                            isExpanded
+                              ? "text-primary border-primary/35 bg-primary/10"
+                              : "text-muted-foreground border-border/50 hover:text-primary hover:border-primary/30"
+                          )}
+                        >
+                          <Key className="w-3 h-3" />
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </motion.div>
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+
+                  {/* ── Expandable credential input ───────────────────────── */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div
+                          className="mx-4 mb-4 p-4 rounded-xl border border-primary/15 bg-card/40"
+                          style={{ boxShadow: "0 0 24px rgba(212,175,55,0.05)" }}
+                        >
+                          {/* Security note */}
+                          <div className="flex items-start gap-2 mb-3 pb-3 border-b border-border/30">
+                            <Lock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                              Keys are stored <strong className="text-muted-foreground/80">server-side only</strong> and never
+                              returned to the browser. Saving a key does <em>not</em> automatically mark the provider as
+                              connected — use <em>Test Connection</em> to verify. Keys reset on server restart; for permanent
+                              storage add them as Replit Secrets using the env var name shown below.
+                            </p>
+                          </div>
+
+                          {/* Key input fields */}
+                          <div className="space-y-2.5 mb-3">
+                            {p.envVars.map((envVar) => (
+                              <div key={envVar}>
+                                <label className="flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-1.5">
+                                  {envVarToLabel(envVar)}
+                                  <span className="font-mono normal-case text-muted-foreground/40">{envVar}</span>
+                                </label>
+                                <input
+                                  type="password"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  placeholder="Paste key here…"
+                                  value={keyValues[`${p.id}::${envVar}`] ?? ""}
+                                  onChange={(e) =>
+                                    setKeyValues((prev) => ({
+                                      ...prev,
+                                      [`${p.id}::${envVar}`]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full rounded-lg px-3 py-2 text-sm font-mono bg-background/80 border border-border/50 focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder-muted-foreground/25 transition-colors text-foreground"
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Status message */}
+                          {msg && (
+                            <p
+                              className={cn(
+                                "text-[11px] font-mono mb-2.5 leading-relaxed",
+                                msg.ok ? "text-emerald-400" : "text-red-400/80"
+                              )}
+                            >
+                              {msg.ok ? "✓ " : "✗ "}{msg.text}
+                            </p>
+                          )}
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => void saveCredentials(p.id, p.envVars)}
+                              disabled={provLoading}
+                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
+                            >
+                              {provLoading
+                                ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                : <Key className="w-3 h-3" />}
+                              Save Key
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCredMsg((prev) => ({ ...prev, [p.id]: { ok: true, text: "Re-checking connection…" } }));
+                                void forced.refetch();
+                              }}
+                              disabled={isFetching || provLoading}
+                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-50"
+                            >
+                              <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} />
+                              Test Connection
+                            </button>
+                            <button
+                              onClick={() => void removeCredentials(p.id, p.envVars)}
+                              disabled={provLoading}
+                              className="ml-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/30 transition-colors disabled:opacity-50"
+                            >
+                              <X className="w-3 h-3" />
+                              Remove Keys
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </div>
@@ -285,8 +468,7 @@ export default function SettingsPage() {
           <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
             Equity & ETF quotes are <span className="text-foreground/80">delayed ~15 min</span> via Yahoo;
             crypto is reference pricing via CoinGecko. Trading-capable providers are wired
-            <span className="text-red-400/90"> read-only</span> — no live order execution. AI providers
-            power research only and are never used as a price source. API keys live on the server and
+            <span className="text-red-400/90"> read-only</span> — no live order execution. API keys live on the server and
             never reach the browser.
           </p>
         </div>
@@ -294,7 +476,12 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-12 gap-6">
         {/* Notifications */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="col-span-12 md:col-span-6 glass-card overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="col-span-12 md:col-span-6 glass-card overflow-hidden"
+        >
           <div className="p-4 border-b border-border/50 flex items-center gap-2">
             <Bell className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-display font-semibold text-foreground">Notifications</h2>
@@ -309,7 +496,10 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={() => setNotifs((prev) => prev.map((v, j) => j === i ? !v : v))}
-                  className={cn("relative w-10 h-5 rounded-full transition-colors flex-shrink-0", notifs[i] ? "bg-primary" : "bg-muted")}
+                  className={cn(
+                    "relative w-10 h-5 rounded-full transition-colors flex-shrink-0",
+                    notifs[i] ? "bg-primary" : "bg-muted"
+                  )}
                 >
                   <motion.div
                     animate={{ x: notifs[i] ? 20 : 2 }}
@@ -323,7 +513,12 @@ export default function SettingsPage() {
         </motion.div>
 
         {/* Risk thresholds */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="col-span-12 md:col-span-6 glass-card overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="col-span-12 md:col-span-6 glass-card overflow-hidden"
+        >
           <div className="p-4 border-b border-border/50 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-display font-semibold text-foreground">Risk Thresholds</h2>
@@ -347,7 +542,12 @@ export default function SettingsPage() {
       </div>
 
       {/* App info */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-5">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="glass-card p-5"
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -360,7 +560,9 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">Premium AI-powered trading intelligence terminal</p>
           </div>
           <div className="text-right space-y-1">
-            <p className="text-xs text-muted-foreground">All bots operate in <span className="text-red-400 font-semibold">READ-ONLY</span> mode</p>
+            <p className="text-xs text-muted-foreground">
+              All bots operate in <span className="text-red-400 font-semibold">READ-ONLY</span> mode
+            </p>
             <p className="text-xs text-muted-foreground">No live trade execution permitted</p>
           </div>
         </div>

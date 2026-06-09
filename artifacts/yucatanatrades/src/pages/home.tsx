@@ -365,7 +365,7 @@ export default function Home() {
         {/* Title with gold sweep */}
         <div className="relative inline-block overflow-hidden mb-1">
           <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
-            AI Market Command Center
+            Meridian Intelligence Center
           </h1>
           {/* Sweeping gold highlight */}
           <motion.div
@@ -677,6 +677,7 @@ export default function Home() {
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Market Regime</h3>
+                <DemoBadge className="ml-auto" />
               </div>
               <div className="space-y-2.5">
                 {[

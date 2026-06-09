@@ -128,11 +128,11 @@ function r(min: number, max: number) { return Math.random() * (max - min) + min;
 
 function spawnDot(w: number, h: number, theme: ParticleTheme, fadingIn: boolean): Particle {
   const color = theme.dotColors[Math.floor(Math.random() * theme.dotColors.length)]!;
-  const maxOp = r(0.14, 0.34);
+  const maxOp = r(0.28, 0.55);
   return {
     x: Math.random() * w, y: Math.random() * h,
     vx: r(-0.35, 0.35) * theme.speed, vy: r(-0.35, 0.35) * theme.speed,
-    radius: r(0.6, 2.0),
+    radius: r(0.8, 2.2),
     opacity: fadingIn ? 0 : maxOp,
     maxOpacity: maxOp, color, type: "dot",
     phase: Math.random() * Math.PI * 2, phaseSpeed: r(0.008, 0.022),
@@ -142,7 +142,7 @@ function spawnDot(w: number, h: number, theme: ParticleTheme, fadingIn: boolean)
 function spawnLabel(w: number, h: number, theme: ParticleTheme, fadingIn: boolean): Particle {
   const color = theme.labelColors[Math.floor(Math.random() * theme.labelColors.length)]!;
   const label = theme.labels[Math.floor(Math.random() * theme.labels.length)]!;
-  const maxOp = r(0.11, 0.24);
+  const maxOp = r(0.20, 0.40);
   return {
     x: Math.random() * w, y: Math.random() * h,
     vx: r(-0.2, 0.2) * theme.speed, vy: r(-0.15, 0.15) * theme.speed,
@@ -326,7 +326,7 @@ export function ParticleField() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 hidden md:block"
+      className="fixed inset-0 pointer-events-none z-30 hidden md:block"
       aria-hidden="true"
     />
   );

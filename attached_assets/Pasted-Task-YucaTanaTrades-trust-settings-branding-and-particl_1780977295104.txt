@@ -1,0 +1,763 @@
+Task: YucaTanaTrades trust, settings, branding, and particle visibility pass
+
+Act as a senior fintech data engineer, TypeScript engineer, UI engineer, motion designer, and trading-platform reliability reviewer.
+
+Use the existing YucaTanaTrades codebase. Do not rewrite the app. Make the smallest safe set of changes needed. Preserve the current premium dark styling direction and existing functionality.
+
+I am attaching a reference image for the new YucaTanaTrades logo. Use the attached image as the visual reference for the new animated logo/brand mark.
+
+Important:
+
+* No fake prices.
+* No simulated price movement.
+* No mock prices presented as real.
+* No fake “LIVE” labels.
+* No hardcoded “Connected” statuses.
+* No hardcoded timestamps.
+* No trading execution.
+* No auto-trading.
+* No AI-generated market data.
+* Do not make Alpaca required.
+* Do not use Robinhood MCP in this task.
+* Do not treat AI providers as market-data sources.
+* Do not redesign the whole UI.
+* Preserve current visual design and layout.
+
+==================================================
+PRIMARY GOALS
+=============
+
+This pass has 4 major goals:
+
+1. Market-data trust audit:
+   Ensure every market-data-dependent page/module uses the shared data-router/source-metadata system instead of unmarked static mock data.
+
+2. Settings API key input:
+   Inside the Settings tab, when I click a software/API/provider row, an expandable area should open underneath it with “Enter your API key” fields, Save, Test, and Remove controls.
+
+3. Branding update:
+   Change the main hero title from:
+   “AI Market Command Center”
+   to:
+   “Meridian Intelligence Center”
+
+4. Visual/logo/particle fix:
+   Use the attached teal/cyan circular energy-ring image as the new YucaTanaTrades logo/brand mark reference. Replace the current logo with it and animate it with a slow smooth circular spin. Also fix the missing background particle/wallpaper effects so they are actually visible.
+
+==================================================
+CURRENT PROVIDER POLICY
+=======================
+
+Equities / ETFs:
+
+1. MooMoo/OpenD = intended future primary source when connected and healthy.
+2. Yahoo Finance = current free delayed fallback/reference source.
+3. Polygon/FMP/Twelve Data = future optional providers if API keys are added.
+4. Alpaca = optional/future-ready only, not required, not primary.
+
+Crypto:
+
+1. Kraken = preferred future crypto exchange source.
+2. Coinbase = future secondary crypto exchange source.
+3. Binance/Binance.US = optional future source.
+4. CoinGecko = current crypto reference/fallback source.
+
+Broker / portfolio connectors:
+
+* Robinhood MCP = future read-only broker/portfolio connector only.
+* Do not treat Robinhood MCP as a market-data provider.
+* Do not add Robinhood MCP in this task.
+
+AI / research:
+
+* OpenAI, DeepSeek, Gemini, and Perplexity are analysis/research providers only.
+* They must never generate or replace market prices.
+
+==================================================
+PART 1 — MARKET-DATA TRUST AUDIT
+================================
+
+Primary goal:
+Audit the repo and ensure every market-data-dependent page/module uses the shared data-router/source-metadata system instead of static mock data.
+
+Step 1 — Audit existing implementation
+
+Inspect the current codebase for:
+
+* provider registry
+* data router
+* Yahoo quote adapter
+* CoinGecko quote adapter
+* Alpaca adapter
+* health checks
+* freshness policy
+* source labels
+* ticker rail data source
+* index overview data source
+* Settings/API Connections page
+* mock/static data files
+* Scanners page
+* Portfolio page
+* Risk page
+* Watchlist page
+* Market Regime widget
+* Bot Status widgets
+* AI Daily Briefing data inputs
+* particle/background implementation
+* current logo/brand component
+* hero/header component
+
+Create a short internal plan before editing.
+
+Step 2 — Validate provider policy
+
+Verify and fix if needed:
+
+1. Yahoo Finance:
+
+* Used only as delayed equity/ETF fallback/reference.
+* Label: “Delayed · Yahoo” or “Yahoo fallback · Delayed.”
+* isLive must be false.
+* isDelayed must be true.
+* Must include provider and timestamp.
+
+2. CoinGecko:
+
+* Used as current crypto reference/fallback.
+* Label: “CoinGecko · Reference” or “Reference · CoinGecko.”
+* Must not be labeled live.
+* Must include provider and timestamp.
+
+3. Alpaca:
+
+* Adapter may exist.
+* Must remain optional/future-ready.
+* Must not be called unless explicitly enabled later.
+* Must not block the app if keys are missing.
+* Must not appear as required live feed.
+
+4. MooMoo/OpenD:
+
+* Should remain intended future primary for equities/options when connected and healthy.
+* Must not show connected unless a real health check passes.
+
+5. Global LIVE badge:
+
+* Do not show “LIVE” if visible data is Yahoo delayed and CoinGecko reference.
+* Replace with an honest label such as:
+  “DATA ACTIVE”
+  “DELAYED DATA”
+  “SOURCES ONLINE”
+  or another truthful label.
+* Only show “LIVE” when a true live provider powers the visible data.
+
+Step 3 — Quote metadata contract
+
+Ensure all quote objects used by UI include:
+
+{
+symbol,
+assetClass,
+price,
+change,
+changePercent,
+provider,
+providerLabel,
+timestamp,
+isLive,
+isDelayed,
+isStale,
+isFallback,
+isReference,
+isDemo,
+marketSession,
+error
+}
+
+If the current schema differs, adapt cleanly without unnecessary rewrites.
+
+Step 4 — Remove mock data from production-looking market UI
+
+Find any static/mock files feeding:
+
+* top ticker rail
+* index overview cards
+* market cards
+* portfolio values
+* scanner rows
+* risk widgets
+* market regime widgets
+* bot status timestamps
+* AI Daily Briefing market facts
+
+For each:
+
+* replace with data-router output where possible
+* or quarantine as demo/sample data
+* or clearly label as Demo/Example
+* never show mock data as real market data
+
+Step 5 — Propagate real/fallback data into pages
+
+A. Ticker rail:
+
+* Use real/fallback quote data.
+* Show source/timestamp on hover or tooltip.
+* No fake live label.
+* No random ticking.
+
+B. Index Overview:
+
+* Use real/fallback quote data.
+* Show source/timestamp.
+* Keep sparklines only if sourced or decorative.
+* If decorative, do not imply real intraday path.
+
+C. Scanners:
+
+* Replace mock quote values with data-router quotes where available.
+* If scanner signals are demo/example, label clearly.
+* Do not invent scanner results.
+* Show unavailable/stale when source data is missing.
+
+D. Portfolio:
+
+* Do not invent holdings, cost basis, P&L, or allocation.
+* If real holdings are not connected, show empty/setup state.
+* If existing user-entered holdings exist, value them using data-router quotes.
+* Show delayed/fallback/reference badge when applicable.
+
+E. Risk:
+
+* Risk metrics must derive from real holdings + trusted quote data.
+* If insufficient data, show “Insufficient data.”
+* Do not invent drawdown, sector concentration, alerts, or volatility values.
+
+F. Watchlist:
+
+* Use data-router quotes.
+* Show source, timestamp, and stale/fallback labels.
+
+G. Market Regime:
+
+* Use real market inputs where available.
+* If unavailable, label as insufficient data or demo/example.
+* Do not present fake regime scores as real.
+
+H. Bot Status:
+
+* Do not hardcode last scan timestamps.
+* Only show online/scanning if real status exists.
+* Otherwise show stale/offline/not connected/last known status.
+
+I. AI Daily Briefing:
+
+* AI can summarize app data only.
+* Include input data timestamp/source context.
+* If data is delayed/stale/reference, AI panel should reflect that.
+* Do not let AI invent prices, confidence values, or market status.
+
+==================================================
+PART 2 — SETTINGS API KEY INPUT / SAVE UI
+=========================================
+
+Current issue:
+Inside the Settings tab there is no clear option to input API keys and save them.
+
+Required behavior:
+When I click a software/API/provider row in Settings, an expandable area should open underneath that row with:
+
+* “Enter your API key”
+* “Enter your API secret” if needed
+* Save button
+* Test Connection button
+* Remove/Clear button
+* Last tested timestamp
+* Last successful connection timestamp
+* Status/error message area
+
+This should happen inline underneath the selected provider row, not hidden somewhere confusing.
+
+Provider row collapsed state should show:
+
+* Provider name
+* Purpose
+* Current status
+* Provider category
+* Read-only / future-ready / fallback badge where appropriate
+
+Expanded state should show:
+
+* API key input field
+* API secret input field if needed
+* Optional host/port/base URL field if relevant
+* Save credentials button
+* Test connection button
+* Remove/Clear key button
+* Last error
+* Last success
+* Required environment variables if applicable
+
+Providers to include:
+
+Equities / options / brokers:
+
+* MooMoo / OpenD
+* Alpaca
+* Interactive Brokers
+* Polygon
+* Financial Modeling Prep / FMP
+* Twelve Data
+* Tradier
+* Unusual Whales
+* Yahoo fallback — no key required, delayed/reference only
+
+Crypto:
+
+* Kraken
+* Coinbase
+* Binance / Binance.US
+* CoinGecko
+* CoinMarketCap
+
+AI / research:
+
+* OpenAI
+* DeepSeek
+* Gemini
+* Perplexity
+
+Research / filings:
+
+* SEC EDGAR — user-agent/no-key config if needed
+
+Internal:
+
+* Crypto Hunter
+* MooMoo Stock Bot
+
+Security rules:
+
+* Do not expose secrets to frontend JS responses.
+* Do not store raw keys in insecure plain localStorage.
+* Prefer server-side storage, Replit Secrets, or secure server-side persistence.
+* If secure persistent storage is not fully available, build the UI/backend structure safely and clearly add TODO comments.
+* After save, keys should display masked only.
+* Saving a key should not automatically mark provider “Connected.”
+* Connected only means a real health check passed.
+* Never log full API keys.
+
+Status states to support:
+
+* Missing API Key
+* Key Saved · Not Tested
+* Connected
+* Health Check Failed
+* Auth Failed
+* Rate Limited
+* Future Ready
+* No Key Required
+* Fallback / Reference
+* Read-Only
+* Trading Disabled
+
+Settings page design:
+
+* Premium dark glass card styling
+* Smooth expand/collapse animation
+* Gold/champagne accents
+* Emerald success states
+* Muted red error states
+* Clear provider grouping if possible:
+
+  * Market Data
+  * Crypto Data
+  * Broker Connections
+  * Fundamentals / Filings
+  * AI / Research Models
+  * Internal Bots
+
+==================================================
+PART 3 — CHANGE HERO TITLE
+==========================
+
+Change the hero/main header text:
+
+Current:
+“AI Market Command Center”
+
+New:
+“Meridian Intelligence Center”
+
+Keep the surrounding hero layout and styling intact.
+
+If there are related labels, titles, or page metadata that reference “AI Market Command Center,” update them only where appropriate. Do not over-rename unrelated internal files unless necessary.
+
+The final header should still feel premium, clean, and aligned with the app’s AI trading intelligence identity.
+
+==================================================
+PART 4 — NEW LOGO USING ATTACHED IMAGE
+======================================
+
+Use the attached teal/cyan circular energy-ring image as the visual reference and/or asset for the new YucaTanaTrades logo.
+
+Description of desired logo:
+The attached image looks like:
+
+* a luminous teal/cyan circular energy ring
+* layered waveform lines
+* radial/concentric motion
+* neural/signal-like energy
+* dark background
+* futuristic
+* elegant
+* high-end
+* intelligent
+* like an AI market-intelligence core or signal vortex
+
+Use this as the new brand mark direction.
+
+Requirements:
+
+* Replace the current logo/brand icon with the new image-inspired circular logo.
+* It should appear in the main branding/nav area where the old logo is.
+* Also place it in the top-right only if it looks premium and does not clutter the layout.
+* It should be circular, sharp, and premium on the dark background.
+* It should feel like a living AI/market-signal core.
+
+Animation:
+
+* The logo should spin/rotate slowly in a smooth circular motion.
+* Add subtle glow breathing/pulsing.
+* Add subtle internal waveform shimmer if feasible.
+* Motion must be restrained and elegant, not fast or distracting.
+* Respect prefers-reduced-motion.
+
+Color:
+
+* The logo can use teal/cyan as a special AI/intelligence accent.
+* The broader app should still keep its black/gold/champagne luxury language.
+* Make the logo blend with the premium dark UI.
+
+Implementation:
+
+* If possible, add the image to the app assets and use it directly.
+* If needed, create a CSS/SVG-inspired version based on the image.
+* If using the image directly, ensure it is optimized.
+* If black background causes issues, use blend/screen/mask techniques or crop/transparent processing if feasible.
+* Avoid pixelated scaling.
+* Keep it crisp.
+
+==================================================
+PART 5 — FIX MISSING BACKGROUND PARTICLE/WALLPAPER EFFECTS
+==========================================================
+
+Current issue:
+I still do not see particle effects in the background/wallpaper at all.
+
+High priority:
+Audit why the particles are not visible and fix it.
+
+Diagnose:
+
+* Is the particle canvas/container mounting properly?
+* Is z-index hiding it?
+* Is it behind an opaque background?
+* Is it being clipped by parent containers?
+* Is opacity too low?
+* Is the particle engine not starting?
+* Is route/tab logic disabling it?
+* Is reduced-motion incorrectly disabling it?
+* Is canvas size wrong?
+* Is the element mounted only on certain pages?
+* Is CSS pointer/layering preventing visibility?
+
+Then fix and improve the particle wallpaper system.
+
+Particle requirements:
+
+* Clearly visible in the background, especially in empty dark areas.
+* Still subtle enough to preserve readability.
+* Smooth, elegant, luxury, and institutional.
+* No confetti.
+* No gaming neon.
+* No chaotic movement.
+* No distraction from data.
+
+Particles should include a mix of:
+
+* tiny dots
+* ticker labels
+* finance glyphs
+* crypto symbols
+* AI nodes
+* signal points
+* mini chart marks
+* shield/risk icons
+
+Examples:
+
+* SPY
+* QQQ
+* NVDA
+* MSFT
+* BTC
+* ETH
+* SOL
+* SUI
+* AI
+* RISK
+* ALPHA
+* FLOW
+* SCAN
+* NAV
+* P&L
+* VAR
+* DD
+* STOP
+
+Behavior:
+
+* floating
+* drifting
+* fading
+* slight rotation
+* gentle breathing opacity
+* occasional faint connection lines
+* slow movement
+* depth/parallax
+* smooth tab transitions
+
+Visibility requirement:
+Particles must be visible enough that I can clearly tell the wallpaper/background is upgraded.
+Increase visibility intelligently:
+
+* slightly higher opacity
+* better contrast
+* corrected z-index
+* corrected background transparency
+* appropriate density
+* better placement across the page
+
+But do not overdo it. The app should still feel clean and premium.
+
+==================================================
+PART 6 — TAB-SPECIFIC PARTICLE THEMES
+=====================================
+
+If possible, add or fix tab-specific particle themes.
+
+Command Center / Meridian Intelligence Center:
+
+* AI nodes
+* gold dots
+* SPY / QQQ / BTC / ETH
+* neural/signal lines
+
+Markets:
+
+* ticker symbols
+* candlestick glyphs
+* up/down triangles
+* mini chart marks
+
+Scanners:
+
+* radar rings
+* lightning/signal glyphs
+* MOM / BO / RS style marks
+
+Research:
+
+* document/source nodes
+* AI
+* NEWS
+* SEC-style marks
+
+Portfolio:
+
+* P&L
+* NAV
+* allocation rings
+* pie-slice glyphs
+
+Bots:
+
+* circuit nodes
+* RUN
+* SCAN
+* READ
+
+Journal:
+
+* ENTRY
+* EXIT
+* LESSON
+* note glyphs
+
+Watchlist:
+
+* eye glyphs
+* stars
+* ticker labels
+* alert dots
+
+Risk:
+
+* shield icons
+* warning triangles
+* VAR
+* DD
+* STOP
+
+Settings:
+
+* gear glyphs
+* slider icons
+* API
+* KEY
+* config nodes
+
+Transitions between tabs:
+
+* smooth fade/morph
+* avoid flicker
+* avoid abrupt full reset if possible
+
+Particle technical requirements:
+
+* Use one reusable particle engine.
+* Use requestAnimationFrame.
+* Use pointer-events: none.
+* Do not block clicks.
+* Pause/reduce when browser tab is hidden.
+* Respect prefers-reduced-motion.
+* Reduce or disable on mobile if needed.
+* Do not use heavy libraries unless already installed.
+* Keep performance smooth.
+
+Suggested particle count:
+
+* Desktop: 35–70 particles
+* Tablet: 20–35 particles
+* Mobile: disabled or 8–15
+* Reduced motion: disabled
+
+==================================================
+PART 7 — SETTINGS / SOURCE HEALTH VALIDATION
+============================================
+
+Improve or verify Settings/API Connections:
+
+* Yahoo: No key required · Delayed fallback.
+* CoinGecko: No key or optional key · Crypto reference data.
+* Alpaca: Optional/Future Ready unless explicitly enabled.
+* MooMoo/OpenD: Connected only if real health check passes.
+* Polygon/FMP/Kraken/Coinbase/etc.: Missing key/Future Ready unless configured.
+* OpenAI/DeepSeek/Gemini/Perplexity: AI/research only, not market data.
+
+Add or verify a Source Health area showing:
+
+* current equity provider
+* current crypto provider
+* options provider state
+* fundamentals provider state
+* AI provider state
+* last health check
+* fallback usage
+* last error if present
+
+==================================================
+PART 8 — TESTS / VALIDATION
+===========================
+
+Add or update tests where practical.
+
+Minimum validation:
+
+* Yahoo quote adapter returns isLive=false, isDelayed=true.
+* CoinGecko quote adapter returns isLive=false and isReference=true or proper reference metadata.
+* Alpaca is not selected by router while implemented=false or disabled.
+* Router falls back to Yahoo for equities when no primary keyed provider exists.
+* Router falls back to CoinGecko for crypto when no exchange provider exists.
+* UI source label helper never labels Yahoo as Live.
+* Mock/demo data cannot appear without Demo/Example labeling in production-looking modules.
+* Settings API row expands and shows API input fields.
+* Saving a key does not automatically mark provider connected.
+* Hero title renders “Meridian Intelligence Center.”
+* Logo component uses the new animated image/brand mark.
+* Particle layer mounts and is visible behind content.
+
+Run:
+
+* typecheck
+* lint if available
+* relevant tests
+* app build if available
+
+==================================================
+FINAL REPORT
+============
+
+Return a concise summary:
+
+1. Files changed.
+2. Mock/static data paths found.
+3. Which paths were replaced or quarantined.
+4. Current source for SPY, QQQ, NVDA, MSFT, BTC, ETH, SOL, and SUI.
+5. Whether each is live/delayed/reference/stale.
+6. Any remaining modules still using demo data.
+7. What changed in Settings API key input.
+8. How the new logo was implemented.
+9. Why particles were not visible before and how it was fixed.
+10. Any follow-up tasks needed.
+
+==================================================
+ACCEPTANCE CRITERIA
+===================
+
+Market data:
+
+* No production-looking market prices come from unmarked static mock data.
+* Yahoo equities are delayed and labeled honestly.
+* CoinGecko crypto is reference/fallback and labeled honestly.
+* Alpaca remains optional/future-ready only.
+* MooMoo/OpenD remains intended future primary for scanner/data engine.
+* No fake LIVE badge.
+* No fake connected state.
+* No fake timestamps.
+* Scanners/Portfolio/Risk/Watchlist/Market Regime do not invent data.
+* Missing data is shown as unavailable/insufficient, not fabricated.
+
+Settings:
+
+* Clicking a provider row expands an API input panel underneath.
+* API key/API secret fields are clear.
+* Save/Test/Remove controls exist.
+* Keys are handled securely/masked.
+* Saving does not fake connection status.
+* Provider statuses are truthful.
+
+Branding:
+
+* “AI Market Command Center” is replaced with “Meridian Intelligence Center.”
+* Current logo is replaced with the attached teal/cyan circular energy-ring logo concept.
+* Logo rotates slowly and smoothly.
+* Logo glow/pulse is subtle and premium.
+
+Particles:
+
+* Background particle/wallpaper effects are actually visible.
+* Particles feel smooth, premium, and high-end.
+* Particles do not block clicks.
+* Particles do not reduce readability.
+* Tab-specific themes work if feasible.
+* Performance remains smooth.
+
+General:
+
+* Typecheck passes.
+* Existing UI remains intact.
+* No console errors.
+* No fake market data is introduced.
+* No trading execution is added.

@@ -5,6 +5,7 @@ import watchlistRouter from "./watchlist";
 import botsRouter from "./bots";
 import portfolioRouter from "./portfolio";
 import marketRouter from "./market";
+import settingsRouter from "./settings";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(watchlistRouter);
 router.use(botsRouter);
 router.use(portfolioRouter);
 router.use(marketRouter);
+router.use(settingsRouter);
 
 export default router;

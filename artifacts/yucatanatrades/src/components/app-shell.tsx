@@ -20,6 +20,22 @@ const SHIMMER_STYLE = `
     0%   { transform: translateX(-200%); }
     100% { transform: translateX(400%);  }
   }
+  @keyframes logo-ring-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes logo-ring-spin-rev {
+    from { transform: rotate(360deg); }
+    to   { transform: rotate(0deg); }
+  }
+  @keyframes logo-glow-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1.0); }
+    50%       { opacity: 1.0;  transform: scale(1.10); }
+  }
+  @keyframes logo-core-pulse {
+    0%, 100% { transform: scale(0.82); opacity: 0.70; }
+    50%       { transform: scale(1.20); opacity: 1.0;  }
+  }
 `;
 
 // ─── Per-tab accent colors ────────────────────────────────────────────────────
@@ -67,47 +83,75 @@ const NAV_FLYOUTS: Record<string, FlyoutData> = {
   "Settings":       { desc: "Data sources, AI behavior, display, and system controls.",   chips: ["Sources", "Theme", "Controls"]                 },
 };
 
-// ─── Logo mark ────────────────────────────────────────────────────────────────
+// ─── Logo mark — teal/cyan energy ring ───────────────────────────────────────
 function LogoMark({ expanded }: { expanded: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", !expanded && "justify-center")}>
       <div className="relative flex-shrink-0 w-10 h-10">
-        {/* Rotating ring */}
+
+        {/* Ambient glow halo */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgba(20,184,166,0.22) 0%, transparent 68%)",
+            animation: "logo-glow-pulse 3.2s ease-in-out infinite",
+          }}
+        />
+
+        {/* Outer ring — slow 28s clockwise spin */}
         <div
           className="absolute inset-0"
-          style={{ animation: "ring-rotate 18s linear infinite", transformOrigin: "center" }}
+          style={{ animation: "logo-ring-spin 28s linear infinite", transformOrigin: "center" }}
         >
           <svg viewBox="0 0 40 40" className="w-10 h-10">
-            <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(212,175,55,0.14)" strokeWidth="1" />
-            <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(212,175,55,0.65)" strokeWidth="1.5" strokeDasharray="9 51" strokeLinecap="round" />
+            <circle cx="20" cy="20" r="17.5" fill="none" stroke="rgba(20,184,166,0.15)" strokeWidth="1" />
+            <circle cx="20" cy="20" r="17.5" fill="none"
+              stroke="rgba(20,184,166,0.80)" strokeWidth="1.5"
+              strokeDasharray="7 53" strokeLinecap="round"
+            />
           </svg>
-          {/* Orbiting dot */}
+          {/* Orbiting bead */}
           <div
-            className="absolute w-2 h-2 rounded-full"
+            className="absolute rounded-full"
             style={{
-              top: "1px", left: "calc(50% - 4px)",
-              background: "radial-gradient(circle,#F5D76E,#D4AF37)",
-              boxShadow: "0 0 6px rgba(212,175,55,0.9)",
+              width: 5, height: 5,
+              top: "1px", left: "calc(50% - 2.5px)",
+              background: "radial-gradient(circle, #A5F3FC, #14B8A6)",
+              boxShadow: "0 0 6px rgba(165,243,252,0.90)",
             }}
           />
         </div>
 
-        {/* Glass "YT" monogram */}
+        {/* Middle ring — counter-rotating 18s */}
         <div
-          className="absolute inset-[5px] rounded-xl flex items-center justify-center"
+          className="absolute inset-[5px]"
+          style={{ animation: "logo-ring-spin-rev 18s linear infinite", transformOrigin: "center" }}
+        >
+          <svg viewBox="0 0 30 30" className="w-full h-full">
+            <circle cx="15" cy="15" r="12" fill="none"
+              stroke="rgba(6,182,212,0.40)" strokeWidth="0.75"
+              strokeDasharray="3 8" strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        {/* Inner glowing core */}
+        <div
+          className="absolute inset-[8px] rounded-full flex items-center justify-center"
           style={{
-            background: "linear-gradient(135deg,rgba(212,175,55,0.16) 0%,rgba(8,10,20,0.85) 100%)",
-            border: "1px solid rgba(212,175,55,0.35)",
-            boxShadow: "0 0 20px rgba(212,175,55,0.10),inset 0 1px 0 rgba(212,175,55,0.22)",
+            background: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(8,10,20,0.92) 100%)",
+            border: "1px solid rgba(20,184,166,0.52)",
+            boxShadow: "0 0 14px rgba(20,184,166,0.28), inset 0 0 8px rgba(20,184,166,0.08)",
           }}
         >
-          <span
-            className="font-display font-bold text-xs leading-none select-none"
+          <div
             style={{
-              background: "linear-gradient(135deg,#F7E7B4 0%,#D4AF37 50%,#B8860B 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              width: 6, height: 6, borderRadius: "50%",
+              background: "radial-gradient(circle, #A5F3FC 0%, #14B8A6 70%)",
+              boxShadow: "0 0 8px rgba(165,243,252,0.85), 0 0 16px rgba(20,184,166,0.45)",
+              animation: "logo-core-pulse 2.8s ease-in-out infinite",
             }}
-          >YT</span>
+          />
         </div>
       </div>
 
@@ -123,12 +167,12 @@ function LogoMark({ expanded }: { expanded: boolean }) {
             <span
               className="font-display font-bold text-base tracking-tight block leading-tight"
               style={{
-                background: "linear-gradient(135deg,#F7E7B4 0%,#D4AF37 60%,#E8C84A 100%)",
+                background: "linear-gradient(135deg, #67E8F9 0%, #14B8A6 60%, #0D9488 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               }}
             >YucaTana</span>
             <span className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.18em] block">
-              AI Market Intelligence
+              Meridian Intelligence
             </span>
           </motion.div>
         )}

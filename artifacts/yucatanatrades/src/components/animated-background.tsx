@@ -95,7 +95,7 @@ export function AnimatedBackground() {
             top: s.y,
             fontSize: s.size,
             color: "#D4AF37",
-            opacity: 0.025,
+            opacity: 0.065,
             letterSpacing: "0.08em",
             animation: `float-symbol ${s.dur} ease-in-out infinite alternate`,
             animationDelay: s.delay,
