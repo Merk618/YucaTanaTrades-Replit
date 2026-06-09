@@ -10,14 +10,22 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle } from "lucide-react";
+import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
-import { useListPositions } from "@workspace/api-client-react";
+import {
+  useListPositions,
+  useCreatePosition,
+  useUpdatePosition,
+  useDeletePosition,
+  getListPositionsQueryKey,
+  PortfolioPositionSleeve,
+} from "@workspace/api-client-react";
+import type { PortfolioPosition, PortfolioPositionInput, PortfolioPositionUpdate } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 
 // ─── Deterministic performance history (90 trading days) ─────────────────────
-// Chart shows a simulated historical walk — current values pin to real quotes
 function generateHistory(finalTotals: { roth: number; indiv: number; crypto: number } | null) {
   let s = 1337;
   const r = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
@@ -52,7 +60,6 @@ function generateHistory(finalTotals: { roth: number; indiv: number; crypto: num
     });
   }
 
-  // Pin last row to real current values if available, simulated fallback otherwise
   const last = result[result.length - 1];
   if (last) {
     if (finalTotals) {
@@ -73,7 +80,7 @@ function generateHistory(finalTotals: { roth: number; indiv: number; crypto: num
 const PERIOD_SLICES = { "1W": 5, "1M": 22, "3M": 65 } as const;
 type Period = keyof typeof PERIOD_SLICES;
 
-const FRESHNESS_WARNING_MS = 15 * 60 * 1000; // 15 minutes
+const FRESHNESS_WARNING_MS = 15 * 60 * 1000;
 
 // ─── Sleeve config ────────────────────────────────────────────────────────────
 const SLEEVES = [
@@ -86,6 +93,14 @@ const SECTOR_COLORS: Record<string, string> = {
   Semis: "#C4A44A", Tech: "#3b82f6", Nuclear: "#f97316",
   Defense: "#8b5cf6", Crypto: "#10b981", Space: "#06b6d4",
 };
+
+const SLEEVE_OPTIONS: { value: PortfolioPositionSleeve; label: string }[] = [
+  { value: "rothIra",    label: "Roth IRA" },
+  { value: "individual", label: "Individual" },
+  { value: "crypto",     label: "Crypto" },
+];
+
+const SECTOR_OPTIONS = ["Semis", "Tech", "Nuclear", "Defense", "Crypto", "Space", "Other"];
 
 // ─── Custom Tooltip ──────────────────────────────────────────────────────────
 function ChartTooltip({ active, payload, label, view }: {
@@ -173,6 +188,295 @@ function SectorAllocation({ holdings }: { holdings: { sector: string; value: num
   );
 }
 
+// ─── Position Form (add / edit) ───────────────────────────────────────────────
+type FormState = {
+  ticker: string;
+  name: string;
+  shares: string;
+  avgCost: string;
+  sleeve: PortfolioPositionSleeve;
+  sector: string;
+};
+
+const EMPTY_FORM: FormState = {
+  ticker: "",
+  name: "",
+  shares: "",
+  avgCost: "",
+  sleeve: "individual",
+  sector: "Tech",
+};
+
+function positionToForm(p: PortfolioPosition): FormState {
+  return {
+    ticker:  p.ticker,
+    name:    p.name,
+    shares:  String(p.shares),
+    avgCost: String(p.avgCost),
+    sleeve:  p.sleeve,
+    sector:  p.sector,
+  };
+}
+
+function PositionModal({
+  mode,
+  position,
+  onClose,
+}: {
+  mode: "add" | "edit";
+  position: PortfolioPosition | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState<FormState>(
+    mode === "edit" && position ? positionToForm(position) : EMPTY_FORM,
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const createMutation = useCreatePosition();
+  const updateMutation = useUpdatePosition();
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  function field<K extends keyof FormState>(key: K) {
+    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setForm((f) => ({ ...f, [key]: e.target.value }));
+      setError(null);
+    };
+  }
+
+  function validate(): string | null {
+    if (!form.ticker.trim()) return "Ticker is required.";
+    if (!form.name.trim()) return "Name is required.";
+    const shares = parseFloat(form.shares);
+    if (isNaN(shares) || shares <= 0) return "Shares must be a positive number.";
+    const avgCost = parseFloat(form.avgCost);
+    if (isNaN(avgCost) || avgCost <= 0) return "Avg cost must be a positive number.";
+    if (!form.sector.trim()) return "Sector is required.";
+    return null;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const err = validate();
+    if (err) { setError(err); return; }
+
+    const payload = {
+      ticker:  form.ticker.trim().toUpperCase(),
+      name:    form.name.trim(),
+      shares:  parseFloat(form.shares),
+      avgCost: parseFloat(form.avgCost),
+      sleeve:  form.sleeve,
+      sector:  form.sector.trim(),
+    };
+
+    try {
+      if (mode === "add") {
+        await createMutation.mutateAsync({ data: payload as PortfolioPositionInput });
+      } else if (position) {
+        await updateMutation.mutateAsync({ id: position.id, data: payload as PortfolioPositionUpdate });
+      }
+      await qc.invalidateQueries({ queryKey: getListPositionsQueryKey() });
+      onClose();
+    } catch {
+      setError("Failed to save position. Please try again.");
+    }
+  }
+
+  const inputCls = "w-full bg-muted/40 border border-border/60 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-colors font-mono";
+  const labelCls = "text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="relative z-10 glass-card w-full max-w-md p-6 shadow-2xl border-primary/20"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            {mode === "add"
+              ? <Plus className="w-4 h-4 text-primary" />
+              : <Pencil className="w-4 h-4 text-primary" />
+            }
+            <h2 className="font-display font-semibold text-base text-foreground">
+              {mode === "add" ? "Add Position" : "Edit Position"}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted/60"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Ticker</label>
+              <input
+                className={inputCls}
+                placeholder="e.g. NVDA"
+                value={form.ticker}
+                onChange={field("ticker")}
+                autoFocus
+                autoCapitalize="characters"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Sleeve</label>
+              <select className={inputCls} value={form.sleeve} onChange={field("sleeve")}>
+                {SLEEVE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Name</label>
+            <input
+              className={inputCls}
+              placeholder="e.g. NVIDIA Corporation"
+              value={form.name}
+              onChange={field("name")}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Shares</label>
+              <input
+                className={inputCls}
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0.00"
+                value={form.shares}
+                onChange={field("shares")}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Avg Cost ($)</label>
+              <input
+                className={inputCls}
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0.00"
+                value={form.avgCost}
+                onChange={field("avgCost")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Sector</label>
+            <select className={inputCls} value={form.sector} onChange={field("sector")}>
+              {SECTOR_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-primary/20"
+            >
+              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {mode === "add" ? "Add Position" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Delete Confirmation Dialog ───────────────────────────────────────────────
+function DeleteConfirmModal({
+  position,
+  onClose,
+}: {
+  position: PortfolioPosition;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const deleteMutation = useDeletePosition();
+
+  async function handleDelete() {
+    await deleteMutation.mutateAsync({ id: position.id });
+    await qc.invalidateQueries({ queryKey: getListPositionsQueryKey() });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="relative z-10 glass-card w-full max-w-sm p-6 shadow-2xl border-red-500/20"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </div>
+          <div>
+            <h2 className="font-display font-semibold text-base text-foreground">Remove Position</h2>
+            <p className="text-xs text-muted-foreground">This cannot be undone</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-foreground/80 mb-5">
+          Remove <span className="font-mono font-bold text-primary">{position.ticker}</span>{" "}
+          ({position.name}) from your portfolio?
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+            className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+          >
+            {deleteMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            Remove
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Portfolio() {
   const now = useNow();
@@ -183,6 +487,17 @@ export default function Portfolio() {
   const isLoading = positionsLoading || quotesLoading;
   const [period, setPeriod] = useState<Period>("3M");
   const [chartView, setChartView] = useState<"total" | "sleeves">("total");
+
+  // Modal state
+  const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
+  const [editTarget, setEditTarget] = useState<PortfolioPosition | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioPosition | null>(null);
+
+  function openAdd() { setModalMode("add"); setEditTarget(null); }
+  function openEdit(p: PortfolioPosition) { setModalMode("edit"); setEditTarget(p); }
+  function closeModal() { setModalMode(null); setEditTarget(null); }
+  function openDelete(p: PortfolioPosition) { setDeleteTarget(p); }
+  function closeDelete() { setDeleteTarget(null); }
 
   // Build enriched holdings from positions + real quotes
   const holdings = useMemo(() => {
@@ -251,11 +566,9 @@ export default function Portfolio() {
     return Math.floor(Math.min(...vals) * 0.98 / 5000) * 5000;
   }, [chartData, chartView]);
 
-  // Determine overall quote freshness label for the header
   const sourceSample = quotesData?.quotes[0];
   const sourceLabel = sourceSample && isQuoteUsable(sourceSample) ? sourceSample.sourceLabel : null;
 
-  // Oldest timestamp among all priced holdings — represents worst-case freshness for total value
   const oldestTimestamp = useMemo(() => {
     const ts = holdings
       .map((h) => h.timestamp)
@@ -275,6 +588,25 @@ export default function Portfolio() {
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
+      {/* Modals */}
+      <AnimatePresence>
+        {(modalMode === "add" || modalMode === "edit") && (
+          <PositionModal
+            key="position-modal"
+            mode={modalMode}
+            position={editTarget}
+            onClose={closeModal}
+          />
+        )}
+        {deleteTarget && (
+          <DeleteConfirmModal
+            key="delete-modal"
+            position={deleteTarget}
+            onClose={closeDelete}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-3 mb-1">
@@ -518,16 +850,25 @@ export default function Portfolio() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
         <div className="p-4 border-b border-border/50 flex items-center justify-between">
           <h2 className="text-sm font-display font-semibold text-primary">All Holdings</h2>
-          <span className="text-[10px] text-muted-foreground font-mono">
-            Sorted by value · {positions.length} positions · {sourceLabel ?? "Loading prices…"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-muted-foreground font-mono">
+              Sorted by value · {positions.length} positions · {sourceLabel ?? "Loading prices…"}
+            </span>
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/25 text-primary hover:bg-primary/20 hover:border-primary/40 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Position
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">
-                {["Ticker", "Name", "Sleeve", "Shares", "Avg Cost", "Price", "Value", "Gain $", "Gain %"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                {["Ticker", "Name", "Sleeve", "Shares", "Avg Cost", "Price", "Value", "Gain $", "Gain %", ""].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider last:w-20">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -535,6 +876,7 @@ export default function Portfolio() {
               {holdingsSorted.map((h, i) => {
                 const gain    = h.price > 0 ? (h.price - h.avgCost) * h.shares : 0;
                 const gainPct = h.price > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0;
+                const rawPosition = positions.find((p) => p.id === h.id)!;
                 return (
                   <motion.tr
                     key={h.ticker}
@@ -583,9 +925,38 @@ export default function Portfolio() {
                     <td className={cn("px-4 py-3 font-mono text-xs font-semibold", gainPct >= 0 ? "text-emerald-400" : "text-red-400")}>
                       {h.price > 0 ? `${gainPct >= 0 ? "+" : ""}${gainPct.toFixed(1)}%` : "—"}
                     </td>
+                    {/* Action icons */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(rawPosition)}
+                          title="Edit position"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => openDelete(rawPosition)}
+                          title="Remove position"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </motion.tr>
                 );
               })}
+              {holdingsSorted.length === 0 && !isLoading && (
+                <tr>
+                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                    No positions yet.{" "}
+                    <button onClick={openAdd} className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                      Add your first position
+                    </button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
