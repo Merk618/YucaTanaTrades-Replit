@@ -42,7 +42,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export default function Bots() {
-  const { data: botsData } = useGetBotsStatus();
+  const { data: botsData, dataUpdatedAt } = useGetBotsStatus();
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -129,6 +129,11 @@ export default function Bots() {
                 />
               </div>
             </div>
+
+            {/* Fetch freshness footer */}
+            <p className="mt-3 text-[10px] text-muted-foreground/60 font-mono text-right">
+              Data fetched {freshnessLabel(dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : undefined)}
+            </p>
           </motion.div>
         ))}
       </div>
