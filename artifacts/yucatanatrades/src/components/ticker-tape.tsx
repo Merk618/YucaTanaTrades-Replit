@@ -161,7 +161,7 @@ export function TickerTape() {
             className={cn(
               "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
               eqSecondsLeft <= 5
-                ? "text-primary/90"
+                ? "text-primary/90 animate-[countdown-pulse-gold_1s_ease-in-out_infinite]"
                 : "text-muted-foreground/40",
             )}
           >
@@ -171,7 +171,7 @@ export function TickerTape() {
             className={cn(
               "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
               cryptoSecondsLeft <= 5
-                ? "text-emerald-400/90"
+                ? "text-emerald-400/90 animate-[countdown-pulse-emerald_1s_ease-in-out_infinite]"
                 : "text-muted-foreground/40",
             )}
           >
@@ -253,10 +253,20 @@ export function TickerTape() {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
         }
+        @keyframes countdown-pulse-gold {
+          0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(43 63% 52% / 0.5); }
+          50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(43 63% 52% / 0.9); }
+        }
+        @keyframes countdown-pulse-emerald {
+          0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(160 100% 39% / 0.5); }
+          50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(160 100% 39% / 0.9); }
+        }
         @media (prefers-reduced-motion: reduce) {
           .animate-\\[ticker_35s_linear_infinite\\]   { animation: none; }
           .animate-\\[price-flash-up_0\\.9s_ease-out\\]   { animation: none; }
           .animate-\\[price-flash-down_0\\.9s_ease-out\\] { animation: none; }
+          .animate-\\[countdown-pulse-gold_1s_ease-in-out_infinite\\]    { animation: none; }
+          .animate-\\[countdown-pulse-emerald_1s_ease-in-out_infinite\\] { animation: none; }
         }
       `,
         }}
