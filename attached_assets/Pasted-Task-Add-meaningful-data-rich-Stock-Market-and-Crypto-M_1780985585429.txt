@@ -1,0 +1,674 @@
+Task: Add meaningful data-rich Stock Market and Crypto Market tabs inside Markets
+
+Act as a senior fintech product engineer, market-data architect, TypeScript engineer, and trading-dashboard UI/UX designer.
+
+Use the existing YucaTanaTrades codebase. Do not rewrite the app. Preserve existing layout, routing, provider registry, source metadata, Settings logic, particle system, and premium dark Meridian visual identity.
+
+This task is focused on making the new Markets subtabs more useful and data-rich:
+
+1. Stock Market
+2. Crypto Market
+
+The goal is not to clutter the pages. The goal is to add meaningful, source-aware, useful market intelligence widgets that make each tab feel like a real trading terminal section.
+
+Important:
+
+* Do not add fake prices.
+* Do not simulate price movement.
+* Do not invent market data.
+* Do not invent scanner results.
+* Do not invent volume, RSI, market cap, dominance, breadth, sector data, fundamentals, or news.
+* Do not use AI as a market-data source.
+* Do not show “LIVE” unless a true live provider powers the visible data.
+* Do not make Alpaca required.
+* Do not add trading execution.
+* Do not add Robinhood MCP in this task.
+* Do not break existing dashboard functionality.
+
+All market data must come from the existing data router/provider system or be marked unavailable/insufficient/demo.
+
+Current provider policy:
+Equities / ETFs:
+
+1. MooMoo/OpenD = intended future primary source when connected and healthy.
+2. Yahoo Finance = current delayed fallback/reference source.
+3. Polygon/FMP/Twelve Data = future optional providers if API keys are added.
+4. Alpaca = optional/future-ready only, not required, not primary.
+
+Crypto:
+
+1. Kraken = preferred future exchange source.
+2. Coinbase = future secondary exchange source.
+3. Binance/Binance.US = optional future source.
+4. CoinGecko = current crypto reference/fallback source.
+
+AI providers:
+OpenAI, DeepSeek, Gemini, and Perplexity are AI/research providers only. They must never generate market prices.
+
+==================================================
+PRIMARY PRODUCT GOAL
+====================
+
+Upgrade the Markets area so it feels like a serious market intelligence section.
+
+Markets should contain two rich subviews:
+
+* Stock Market
+* Crypto Market
+
+Each tab should show:
+
+* useful overview data
+* source/freshness badges
+* meaningful widgets
+* premium card layout
+* clean information hierarchy
+* no fake data
+* no misleading live labels
+
+The tabs should feel more like:
+
+* TradingView market overview
+* Bloomberg market monitor
+* institutional watch dashboard
+* AI market intelligence command panel
+
+But preserve the YucaTanaTrades/Meridian visual identity:
+
+* dark base
+* gold/champagne luxury accents
+* teal/cyan Meridian Intelligence accents
+* emerald positive states
+* muted crimson risk/negative states
+* subtle particles/background effects
+
+==================================================
+
+1. STOCK MARKET TAB — DATA WIDGETS
+   ==================================================
+
+Create or improve the Stock Market tab under Markets.
+
+The Stock Market tab should focus on equities, ETFs, indices, sectors, watchlists, and opportunity context.
+
+Add these sections if data is available. If data is not available, show honest empty/unavailable states.
+
+A. Market Overview Header
+Show:
+
+* market session status
+* data source status
+* current primary equity provider
+* fallback provider if used
+* last updated timestamp
+* source badge such as “Delayed · Yahoo”
+
+Do not show LIVE if Yahoo delayed data is active.
+
+B. Major Index Cards
+Symbols:
+
+* SPY
+* QQQ
+* IWM
+* DIA
+
+For each:
+
+* price
+* change
+* change %
+* source badge
+* timestamp
+* stale/delayed/fallback status
+* mini sparkline only if real historical data exists or clearly decorative
+
+If sparkline is decorative, do not imply real intraday path.
+If real historical/candle data is unavailable, use a clearly non-misleading placeholder or omit the sparkline.
+
+C. Mega-Cap Watch Row
+Symbols:
+
+* NVDA
+* MSFT
+* AAPL
+* AMZN
+* META
+* GOOGL
+* AVGO
+* TSLA
+
+For each:
+
+* price
+* change %
+* delayed/source badge
+* timestamp
+* simple strength indicator if based on actual data
+
+If any symbol fails, show unavailable/stale instead of fake data.
+
+D. Sector / Theme Monitor
+Add a section for sector/theme ETFs if available:
+
+* XLK — Technology
+* XLF — Financials
+* XLE — Energy
+* XLI — Industrials
+* XLV — Healthcare
+* XLU — Utilities
+* SOXX or SMH — Semiconductors
+* ITA — Defense/Aerospace
+* URA — Uranium/Nuclear
+* BOTZ or AIQ — AI/Robotics if available
+
+Show:
+
+* price/change %
+* source badge
+* relative movement vs SPY if data exists
+* unavailable if data missing
+
+Do not invent sector breadth.
+
+E. Market Breadth / Internals Placeholder
+Add a premium card for market breadth, but only populate it if real data exists.
+
+Potential metrics:
+
+* advancers vs decliners
+* new highs vs new lows
+* % above 50DMA
+* % above 200DMA
+* up volume vs down volume
+
+If no valid provider exists for these:
+show:
+“Market breadth unavailable — connect Polygon/FMP/MooMoo/OpenD or another provider.”
+
+Do not fake breadth numbers.
+
+F. Top Movers
+Add Top Gainers / Top Losers cards only if the data provider supports it.
+
+If Yahoo/current fallback does not reliably provide market-wide movers:
+show empty state:
+“Top movers unavailable with current data source.”
+
+Do not invent movers.
+
+G. Volume / Relative Volume Watch
+Add a widget for volume/relative volume only if real volume data exists.
+
+If not available:
+show “Volume intelligence unavailable with current provider.”
+
+H. Earnings / Catalyst Calendar
+Add a future-ready widget for:
+
+* earnings today
+* upcoming earnings
+* analyst/catalyst notes
+* SEC/event items
+
+Use FMP/SEC/Perplexity only if configured.
+If unavailable, show “Catalyst calendar requires FMP/SEC/research provider.”
+
+I. Stock Watchlist Intelligence
+If a watchlist exists, show watchlist tickers with:
+
+* quote source
+* timestamp
+* delayed/live/reference/stale badge
+* notes/thesis if available
+* alert state if real
+
+If no watchlist exists, show a setup prompt:
+“Add tickers to build your Stock Market watchlist.”
+
+==================================================
+2. CRYPTO MARKET TAB — DATA WIDGETS
+===================================
+
+Create or improve the Crypto Market tab under Markets.
+
+The Crypto Market tab should focus on crypto majors, market structure, watchlist, trends, and source-aware reference data.
+
+Current source is likely CoinGecko reference/fallback unless Kraken/Coinbase/Binance are configured.
+
+A. Crypto Overview Header
+Show:
+
+* crypto market status: “24/7 Market”
+* current crypto provider
+* source badge
+* last updated timestamp
+* reference/fallback status
+
+If using CoinGecko:
+label clearly:
+“CoinGecko · Reference”
+or
+“Reference · CoinGecko”
+
+Do not show LIVE unless connected to a true exchange provider such as Kraken/Coinbase/Binance.
+
+B. Major Crypto Cards
+Symbols/assets:
+
+* BTC
+* ETH
+* SOL
+* SUI
+
+For each:
+
+* price
+* 24h change %
+* market cap if provider supplies it
+* 24h volume if provider supplies it
+* source badge
+* timestamp
+* reference/fallback/stale status
+
+Do not invent market cap or volume.
+
+C. Additional Crypto Watch Row
+If supported by provider, include:
+
+* XRP
+* LINK
+* AVAX
+* DOGE
+* ADA
+* RNDR / RENDER if supported
+* NEAR
+* ATOM
+
+If not available, omit or show unavailable.
+
+D. Crypto Market Structure
+Add widgets if CoinGecko or future provider supports the fields:
+
+* total crypto market cap
+* BTC dominance
+* ETH dominance
+* total 24h volume
+* stablecoin market cap if available
+* DeFi market cap if available
+
+If unavailable:
+show “Market structure data unavailable with current provider.”
+
+Do not fake dominance values.
+
+E. Crypto Strength Board
+Create a simple strength board using real available data:
+
+* 24h change
+* 7d change if provider supports it
+* volume trend if provider supports it
+* relative rank
+
+Only calculate from real provider data.
+If 7d data is unavailable, omit it.
+
+F. Crypto Watchlist Intelligence
+If crypto watchlist exists, show:
+
+* asset
+* source
+* timestamp
+* 24h change
+* notes/thesis if available
+* alert state if real
+
+If no crypto watchlist exists, show:
+“Add crypto assets to build your Crypto Market watchlist.”
+
+G. Exchange Source Readiness
+Add a small provider-readiness card:
+
+* Kraken: Future / Missing key / Connected if health passes
+* Coinbase: Future / Missing key / Connected if health passes
+* Binance: Optional / Missing key / Connected if health passes
+* CoinGecko: Reference fallback
+
+This should help the user understand that CoinGecko is reference data and exchange data can be added later.
+
+H. Crypto Risk Panel
+Add a crypto-specific risk card:
+
+* source freshness
+* reference vs exchange status
+* stale warning
+* volatility unavailable/available
+* liquidity unavailable/available
+
+Only show actual calculated risk metrics if real data exists.
+
+==================================================
+3. SHARED MARKET TAB DATA CONTRACT
+==================================
+
+Both Stock Market and Crypto Market tabs should consume the shared data router/source metadata.
+
+Every quote/displayed asset should include or derive:
+
+{
+symbol,
+assetClass,
+price,
+change,
+changePercent,
+provider,
+providerLabel,
+timestamp,
+isLive,
+isDelayed,
+isStale,
+isFallback,
+isReference,
+isDemo,
+marketSession,
+error
+}
+
+UI should show:
+
+* provider label
+* last updated timestamp
+* live/delayed/reference/stale/fallback status
+* unavailable state if missing
+
+Do not create separate unmanaged mock data paths for these tabs.
+
+==================================================
+4. PAGE LAYOUT / UI STRUCTURE
+=============================
+
+Use a clean, premium dashboard structure.
+
+Suggested Stock Market layout:
+
+Top:
+
+* Market Overview Header
+* Source Health / Last Updated badge
+
+Row 1:
+
+* SPY
+* QQQ
+* IWM
+* DIA
+
+Row 2:
+
+* Mega-Cap Watch Row
+* Sector / Theme Monitor
+
+Row 3:
+
+* Top Movers if available
+* Volume / Relative Volume if available
+* Earnings / Catalyst Calendar if available
+
+Row 4:
+
+* Watchlist Intelligence
+* Market Breadth / unavailable card if not connected
+
+Suggested Crypto Market layout:
+
+Top:
+
+* 24/7 Crypto Market Header
+* Source Health / Last Updated badge
+
+Row 1:
+
+* BTC
+* ETH
+* SOL
+* SUI
+
+Row 2:
+
+* Crypto Watch Row
+* Crypto Market Structure
+
+Row 3:
+
+* Crypto Strength Board
+* Crypto Risk Panel
+
+Row 4:
+
+* Exchange Source Readiness
+* Crypto Watchlist Intelligence
+
+Design:
+
+* Use existing glass-card styling.
+* Use gold/champagne for premium borders and financial UI.
+* Use teal/cyan as the Meridian Intelligence signature, especially for Crypto Market and AI/crypto data-stream accents.
+* Use emerald for positive movement.
+* Use muted crimson for negative movement.
+* Use amber/gold for warning/stale states.
+* Keep card density readable.
+
+==================================================
+5. MEANINGFUL DATA RULES
+========================
+
+This task is about meaningful data, not just more cards.
+
+Only add widgets that meet at least one of these criteria:
+
+* improves market awareness
+* helps compare relative strength
+* explains data source/freshness
+* supports watchlist decisions
+* supports scanner/risk/portfolio context
+* prepares future premium data integrations
+* highlights unavailable data honestly
+
+Avoid:
+
+* random decorative metrics
+* fake progress bars
+* fake market regime scores
+* fake sentiment
+* meaningless gauges
+* duplicate cards
+* oversized empty widgets
+* clutter
+
+If a metric cannot be sourced, show a polished unavailable state that explains what provider is needed.
+
+Example:
+“Sector breadth requires Polygon, FMP, or MooMoo/OpenD.”
+“Top movers unavailable with current fallback provider.”
+“Crypto dominance requires CoinGecko market endpoint or exchange/aggregator provider.”
+
+==================================================
+6. DATA SOURCE AND PROVIDER READINESS
+=====================================
+
+Add provider-readiness messages where useful.
+
+Stock Market should clearly communicate:
+Current:
+
+* Yahoo delayed fallback for equities/ETFs if no primary provider connected
+
+Future:
+
+* MooMoo/OpenD for primary scanner/stock data
+* Polygon for premium market data
+* FMP for fundamentals/company data
+* Twelve Data optional
+
+Crypto Market should clearly communicate:
+Current:
+
+* CoinGecko reference/fallback
+
+Future:
+
+* Kraken preferred exchange source
+* Coinbase secondary exchange source
+* Binance/Binance.US optional
+
+Do not make Alpaca primary.
+Alpaca remains optional/future-ready only.
+
+==================================================
+7. INTERACTIONS
+===============
+
+Add useful interactions:
+
+Asset card hover:
+
+* show source
+* timestamp
+* freshness status
+* provider label
+* data quality state
+
+Click asset card:
+
+* if ticker detail route exists, navigate to detail
+* otherwise open a lightweight detail drawer or do nothing safely
+
+Filters:
+Stock Market:
+
+* Indices
+* Mega Caps
+* Sectors
+* Themes
+* Watchlist
+
+Crypto Market:
+
+* Majors
+* Layer 1s
+* Watchlist
+* High Volume
+* Reference Data
+
+Sort options if easy:
+
+* change %
+* volume if available
+* symbol
+* data quality
+
+Do not overbuild if the current architecture does not support it yet.
+
+==================================================
+8. EMPTY / UNAVAILABLE STATES
+=============================
+
+Make missing data look intentional.
+
+Use premium empty states:
+
+* dark glass card
+* small icon
+* short explanation
+* provider needed
+* optional Settings link/button
+
+Examples:
+
+* “Top movers unavailable with current provider.”
+* “Connect Polygon or MooMoo/OpenD for market-wide movers.”
+* “Portfolio-linked watchlist unavailable until holdings are connected.”
+* “Crypto exchange data unavailable — using CoinGecko reference.”
+
+Do not fill empty states with fake numbers.
+
+==================================================
+9. PERFORMANCE
+==============
+
+Keep performance smooth.
+
+* Batch quote requests where possible.
+* Avoid redundant provider calls.
+* Cache briefly using existing freshness policy if available.
+* Do not call providers on every render.
+* Use loading states.
+* Handle errors gracefully.
+* Avoid huge dependency additions.
+* Keep UI responsive.
+
+==================================================
+10. TESTS / VALIDATION
+======================
+
+Run or add practical validation:
+
+* typecheck
+* lint if available
+* build if available
+* basic tests if available
+
+Verify:
+
+* Stock Market tab loads.
+* Crypto Market tab loads.
+* Yahoo equity data is labeled delayed.
+* CoinGecko crypto data is labeled reference.
+* No fake LIVE label.
+* No fake data.
+* Unavailable widgets show honest empty states.
+* Asset cards show source/timestamp metadata.
+* Existing Markets hover submenu still works.
+* Existing dashboard still works.
+* No console errors.
+
+==================================================
+11. FINAL REPORT
+================
+
+Return a concise summary:
+
+1. Files changed.
+2. Stock Market widgets added.
+3. Crypto Market widgets added.
+4. Data source used for SPY, QQQ, IWM, DIA, NVDA, MSFT.
+5. Data source used for BTC, ETH, SOL, SUI.
+6. Which widgets are live/delayed/reference/unavailable.
+7. Any provider keys needed for richer future data.
+8. Any remaining demo/example data.
+9. Test/build results.
+
+==================================================
+ACCEPTANCE CRITERIA
+===================
+
+When finished:
+
+1. Stock Market tab contains meaningful market data widgets.
+2. Crypto Market tab contains meaningful crypto data widgets.
+3. Both tabs use the shared data router/source metadata.
+4. Yahoo equity data is labeled delayed, not live.
+5. CoinGecko crypto data is labeled reference, not live.
+6. No fake prices are added.
+7. No simulated movements are added.
+8. No fake market breadth, movers, dominance, volume, or sentiment is added.
+9. Missing metrics show polished unavailable states.
+10. Stock and crypto tabs feel more useful and data-rich.
+11. The UI remains premium, readable, and not cluttered.
+12. The Meridian teal/cyan identity is used tastefully, especially in crypto/AI accents.
+13. Existing dashboard and Settings remain intact.
+14. Typecheck/build passes.
+15. No console errors.
+
+Final quality bar:
+The Stock Market and Crypto Market tabs should feel like real, meaningful market-intelligence environments — not empty pages and not fake dashboards. They should provide useful source-aware information now, while clearly showing which richer data will unlock later when providers like MooMoo/OpenD, Polygon, FMP, Kraken, or Coinbase are connected.
