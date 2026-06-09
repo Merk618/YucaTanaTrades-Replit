@@ -11,13 +11,62 @@ import {
 
 type FlashMap = Record<string, "up" | "down">;
 
+/**
+ * Tracks how many seconds remain until the next data refresh and returns a
+ * 0–100 progress value (100 = just fetched, 0 = due now).
+ */
+function useRefreshCountdown(lastFetchedAt: number, intervalMs: number) {
+  const totalSeconds = Math.max(1, Math.round(intervalMs / 1000));
+
+  const computeSecondsLeft = React.useCallback(() => {
+    if (!lastFetchedAt) return totalSeconds;
+    const elapsed = Date.now() - lastFetchedAt;
+    return Math.max(0, Math.round((intervalMs - elapsed) / 1000));
+  }, [lastFetchedAt, intervalMs, totalSeconds]);
+
+  const [secondsLeft, setSecondsLeft] = React.useState<number>(computeSecondsLeft);
+
+  React.useEffect(() => {
+    setSecondsLeft(computeSecondsLeft());
+    const id = setInterval(() => setSecondsLeft(computeSecondsLeft()), 1000);
+    return () => clearInterval(id);
+  }, [computeSecondsLeft]);
+
+  const progressPercent = (secondsLeft / totalSeconds) * 100;
+
+  return { secondsLeft, progressPercent };
+}
+
+function formatCountdown(seconds: number): string {
+  if (seconds >= 60) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  }
+  return `${seconds}s`;
+}
+
 export function TickerTape() {
-  const { quotes: rawQuotes, isError } = useTickerQuotes();
+  const {
+    quotes: rawQuotes,
+    isError,
+    equityRefetchMs,
+    equityDataUpdatedAt,
+  } = useTickerQuotes();
 
   const quotes: Quote[] = React.useMemo(
     () => rawQuotes.filter(isQuoteUsable),
     [rawQuotes],
   );
+
+  // Drive the countdown from the equity cadence, which matches the
+  // market-state contract: 30 s (open) or 5 min (off-hours).
+  // Crypto has its own cycle; we track equities here because that's the
+  // interval the task describes as "the" ticker refresh cadence.
+  const nextRefetchMs = equityRefetchMs;
+  const lastFetchedAt = equityDataUpdatedAt;
+
+  const { secondsLeft, progressPercent } = useRefreshCountdown(lastFetchedAt, nextRefetchMs);
 
   // Track previous prices so we can detect changes and fire flash animations.
   const prevPricesRef = React.useRef<Record<string, number>>({});
@@ -70,6 +119,33 @@ export function TickerTape() {
             "linear-gradient(90deg, transparent 0%, hsl(43 63% 52% / 0.6) 30%, hsl(43 63% 52% / 0.9) 50%, hsl(43 63% 52% / 0.6) 70%, transparent 100%)",
         }}
       />
+
+      {/* Refresh countdown progress bar — bottom edge of ticker */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 h-px z-20 transition-[width] duration-1000 ease-linear"
+        style={{
+          width: `${progressPercent}%`,
+          background:
+            "linear-gradient(90deg, hsl(43 63% 52% / 0.25), hsl(43 63% 52% / 0.65))",
+        }}
+      />
+
+      {/* Countdown label — overlaid on the right fade, above the scrolling tape */}
+      <div
+        className="pointer-events-none absolute right-0 top-0 bottom-0 w-14 z-20 flex items-center justify-end pr-2"
+        aria-label={`Next refresh in ${formatCountdown(secondsLeft)}`}
+      >
+        <span
+          className={cn(
+            "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
+            secondsLeft <= 5
+              ? "text-primary/80"
+              : "text-muted-foreground/35",
+          )}
+        >
+          {formatCountdown(secondsLeft)}
+        </span>
+      </div>
 
       <div className="flex animate-[ticker_35s_linear_infinite]">
         {[...quotes, ...quotes, ...quotes].map((item, i) => {

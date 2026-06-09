@@ -79,6 +79,10 @@ export function useTickerQuotes() {
     ],
     isError: equityResult.isError && cryptoResult.isError,
     equitiesOpen,
+    equityRefetchMs,
+    cryptoRefetchMs,
+    equityDataUpdatedAt: equityResult.dataUpdatedAt,
+    cryptoDataUpdatedAt: cryptoResult.dataUpdatedAt,
   };
 }
 
