@@ -12,7 +12,7 @@ import {
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
   useMarketQuotes, useMarketSession, INDEX_SYMBOLS,
-  isQuoteUsable, quoteTooltip, freshnessLabel, type Quote,
+  isQuoteUsable, quoteTooltip, freshnessLabel, useNow, type Quote,
 } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
@@ -130,8 +130,9 @@ function MetricCard({
 }
 
 // ─── Index card with sparkline ───────────────────────────────────────────────
-function IndexCard({ symbol, price, change, changePercent, tooltip }: {
+function IndexCard({ symbol, price, change, changePercent, tooltip, timestamp, now }: {
   symbol: string; price: number; change: number; changePercent: number; tooltip?: string;
+  timestamp?: string; now?: number;
 }) {
   const isUp = change >= 0;
   const sparkData = TICKER_SPARKLINES[symbol] ?? [price * 0.96, price * 0.98, price];
@@ -189,6 +190,11 @@ function IndexCard({ symbol, price, change, changePercent, tooltip }: {
       <p className={cn("font-mono text-[11px] mt-0.5 tabular-nums", isUp ? "text-emerald-400" : "text-red-400")}>
         {isUp ? "▲" : "▼"} {Math.abs(changePercent).toFixed(2)}%
       </p>
+      {timestamp && now !== undefined && (
+        <p className="font-mono text-[9px] text-muted-foreground/35 mt-1 truncate">
+          as of {freshnessLabel(timestamp, now)}
+        </p>
+      )}
     </div>
   );
 }
@@ -342,6 +348,7 @@ export default function Home() {
   const { data: botStatus } = useGetBotsStatus();
   const { data: session } = useMarketSession();
   const { data: quoteData } = useMarketQuotes(INDEX_SYMBOLS);
+  const now = useNow();
 
   const indexQuotes: Quote[] = (quoteData?.quotes ?? []).filter(isQuoteUsable);
   // Honest source label for the Index Overview footer, derived from the quotes.
@@ -535,6 +542,8 @@ export default function Home() {
                       change={q.change}
                       changePercent={q.changePercent}
                       tooltip={quoteTooltip(q)}
+                      timestamp={q.timestamp}
+                      now={now}
                     />
                   ))}
                 </div>

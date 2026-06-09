@@ -46,8 +46,8 @@ function usePrevPrice(price: number) {
 
 // ─── Full-size QuoteCard ───────────────────────────────────────────────────────
 function QuoteCard({
-  q, teal = false, batchFlashKey = 0, isHighlighted = false,
-}: { q: Quote; teal?: boolean; batchFlashKey?: number; isHighlighted?: boolean }) {
+  q, teal = false, batchFlashKey = 0, isHighlighted = false, now,
+}: { q: Quote; teal?: boolean; batchFlashKey?: number; isHighlighted?: boolean; now?: number }) {
   const up       = q.change >= 0;
   const badge    = quoteBadge(q);
   const prev     = usePrevPrice(q.price);
@@ -134,12 +134,17 @@ function QuoteCard({
           </span>
         )}
       </div>
+      {q.timestamp && now !== undefined && (
+        <p className="font-mono text-[8px] text-muted-foreground/30 mt-1.5 truncate">
+          as of {freshnessLabel(q.timestamp, now)}
+        </p>
+      )}
     </motion.div>
   );
 }
 
 // ─── Compact MiniQuoteCard (mega-caps, sector ETFs, crypto watch) ──────────────
-function MiniQuoteCard({ q, label, teal = false, isHighlighted = false }: { q: Quote; label?: string; teal?: boolean; isHighlighted?: boolean }) {
+function MiniQuoteCard({ q, label, teal = false, isHighlighted = false, now }: { q: Quote; label?: string; teal?: boolean; isHighlighted?: boolean; now?: number }) {
   const up       = q.changePercent >= 0;
   const badge    = quoteBadge(q);
   const prev     = usePrevPrice(q.price);
@@ -193,6 +198,11 @@ function MiniQuoteCard({ q, label, teal = false, isHighlighted = false }: { q: Q
         <span className={cn("inline-block text-[8px] font-mono px-1 py-0.5 rounded border",
           BADGE_TONE[badge.tone])}>{badge.text}</span>
       </div>
+      {q.timestamp && now !== undefined && (
+        <p className="font-mono text-[7px] text-muted-foreground/28 mt-1 truncate">
+          {freshnessLabel(q.timestamp, now)}
+        </p>
+      )}
     </motion.div>
   );
 }
@@ -414,7 +424,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
             const q = indexQ[i];
             return (
               <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                {q ? <QuoteCard q={q} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
+                {q ? <QuoteCard q={q} isHighlighted={pulseSymbol === sym} now={now} /> : <SymbolPlaceholder symbol={sym} />}
               </motion.div>
             );
           })}
@@ -432,7 +442,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
             const q = megaQ[i];
             return (
               <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                {q ? <MiniQuoteCard q={q} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
+                {q ? <MiniQuoteCard q={q} isHighlighted={pulseSymbol === sym} now={now} /> : <SymbolPlaceholder symbol={sym} />}
               </motion.div>
             );
           })}
@@ -450,7 +460,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
             const q = sectQ[i];
             return (
               <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                {q ? <MiniQuoteCard q={q} label={SECTOR_LABELS[sym]} isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} label={SECTOR_LABELS[sym]} />}
+                {q ? <MiniQuoteCard q={q} label={SECTOR_LABELS[sym]} isHighlighted={pulseSymbol === sym} now={now} /> : <SymbolPlaceholder symbol={sym} label={SECTOR_LABELS[sym]} />}
               </motion.div>
             );
           })}
@@ -704,7 +714,7 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {byChange.map((q, i) => (
                 <motion.div key={q.symbol} id={`mkt-${q.symbol}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                  <QuoteCard q={q} teal batchFlashKey={batchFlashKey} isHighlighted={pulseSymbol === q.symbol} />
+                  <QuoteCard q={q} teal batchFlashKey={batchFlashKey} isHighlighted={pulseSymbol === q.symbol} now={now} />
                 </motion.div>
               ))}
             </div>
@@ -739,7 +749,7 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
                 const q = watchQ[i];
                 return (
                   <motion.div key={sym} id={`mkt-${sym}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                    {q ? <MiniQuoteCard q={q} teal isHighlighted={pulseSymbol === sym} /> : <SymbolPlaceholder symbol={sym} />}
+                    {q ? <MiniQuoteCard q={q} teal isHighlighted={pulseSymbol === sym} now={now} /> : <SymbolPlaceholder symbol={sym} />}
                   </motion.div>
                 );
               })}
