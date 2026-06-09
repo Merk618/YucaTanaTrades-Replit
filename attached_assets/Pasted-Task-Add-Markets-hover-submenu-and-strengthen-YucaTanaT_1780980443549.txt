@@ -1,0 +1,428 @@
+Task: Add Markets hover submenu and strengthen YucaTanaTrades’ unique visual identity
+
+Act as a senior fintech UI/UX engineer, frontend engineer, motion designer, and premium product designer.
+
+Use the existing YucaTanaTrades codebase. Do not rewrite the app. Do not break existing routing, data trust, Settings, provider logic, or dashboard functionality.
+
+This task is focused on navigation structure, premium sidebar interaction, stronger brand uniqueness, and color-system refinement.
+
+Important:
+
+* Do not add fake prices.
+* Do not simulate market data.
+* Do not change provider/data routing.
+* Do not add trading execution.
+* Do not redesign the whole app.
+* Preserve the current premium dark UI direction.
+* Keep everything smooth, high-end, responsive, and accessible.
+
+==================================================
+
+1. ADD MARKETS HOVER SUBMENU
+   ==================================================
+
+Current issue:
+The sidebar has a single “Markets” tab. I want Markets to behave like a premium expandable/hover navigation item with two clear subtabs:
+
+* Stock Market
+* Crypto Market
+
+Behavior:
+When hovering over the “Markets” tab in the left sidebar, show a smooth premium submenu/flyout with two options:
+
+1. Stock Market
+2. Crypto Market
+
+The submenu should:
+
+* appear beside or underneath the Markets item depending on layout
+* animate smoothly with fade + slight slide + blur-to-clear
+* use premium dark glass styling
+* use gold/champagne border accents
+* feel like part of the sidebar command system, not a generic dropdown
+* close smoothly when the cursor leaves
+* remain keyboard accessible
+* work on touch/mobile as tap-to-expand
+
+Subtab design:
+
+Stock Market:
+
+* Icon: chart/candlestick/equity style
+* Accent: gold + emerald
+* Description: “Equities, ETFs, indices, watchlists, and sector flow”
+* Optional mini chips: SPY, QQQ, NVDA, MSFT
+
+Crypto Market:
+
+* Icon: crypto/network/coin style
+* Accent: teal/cyan + gold
+* Description: “BTC, ETH, SOL, SUI, crypto strength, and 24/7 market flow”
+* Optional mini chips: BTC, ETH, SOL, SUI
+
+Click behavior:
+
+* Clicking Stock Market should navigate to or activate a Stock Market view.
+* Clicking Crypto Market should navigate to or activate a Crypto Market view.
+* If separate routes already exist, use them.
+* If routes do not exist, create clean internal subviews under Markets without a major architecture rewrite.
+
+Suggested route/state names:
+
+* /markets/stocks
+* /markets/crypto
+
+or equivalent existing router structure.
+
+Do not remove the main Markets item. The main Markets item can either:
+
+* open the default Stock Market view, or
+* expand the submenu.
+
+Choose the cleanest behavior based on existing app structure.
+
+==================================================
+2. STOCK MARKET SUBVIEW
+=======================
+
+Create or organize a Stock Market subview under Markets.
+
+This should be focused on:
+
+* equities
+* ETFs
+* indices
+* major stock watchlist
+* sector/market overview if already available
+* source labels and timestamps from the existing data trust system
+
+Do not invent data.
+If data is unavailable, show “Unavailable” or “Delayed · Yahoo” depending current source metadata.
+
+Stock Market UI ideas:
+
+* Market overview cards
+* SPY / QQQ / IWM / DIA
+* major watchlist row
+* source badge: Delayed · Yahoo if Yahoo fallback is used
+* no fake LIVE label
+
+==================================================
+3. CRYPTO MARKET SUBVIEW
+========================
+
+Create or organize a Crypto Market subview under Markets.
+
+This should be focused on:
+
+* BTC
+* ETH
+* SOL
+* SUI
+* crypto market strength
+* crypto watchlist
+* source labels and timestamps from the existing data trust system
+
+Do not invent data.
+If current source is CoinGecko, label it as:
+“CoinGecko · Reference”
+or
+“Reference · CoinGecko”
+
+Crypto Market UI ideas:
+
+* Crypto overview cards
+* BTC / ETH / SOL / SUI
+* crypto relative strength
+* 24/7 market status
+* source badge
+* no fake LIVE label unless a true live exchange provider is connected later
+
+==================================================
+4. MAKE THE SIDEBAR FEEL MORE UNIQUE
+====================================
+
+The current structure is good, but it risks looking similar to other dark finance dashboards. Improve the sidebar so it feels like YucaTanaTrades’ own command system.
+
+Add:
+
+* Premium hover glow per sidebar item
+* Active item vertical energy beam
+* Smooth left-edge shimmer
+* Slight magnetic hover movement
+* Submenu/flyout cards with glass depth
+* Better separation between brand/logo area and nav groups
+* Subtle teal/cyan intelligence accent that matches the new Meridian logo
+* Gold/champagne remains the main luxury accent
+
+Markets tab special treatment:
+
+* When hovering Markets, show a stronger “market split” submenu animation.
+* Add tiny animated line connecting Markets to the submenu.
+* Stock Market option should have a subtle emerald/gold shine.
+* Crypto Market option should have a subtle teal/cyan/gold shine.
+
+Keep it restrained and premium.
+
+==================================================
+5. MERIDIAN INTELLIGENCE COLOR SYSTEM
+=====================================
+
+Do not rely only on black and gold.
+
+Keep gold/champagne as the luxury finance accent, but make teal/cyan the unique “Meridian Intelligence” signature color.
+
+The app should feel less like a generic black/gold finance template and more like a proprietary AI market-intelligence terminal.
+
+Color hierarchy:
+
+* Black / charcoal / midnight navy = core background
+* Gold / champagne = luxury finance, navigation highlights, premium borders
+* Teal / cyan = Meridian Intelligence signature, AI layer, logo energy, particles, crypto, signal effects
+* Emerald = positive market movement
+* Muted crimson = negative/risk movement
+* Amber = warnings, scanners, risk watch states
+
+Use teal/cyan specifically in:
+
+* the new Meridian logo glow
+* background particles
+* AI orb / AI effects
+* crypto submenu
+* Crypto Market page accents
+* subtle active glows
+* signal lines
+* neural/data-stream effects
+* hover effects for intelligence-related UI
+
+Do not make the whole UI teal.
+Teal/cyan should be a distinctive intelligence accent, not the dominant color.
+
+Gold should remain the premium brand/luxury accent.
+Teal/cyan should become the “Meridian Intelligence” signature accent.
+
+Suggested teal/cyan values:
+
+* Deep teal: #0F766E
+* Bright cyan/teal glow: #22D3EE
+* Electric teal: #14B8A6
+* Soft cyan glow: rgba(34, 211, 238, 0.24)
+* Deep teal glow: rgba(20, 184, 166, 0.18)
+
+Suggested gold/champagne values:
+
+* Gold: #D4AF37
+* Champagne: #F7E7B4
+* Soft gold glow: rgba(212, 175, 55, 0.22)
+
+The final color direction should feel:
+
+* dark
+* premium
+* sharp
+* intelligent
+* proprietary
+* luxury
+* AI-powered
+* not generic
+
+==================================================
+6. UNIQUE PRODUCT STRUCTURE RECOMMENDATION
+==========================================
+
+Give the app a more unique identity by treating it like a “Meridian Intelligence OS.”
+
+Do not necessarily rename everything, but visually structure the app around three major intelligence zones:
+
+A. Meridian Intelligence Center
+Primary overview/dashboard.
+
+B. Markets
+Split into:
+
+* Stock Market
+* Crypto Market
+
+C. Systems
+For:
+
+* Scanners
+* Research
+* Portfolio
+* Bots
+* Journal
+* Watchlist
+* Risk
+* Settings
+
+If feasible, subtly group sidebar items:
+
+Intelligence:
+
+* Command Center / Meridian Intelligence Center
+
+Markets:
+
+* Stock Market
+* Crypto Market
+
+Systems:
+
+* Scanners
+* Research
+* Portfolio
+* Bots
+* Journal
+* Watchlist
+* Risk
+
+Control:
+
+* Settings
+
+Do not overcomplicate the UI. If grouping is too disruptive, keep current sidebar but add the Markets submenu.
+
+==================================================
+7. PARTICLE BACKGROUND AND COLOR INTEGRATION
+============================================
+
+Make sure the particle system reflects the new Meridian color direction.
+
+The particle system should no longer be only gold.
+Blend gold/champagne with teal/cyan so the background feels proprietary and tied to the new logo.
+
+Particle color behavior:
+
+Default / Meridian Intelligence Center:
+
+* gold dots
+* champagne signal particles
+* teal/cyan AI nodes
+* subtle neural connection lines
+
+Stock Market:
+
+* gold/champagne base
+* emerald positive particles
+* muted red negative particles
+* ticker/candlestick particles
+
+Crypto Market:
+
+* teal/cyan dominant accent
+* gold secondary accent
+* crypto/network/coin particles
+* BTC / ETH / SOL / SUI ticker glyphs
+
+Risk:
+
+* amber/gold base
+* muted red warning accents
+* shield/warning particles
+
+Research / AI:
+
+* teal/cyan AI nodes
+* champagne source particles
+* data-link lines
+
+The particle background should help make YucaTanaTrades look more unique.
+
+Important:
+
+* Particles must be visible but not distracting.
+* Particle layer must stay behind content.
+* Use pointer-events: none.
+* Do not reduce text readability.
+* Do not make it look like neon gaming effects.
+
+==================================================
+8. AI / MERIDIAN VISUAL SIGNATURE
+=================================
+
+Add a subtle Meridian Intelligence visual signature throughout the app.
+
+Examples:
+
+* Teal/cyan glow around the AI orb
+* Teal/cyan accents in AI Daily Briefing
+* Teal/cyan data-stream line behind research/AI panels
+* Teal/cyan crypto submenu glow
+* Teal/cyan edge highlight on active intelligence-related cards
+* Teal/cyan particle nodes around the logo
+* Gold + teal combined hover effects on key dashboard cards
+
+Do not overuse it.
+The visual identity should feel premium and rare, not loud.
+
+The balance should be:
+
+* 70% dark premium base
+* 20% gold/champagne luxury
+* 10% teal/cyan Meridian Intelligence signature
+
+==================================================
+9. ACCESSIBILITY / MOBILE
+=========================
+
+Desktop:
+
+* Hover over Markets opens submenu.
+* Moving cursor into submenu keeps it open.
+* Leaving submenu closes it smoothly.
+
+Keyboard:
+
+* Markets can receive focus.
+* Arrow/Enter/Space can open submenu.
+* Stock Market and Crypto Market are keyboard selectable.
+* Escape closes submenu.
+
+Mobile/tablet:
+
+* Tap Markets to expand/collapse.
+* Tap Stock Market or Crypto Market to navigate.
+* Submenu should not rely only on hover.
+
+Reduced motion:
+
+* Use simple show/hide or fade only.
+
+Contrast:
+
+* Teal/cyan and gold accents must not reduce readability.
+* Text should remain crisp and accessible.
+* Glow should not wash out labels.
+
+==================================================
+10. ACCEPTANCE CRITERIA
+=======================
+
+When finished:
+
+1. Hovering Markets opens a premium submenu.
+2. Submenu contains exactly:
+
+   * Stock Market
+   * Crypto Market
+3. Stock Market and Crypto Market are clickable/selectable.
+4. Submenu is smooth, dark, glassy, and high-end.
+5. Submenu has keyboard and mobile fallback.
+6. Stock Market uses equity/ETF data labels honestly.
+7. Crypto Market uses crypto data labels honestly.
+8. No fake prices are added.
+9. No fake LIVE labels are added.
+10. No market-data routing is broken.
+11. Sidebar feels more unique and premium.
+12. The new teal/cyan Meridian logo color language is integrated into the UI.
+13. Teal/cyan appears in particles, AI effects, crypto submenu, and subtle active glows.
+14. Gold remains the primary luxury finance accent.
+15. The app no longer feels like a generic black/gold fintech template.
+16. Existing pages still work.
+17. No console errors.
+18. Typecheck/build passes if available.
+
+Final quality bar:
+The Markets tab should feel like a premium command menu with two professional market environments: Stock Market and Crypto Market.
+
+The broader app should feel like a proprietary Meridian Intelligence operating system for market analysis: dark, luxury, gold-accented, teal/cyan intelligence signature, smooth motion, trustworthy data, and a unique identity that separates YucaTanaTrades from generic finance dashboards.
