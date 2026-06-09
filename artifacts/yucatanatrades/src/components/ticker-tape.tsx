@@ -51,7 +51,9 @@ export function TickerTape() {
     quotes: rawQuotes,
     isError,
     equityRefetchMs,
+    cryptoRefetchMs,
     equityDataUpdatedAt,
+    cryptoDataUpdatedAt,
   } = useTickerQuotes();
 
   const quotes: Quote[] = React.useMemo(
@@ -59,14 +61,10 @@ export function TickerTape() {
     [rawQuotes],
   );
 
-  // Drive the countdown from the equity cadence, which matches the
-  // market-state contract: 30 s (open) or 5 min (off-hours).
-  // Crypto has its own cycle; we track equities here because that's the
-  // interval the task describes as "the" ticker refresh cadence.
-  const nextRefetchMs = equityRefetchMs;
-  const lastFetchedAt = equityDataUpdatedAt;
-
-  const { secondsLeft, progressPercent } = useRefreshCountdown(lastFetchedAt, nextRefetchMs);
+  const { secondsLeft: eqSecondsLeft, progressPercent: eqProgress } =
+    useRefreshCountdown(equityDataUpdatedAt, equityRefetchMs);
+  const { secondsLeft: cryptoSecondsLeft, progressPercent: cryptoProgress } =
+    useRefreshCountdown(cryptoDataUpdatedAt, cryptoRefetchMs);
 
   // Pause scroll on hover — declared before any early returns to satisfy Rules of Hooks.
   const [isPaused, setIsPaused] = React.useState(false);
@@ -116,7 +114,7 @@ export function TickerTape() {
     >
       {/* Gold gradient fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-background to-transparent" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-background to-transparent" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-background to-transparent" />
 
       {/* Subtle gold scanning line across top */}
       <div
@@ -127,31 +125,59 @@ export function TickerTape() {
         }}
       />
 
-      {/* Refresh countdown progress bar — bottom edge of ticker */}
+      {/*
+       * Split bottom-edge progress bar:
+       *   Left half  → equity countdown  (gold, anchored left)
+       *   Right half → crypto countdown  (emerald, anchored right)
+       * Each fills from its edge inward and resets independently.
+       */}
       <div
         className="pointer-events-none absolute bottom-0 left-0 h-px z-20 transition-[width] duration-1000 ease-linear"
         style={{
-          width: `${progressPercent}%`,
+          width: `${eqProgress / 2}%`,
           background:
-            "linear-gradient(90deg, hsl(43 63% 52% / 0.25), hsl(43 63% 52% / 0.65))",
+            "linear-gradient(90deg, hsl(43 63% 52% / 0.25), hsl(43 63% 52% / 0.7))",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute bottom-0 right-0 h-px z-20 transition-[width] duration-1000 ease-linear"
+        style={{
+          width: `${cryptoProgress / 2}%`,
+          background:
+            "linear-gradient(270deg, hsl(160 100% 39% / 0.25), hsl(160 100% 39% / 0.7))",
         }}
       />
 
-      {/* Countdown label — overlaid on the right fade, above the scrolling tape */}
+      {/*
+       * Two labeled countdown badges — equity (gold) and crypto (emerald).
+       * Positioned over the right fade, stacked vertically, font-mono 9px.
+       */}
       <div
-        className="pointer-events-none absolute right-0 top-0 bottom-0 w-14 z-20 flex items-center justify-end pr-2"
-        aria-label={`Next refresh in ${formatCountdown(secondsLeft)}`}
+        className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 z-20 flex items-center justify-end pr-2"
+        aria-label={`Equity refresh in ${formatCountdown(eqSecondsLeft)}, crypto refresh in ${formatCountdown(cryptoSecondsLeft)}`}
       >
-        <span
-          className={cn(
-            "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
-            secondsLeft <= 5
-              ? "text-primary/80"
-              : "text-muted-foreground/35",
-          )}
-        >
-          {formatCountdown(secondsLeft)}
-        </span>
+        <div className="flex flex-col items-end gap-px">
+          <span
+            className={cn(
+              "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
+              eqSecondsLeft <= 5
+                ? "text-primary/90"
+                : "text-muted-foreground/40",
+            )}
+          >
+            EQ&thinsp;{formatCountdown(eqSecondsLeft)}
+          </span>
+          <span
+            className={cn(
+              "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
+              cryptoSecondsLeft <= 5
+                ? "text-emerald-400/90"
+                : "text-muted-foreground/40",
+            )}
+          >
+            ₿&thinsp;{formatCountdown(cryptoSecondsLeft)}
+          </span>
+        </div>
       </div>
 
       <div
