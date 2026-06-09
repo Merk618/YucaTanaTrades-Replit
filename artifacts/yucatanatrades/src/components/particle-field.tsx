@@ -39,17 +39,29 @@ type ParticleTheme = {
 // Each key is a wouter route path.
 // To add a new tab: add an entry with the route as key.
 const PARTICLE_THEMES: Record<string, ParticleTheme> = {
-  "/": { // Command Center — gold/champagne AI hub
-    dotColors:   ["212,175,55", "247,231,180", "34,197,94", "255,255,255"],
-    labelColors: ["212,175,55", "247,231,180", "34,197,94"],
-    labels:      ["AI", "SPY", "QQQ", "BTC", "ETH", "NVDA", "MSFT", "SOL", "SUI", "ALPHA", "FLOW", "SCAN", "RISK", "◆"],
-    dotCount:    44, labelCount: 20, speed: 0.22,
+  "/": { // Command Center — gold/champagne + teal Meridian AI hub
+    dotColors:   ["212,175,55", "247,231,180", "20,184,166", "34,211,238", "255,255,255"],
+    labelColors: ["212,175,55", "247,231,180", "20,184,166"],
+    labels:      ["AI", "SPY", "QQQ", "BTC", "ETH", "NVDA", "MSFT", "SOL", "SUI", "ALPHA", "FLOW", "SCAN", "RISK", "◆", "∿"],
+    dotCount:    46, labelCount: 22, speed: 0.22,
   },
-  "/markets": { // Markets — emerald/red live market flow
+  "/markets": { // Markets default — emerald/red/gold market flow
     dotColors:   ["34,197,94", "239,68,68", "212,175,55", "255,255,255"],
     labelColors: ["34,197,94", "239,68,68", "212,175,55"],
     labels:      ["SPY", "QQQ", "DIA", "IWM", "▲", "▼", "BTC", "ETH"],
     dotCount:    30, labelCount: 18, speed: 0.30,
+  },
+  "/markets/stocks": { // Stock Market — gold/emerald equity flow
+    dotColors:   ["212,175,55", "34,197,94", "239,68,68", "247,231,180", "255,255,255"],
+    labelColors: ["212,175,55", "34,197,94", "239,68,68"],
+    labels:      ["SPY", "QQQ", "DIA", "IWM", "MSFT", "NVDA", "ETF", "▲", "▼", "FLOW"],
+    dotCount:    36, labelCount: 20, speed: 0.28,
+  },
+  "/markets/crypto": { // Crypto Market — teal/cyan dominant with gold accent
+    dotColors:   ["20,184,166", "34,211,238", "212,175,55", "255,255,255"],
+    labelColors: ["20,184,166", "34,211,238", "212,175,55"],
+    labels:      ["BTC", "ETH", "SOL", "SUI", "₿", "◎", "CHAIN", "◆", "∿", "24/7"],
+    dotCount:    38, labelCount: 22, speed: 0.32,
   },
   "/scanners": { // Scanners — amber/gold signal detection
     dotColors:   ["212,175,55", "251,191,36", "34,197,94", "249,115,22"],
@@ -57,11 +69,11 @@ const PARTICLE_THEMES: Record<string, ParticleTheme> = {
     labels:      ["MOM", "BO", "RS", "SIG", "SCAN", "◉"],
     dotCount:    28, labelCount: 16, speed: 0.25,
   },
-  "/research": { // Research — champagne/blue-gray intelligence nodes
-    dotColors:   ["247,231,180", "148,163,184", "212,175,55", "255,255,255"],
-    labelColors: ["212,175,55", "247,231,180", "148,163,184"],
-    labels:      ["SEC", "NEWS", "AI", "DATA", "ALPHA", "◆"],
-    dotCount:    24, labelCount: 12, speed: 0.18,
+  "/research": { // Research — teal/cyan AI nodes + champagne intelligence
+    dotColors:   ["20,184,166", "247,231,180", "148,163,184", "34,211,238", "255,255,255"],
+    labelColors: ["20,184,166", "212,175,55", "34,211,238"],
+    labels:      ["SEC", "NEWS", "AI", "DATA", "ALPHA", "◆", "∿", "LLM"],
+    dotCount:    26, labelCount: 14, speed: 0.18,
   },
   "/portfolio": { // Portfolio — gold/emerald wealth engine
     dotColors:   ["212,175,55", "34,197,94", "247,231,180", "255,255,255"],

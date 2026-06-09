@@ -1,59 +1,44 @@
-import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, Globe, RefreshCw } from "lucide-react";
 import {
-  useMarketQuotes,
-  useMarketSession,
-  isQuoteUsable,
-  formatPrice,
-  quoteBadge,
-  quoteTooltip,
+  TrendingUp, TrendingDown, RefreshCw, BarChart3, Coins,
+} from "lucide-react";
+import {
+  useMarketQuotes, useMarketSession,
+  isQuoteUsable, formatPrice, quoteBadge, quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
 import { DemoBadge } from "@/components/demo-badge";
 import { cn } from "@/lib/utils";
 
-const TABS = ["All", "Stocks", "Crypto", "ETFs", "Watchlist"];
-
 const EQUITY_SYMBOLS = ["SPY", "QQQ", "IWM", "DIA", "MSFT", "NVDA", "AVGO"] as const;
 const CRYPTO_SYMBOLS = ["BTC", "ETH", "SOL", "SUI"] as const;
-
-const CATEGORY: Record<string, string[]> = {
-  Stocks: ["MSFT", "NVDA", "AVGO"],
-  Crypto: ["BTC", "ETH", "SOL", "SUI"],
-  ETFs: ["SPY", "QQQ", "IWM", "DIA"],
-  Watchlist: ["MSFT", "AVGO", "BTC", "ETH", "SOL", "NVDA"],
-};
+const INDEX_SYMS     = ["SPY", "QQQ", "IWM", "DIA"] as const;
+const STOCK_SYMS     = ["MSFT", "NVDA", "AVGO"] as const;
 
 const BADGE_TONE: Record<string, string> = {
-  live: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  live:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   delayed: "bg-primary/15 text-primary border-primary/20",
-  ref: "bg-sky-500/15 text-sky-400 border-sky-500/20",
-  stale: "bg-red-500/15 text-red-400 border-red-500/20",
+  ref:     "bg-sky-500/15 text-sky-400 border-sky-500/20",
+  stale:   "bg-red-500/15 text-red-400 border-red-500/20",
 };
 
-// Track the previous value of a quoted field to detect changes.
 function usePrevPrice(price: number) {
-  const ref = useRef<number>(price);
+  const ref  = useRef<number>(price);
   const prev = ref.current;
-  useEffect(() => {
-    ref.current = price;
-  });
+  useEffect(() => { ref.current = price; });
   return prev;
 }
 
-function QuoteCard({ q }: { q: Quote }) {
-  const up = q.change >= 0;
+function QuoteCard({ q, teal = false }: { q: Quote; teal?: boolean }) {
+  const up    = q.change >= 0;
   const badge = quoteBadge(q);
-
-  // Detect price changes to trigger flash animation.
-  const prevPrice = usePrevPrice(q.price);
-  const priceChanged = prevPrice !== 0 && prevPrice !== q.price;
-  const flashDir = priceChanged ? (q.price > prevPrice ? "up" : "down") : null;
-
-  // Each time price changes we bump a key so AnimatePresence remounts flash.
+  const prev  = usePrevPrice(q.price);
+  const changed  = prev !== 0 && prev !== q.price;
+  const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
   const flashKey = useRef(0);
-  if (priceChanged) flashKey.current += 1;
+  if (changed) flashKey.current += 1;
 
   return (
     <motion.div
@@ -61,36 +46,35 @@ function QuoteCard({ q }: { q: Quote }) {
       title={quoteTooltip(q)}
       className={cn(
         "glass-card p-5 cursor-help transition-all relative overflow-hidden",
-        up ? "hover:border-emerald-500/30" : "hover:border-red-500/30"
+        teal ? "hover:border-teal-500/40" : up ? "hover:border-emerald-500/30" : "hover:border-red-500/30"
       )}
+      style={teal ? { borderColor: "rgba(20,184,166,0.20)" } : undefined}
     >
-      {/* Price-change flash overlay */}
       <AnimatePresence>
         {flashDir && (
           <motion.div
             key={flashKey.current}
-            initial={{ opacity: 0.35 }}
-            animate={{ opacity: 0 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0.35 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className={cn(
-              "absolute inset-0 rounded-[inherit] pointer-events-none",
-              flashDir === "up" ? "bg-emerald-500/20" : "bg-red-500/20"
-            )}
+            className={cn("absolute inset-0 rounded-[inherit] pointer-events-none",
+              flashDir === "up" ? "bg-emerald-500/20" : "bg-red-500/20")}
           />
         )}
       </AnimatePresence>
 
       <div className="flex items-start justify-between mb-3">
-        <span className="font-mono font-bold text-primary text-base">{q.symbol}</span>
-        {up ? <TrendingUp className="w-4 h-4 text-emerald-400" /> : <TrendingDown className="w-4 h-4 text-red-400" />}
+        <span className="font-mono font-bold text-base"
+          style={{ color: teal ? "#22D3EE" : "#D4AF37" }}>
+          {q.symbol}
+        </span>
+        {up
+          ? <TrendingUp className={cn("w-4 h-4", teal ? "text-teal-400" : "text-emerald-400")} />
+          : <TrendingDown className="w-4 h-4 text-red-400" />}
       </div>
 
-      {/* Price with subtle scale animation on change */}
       <motion.p
         key={q.price}
-        initial={{ scale: 1.05 }}
-        animate={{ scale: 1 }}
+        initial={{ scale: 1.05 }} animate={{ scale: 1 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="font-mono text-2xl font-bold text-foreground mb-1"
       >
@@ -98,27 +82,26 @@ function QuoteCard({ q }: { q: Quote }) {
       </motion.p>
 
       <div className="flex items-center gap-2 mt-1">
-        <span className={cn("font-mono text-xs font-semibold px-1.5 py-0.5 rounded", up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400")}>
+        <span className={cn("font-mono text-xs font-semibold px-1.5 py-0.5 rounded",
+          up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400")}>
           {up ? "+" : ""}{q.changePercent.toFixed(2)}%
         </span>
         <span className={cn("font-mono text-xs", up ? "text-emerald-400" : "text-red-400")}>
           {up ? "+" : ""}{q.change.toFixed(q.price < 1 ? 4 : 2)}
         </span>
       </div>
-      <span className={cn("inline-block mt-3 text-[9px] font-mono px-1.5 py-0.5 rounded border", BADGE_TONE[badge.tone])}>
+      <span className={cn("inline-block mt-3 text-[9px] font-mono px-1.5 py-0.5 rounded border",
+        BADGE_TONE[badge.tone])}>
         {badge.text}
       </span>
     </motion.div>
   );
 }
 
-// Session-aware quotes hook for the Markets page.
-// Crypto refreshes at 30 s when equities are open (high-activity period),
-// 60 s when equities are closed. Equities use 30 s / 5 min cadence.
 function useMarketsQuotes() {
   const { data: session } = useMarketSession(2 * 60_000);
   const equitiesOpen = session?.equities?.isOpen ?? false;
-  const cryptoOpen = session?.crypto?.isOpen ?? true;
+  const cryptoOpen   = session?.crypto?.isOpen ?? true;
 
   const equityRefetch = equitiesOpen ? 30_000 : 5 * 60_000;
   const cryptoRefetch = equitiesOpen ? 30_000 : cryptoOpen ? 60_000 : 5 * 60_000;
@@ -127,7 +110,7 @@ function useMarketsQuotes() {
   const cryptoResult = useMarketQuotes(CRYPTO_SYMBOLS, cryptoRefetch);
 
   return {
-    quotes: [
+    allQuotes: [
       ...(equityResult.data?.quotes ?? []),
       ...(cryptoResult.data?.quotes ?? []),
     ] as Quote[],
@@ -137,44 +120,33 @@ function useMarketsQuotes() {
   };
 }
 
-export default function Markets() {
-  const [activeTab, setActiveTab] = useState("All");
-  const { quotes: allQuotes, cryptoRefetch, equitiesOpen, isFetching } = useMarketsQuotes();
-  const { data: session } = useMarketSession();
+// ─── Stock Market subview ─────────────────────────────────────────────────────
+function StocksView({ allQuotes, isFetching, equitiesOpen }: {
+  allQuotes: Quote[]; isFetching: boolean; equitiesOpen: boolean;
+}) {
+  const quotes  = allQuotes.filter(isQuoteUsable);
+  const indexQ  = quotes.filter(q => (INDEX_SYMS as readonly string[]).includes(q.symbol));
+  const stockQ  = quotes.filter(q => (STOCK_SYMS as readonly string[]).includes(q.symbol));
+  const gainers = [...quotes].sort((a, b) => b.changePercent - a.changePercent).slice(0, 5);
+  const losers  = [...quotes].sort((a, b) => a.changePercent - b.changePercent).slice(0, 5);
 
-  const quotes = allQuotes.filter(isQuoteUsable);
-
-  const equitiesStatusLabel = equitiesOpen ? "EQUITIES OPEN" : "EQUITIES CLOSED";
   const statusClass = equitiesOpen
     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
     : "bg-muted/40 text-muted-foreground border-border/40";
-
-  const cryptoRefetchLabel = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
-
-  const filtered = quotes.filter((q) => {
-    if (activeTab === "All") return true;
-    const allowed = CATEGORY[activeTab];
-    return allowed ? allowed.includes(q.symbol) : true;
-  });
-
-  const gainers = [...quotes].sort((a, b) => b.changePercent - a.changePercent).slice(0, 5);
-  const losers = [...quotes].sort((a, b) => a.changePercent - b.changePercent).slice(0, 5);
 
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-3 mb-1">
-          <Globe className="w-5 h-5 text-primary" />
-          <h1 className="font-display text-3xl font-bold tracking-tight">Markets</h1>
+          <BarChart3 className="w-5 h-5 text-primary" />
+          <h1 className="font-display text-3xl font-bold tracking-tight">Stock Market</h1>
           <span className={cn("px-2 py-0.5 rounded-full border text-xs font-semibold ml-2", statusClass)}>
-            {equitiesStatusLabel}
+            {equitiesOpen ? "EQUITIES OPEN" : "EQUITIES CLOSED"}
           </span>
-          {isFetching && (
-            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground/50 animate-spin ml-1" />
-          )}
+          {isFetching && <RefreshCw className="w-3.5 h-3.5 text-muted-foreground/50 animate-spin ml-1" />}
         </div>
         <p className="text-muted-foreground text-sm ml-8">
-          Equities &amp; ETFs delayed ~15min (Yahoo Finance) · Crypto refreshes every {cryptoRefetchLabel}
+          Equities &amp; ETFs delayed ~15min (Yahoo Finance) · Indices, stocks, and sector flow
         </p>
       </motion.div>
 
@@ -184,9 +156,37 @@ export default function Markets() {
         </div>
       ) : (
         <>
-          {/* Gainers / Losers (derived from real quotes) */}
+          {indexQ.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Index Overview</h2>
+                <span className="text-[10px] text-muted-foreground/50 font-mono">Delayed ~15min · Yahoo</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {indexQ.map((q, i) => (
+                  <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                    <QuoteCard q={q} />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {stockQ.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <h2 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider mb-3">Key Stocks</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {stockQ.map((q, i) => (
+                  <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                    <QuoteCard q={q} />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="glass-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-sm font-display font-semibold text-foreground">Top Gainers</h3>
@@ -204,7 +204,7 @@ export default function Markets() {
               </div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
+            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }} className="glass-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingDown className="w-4 h-4 text-red-400" />
                 <h3 className="text-sm font-display font-semibold text-foreground">Underperformers</h3>
@@ -223,81 +223,158 @@ export default function Markets() {
             </motion.div>
           </div>
 
-          {/* Sector Heatmap — illustrative sample, not a live data feed */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="glass-card p-5">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="text-sm font-display font-semibold text-foreground">Sector Heatmap</h3>
               <DemoBadge />
             </div>
             <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
               {[
-                { name: "AI / Tech", change: 1.4 },
-                { name: "Semis", change: 2.1 },
-                { name: "Defense", change: 0.8 },
-                { name: "Nuclear", change: 1.2 },
-                { name: "Crypto", change: 3.5 },
-                { name: "Fintech", change: -0.6 },
-                { name: "Biotech", change: -1.2 },
-                { name: "Energy", change: 0.3 },
-                { name: "Quantum", change: 4.2 },
-                { name: "Space", change: 2.8 },
-                { name: "REITs", change: -0.9 },
-                { name: "Utilities", change: 0.5 },
-              ].map((sector) => (
-                <div
-                  key={sector.name}
-                  className={cn(
-                    "p-3 rounded-lg text-center border transition-colors",
-                    sector.change >= 2
-                      ? "bg-emerald-500/25 border-emerald-500/30"
-                      : sector.change >= 0
-                      ? "bg-emerald-500/10 border-emerald-500/20"
-                      : sector.change >= -1
-                      ? "bg-red-500/10 border-red-500/20"
-                      : "bg-red-500/20 border-red-500/30"
-                  )}
-                >
-                  <p className="text-[10px] font-semibold text-foreground/70">{sector.name}</p>
-                  <p className={cn("font-mono text-sm font-bold mt-0.5", sector.change >= 0 ? "text-emerald-400" : "text-red-400")}>
-                    {sector.change >= 0 ? "+" : ""}{sector.change.toFixed(1)}%
+                { name: "AI / Tech", change: 1.4 }, { name: "Semis", change: 2.1 },
+                { name: "Defense",  change: 0.8 }, { name: "Nuclear", change: 1.2 },
+                { name: "Crypto",   change: 3.5 }, { name: "Fintech", change: -0.6 },
+                { name: "Biotech",  change: -1.2 }, { name: "Energy",  change: 0.3 },
+                { name: "Quantum",  change: 4.2 }, { name: "Space",   change: 2.8 },
+                { name: "REITs",    change: -0.9 }, { name: "Utilities", change: 0.5 },
+              ].map((s) => (
+                <div key={s.name} className={cn("p-3 rounded-lg text-center border transition-colors",
+                  s.change >= 2 ? "bg-emerald-500/25 border-emerald-500/30"
+                  : s.change >= 0 ? "bg-emerald-500/10 border-emerald-500/20"
+                  : s.change >= -1 ? "bg-red-500/10 border-red-500/20"
+                  : "bg-red-500/20 border-red-500/30")}>
+                  <p className="text-[10px] font-semibold text-foreground/70">{s.name}</p>
+                  <p className={cn("font-mono text-sm font-bold mt-0.5",
+                    s.change >= 0 ? "text-emerald-400" : "text-red-400")}>
+                    {s.change >= 0 ? "+" : ""}{s.change.toFixed(1)}%
                   </p>
                 </div>
               ))}
             </div>
           </motion.div>
-
-          {/* Tab filter + Price grid */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
-                  activeTab === tab
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="glass-card p-8 text-center text-xs text-muted-foreground/50 font-mono">
-              No instruments available in this category
-            </div>
-          ) : (
-            <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filtered.map((q, i) => (
-                <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <QuoteCard q={q} />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
         </>
       )}
     </div>
   );
+}
+
+// ─── Crypto Market subview ────────────────────────────────────────────────────
+function CryptoView({ allQuotes, isFetching, cryptoRefetch }: {
+  allQuotes: Quote[]; isFetching: boolean; cryptoRefetch: number;
+}) {
+  const quotes   = allQuotes.filter(isQuoteUsable).filter(q => (CRYPTO_SYMBOLS as readonly string[]).includes(q.symbol));
+  const byChange = [...quotes].sort((a, b) => b.changePercent - a.changePercent);
+  const best     = byChange[0];
+  const label    = cryptoRefetch <= 30_000 ? "30 s" : cryptoRefetch <= 60_000 ? "60 s" : "5 min";
+  const isLive   = quotes.some(q => q.isLive);
+
+  return (
+    <div className="h-full overflow-y-auto p-6 space-y-6">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center gap-3 mb-1">
+          <Coins className="w-5 h-5" style={{ color: "#22D3EE" }} />
+          <h1 className="font-display text-3xl font-bold tracking-tight">Crypto Market</h1>
+          <span className="px-2 py-0.5 rounded-full border text-xs font-semibold ml-2"
+            style={{ background: "rgba(20,184,166,0.10)", borderColor: "rgba(20,184,166,0.24)", color: "#22D3EE" }}>
+            CRYPTO 24/7
+          </span>
+          {isFetching && <RefreshCw className="w-3.5 h-3.5 animate-spin ml-1" style={{ color: "#22D3EE" }} />}
+        </div>
+        <p className="text-muted-foreground text-sm ml-8">
+          {isLive ? "Live · Kraken exchange" : "Reference · CoinGecko"} · refreshes every {label}
+        </p>
+      </motion.div>
+
+      {quotes.length === 0 ? (
+        <div className="glass-card p-12 text-center text-sm text-muted-foreground/60 font-mono">
+          Crypto data sources unavailable
+        </div>
+      ) : (
+        <>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-xs font-display font-semibold uppercase tracking-wider" style={{ color: "#22D3EE" }}>
+                Live Prices
+              </h2>
+              <span className="text-[10px] text-muted-foreground/50 font-mono">
+                {isLive ? "Live · Kraken" : "Reference · CoinGecko"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {byChange.map((q, i) => (
+                <motion.div key={q.symbol} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                  <QuoteCard q={q} teal />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+            className="glass-card p-5" style={{ borderColor: "rgba(20,184,166,0.16)" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-sm font-display font-semibold text-foreground">Relative Strength</h3>
+              <span className="text-[10px] text-muted-foreground/50 font-mono">ranked by session change</span>
+            </div>
+            <div className="space-y-3">
+              {byChange.map((q, i) => {
+                const up    = q.changePercent >= 0;
+                const width = Math.min(100, Math.abs(q.changePercent) * 14);
+                const medals = ["🥇", "🥈", "🥉", ""];
+                return (
+                  <div key={q.symbol} className="flex items-center gap-3">
+                    <span className="text-xs w-5 text-center">{medals[i] ?? ""}</span>
+                    <span className="font-mono text-sm font-bold w-12" style={{ color: "#22D3EE" }}>{q.symbol}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${width}%` }}
+                        transition={{ delay: i * 0.08 + 0.2, duration: 0.6, ease: "easeOut" }}
+                        className="h-full rounded-full"
+                        style={{ background: up ? "rgba(20,184,166,0.75)" : "rgba(239,68,68,0.60)" }}
+                      />
+                    </div>
+                    <span className={cn("font-mono text-xs font-semibold w-16 text-right",
+                      up ? "text-emerald-400" : "text-red-400")}>
+                      {up ? "+" : ""}{q.changePercent.toFixed(2)}%
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground/50 w-24 text-right">
+                      ${formatPrice(q.price)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Market Status", value: "24/7 Active",    sub: "Crypto never closes",        teal: true  },
+              { label: "Best Performer", value: best?.symbol ?? "—", sub: best ? `${best.changePercent >= 0 ? "+" : ""}${best.changePercent.toFixed(2)}% today` : "—", teal: false },
+              { label: "Data Source",   value: isLive ? "Kraken" : "CoinGecko", sub: isLive ? "Live exchange" : "Reference data", teal: false },
+            ].map((item) => (
+              <div key={item.label} className="glass-card p-4 text-center"
+                style={item.teal ? { borderColor: "rgba(20,184,166,0.22)" } : undefined}>
+                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-1">{item.label}</p>
+                <p className="font-mono font-bold text-lg"
+                  style={{ color: item.teal ? "#22D3EE" : "#D4AF37" }}>{item.value}</p>
+                <p className="text-[10px] text-muted-foreground/50 mt-0.5">{item.sub}</p>
+              </div>
+            ))}
+          </motion.div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Markets root ─────────────────────────────────────────────────────────────
+export default function Markets() {
+  const [location] = useLocation();
+  const { allQuotes, cryptoRefetch, equitiesOpen, isFetching } = useMarketsQuotes();
+  const isCrypto = location === "/markets/crypto";
+
+  if (isCrypto) {
+    return <CryptoView allQuotes={allQuotes} isFetching={isFetching} cryptoRefetch={cryptoRefetch} />;
+  }
+  return <StocksView allQuotes={allQuotes} isFetching={isFetching} equitiesOpen={equitiesOpen} />;
 }

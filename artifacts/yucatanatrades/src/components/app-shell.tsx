@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, LineChart, Radar, Bot, TerminalSquare,
   Briefcase, BookOpen, ShieldAlert, Settings, Menu, Search,
-  Bell, Star, TrendingUp, TrendingDown,
+  Bell, Star, TrendingUp, TrendingDown, BarChart3, Coins, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,8 @@ const TAB_ACCENTS: Record<string, { beam: string; bg: string; border: string; te
   "Watchlist":      { beam: "linear-gradient(180deg,#F7E7B4,#D4AF37,#B8860B)", bg: "rgba(212,175,55,0.10)",  border: "rgba(212,175,55,0.18)", text: "#D4AF37" },
   "Risk":           { beam: "linear-gradient(180deg,#FDE68A,#F59E0B,#D97706)", bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.16)", text: "#F59E0B" },
   "Settings":       { beam: "linear-gradient(180deg,#CBD5E1,#94A3B8,#64748B)", bg: "rgba(148,163,184,0.07)", border: "rgba(148,163,184,0.12)", text: "#94A3B8" },
+  "Stock Market":   { beam: "linear-gradient(180deg,#F7E7B4,#D4AF37,#22C55E)",  bg: "rgba(212,175,55,0.09)",  border: "rgba(212,175,55,0.18)",  text: "#D4AF37"  },
+  "Crypto Market":  { beam: "linear-gradient(180deg,#67E8F9,#22D3EE,#14B8A6)",  bg: "rgba(20,184,166,0.10)",  border: "rgba(20,184,166,0.22)",  text: "#22D3EE"  },
 };
 
 // ─── Nav configuration ───────────────────────────────────────────────────────
@@ -201,6 +203,198 @@ function FlyoutPanel({ name, data }: { name: string; data: FlyoutData }) {
   );
 }
 
+// ─── Markets flyout submenu ───────────────────────────────────────────────────
+function MarketsSubmenu({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const stocksA = TAB_ACCENTS["Stock Market"]!;
+  const cryptoA = TAB_ACCENTS["Crypto Market"]!;
+  return (
+    <div className="w-64 rounded-xl overflow-hidden"
+      style={{
+        background: "hsl(225 25% 7% / 0.97)",
+        backdropFilter: "blur(24px)",
+        border: "1px solid rgba(212,175,55,0.20)",
+        boxShadow: "0 16px 48px rgba(0,0,0,0.65), 0 0 28px rgba(212,175,55,0.06)",
+      }}>
+      <div className="h-[2px]"
+        style={{ background: "linear-gradient(90deg,#D4AF37 0%,#22D3EE 50%,#D4AF37 100%)" }} />
+      <div className="p-3 space-y-2">
+        <div className="flex items-center gap-2 px-2 py-1">
+          <LineChart className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-display font-semibold text-foreground">Markets</span>
+          <span className="ml-auto text-[9px] text-muted-foreground/40 font-mono uppercase tracking-widest">Select</span>
+        </div>
+        <button onClick={() => onNavigate("/markets/stocks")}
+          className="w-full text-left rounded-lg p-3 transition-all hover:brightness-110 active:scale-[0.99]"
+          style={{ background: stocksA.bg, border: `1px solid ${stocksA.border}` }}>
+          <div className="flex items-center gap-2 mb-1.5">
+            <BarChart3 className="w-3.5 h-3.5" style={{ color: stocksA.text }} />
+            <span className="text-sm font-semibold" style={{ color: stocksA.text }}>Stock Market</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 mb-2.5 leading-relaxed">
+            Equities, ETFs, indices, sector flow · Delayed · Yahoo
+          </p>
+          <div className="flex gap-1 flex-wrap">
+            {["SPY","QQQ","NVDA","MSFT"].map(c => (
+              <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-full font-mono font-semibold"
+                style={{ background: "rgba(212,175,55,0.12)", border: `1px solid ${stocksA.border}`, color: stocksA.text }}>
+                {c}
+              </span>
+            ))}
+          </div>
+        </button>
+        <button onClick={() => onNavigate("/markets/crypto")}
+          className="w-full text-left rounded-lg p-3 transition-all hover:brightness-110 active:scale-[0.99]"
+          style={{ background: cryptoA.bg, border: `1px solid ${cryptoA.border}` }}>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Coins className="w-3.5 h-3.5" style={{ color: cryptoA.text }} />
+            <span className="text-sm font-semibold" style={{ color: cryptoA.text }}>Crypto Market</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 mb-2.5 leading-relaxed">
+            BTC, ETH, SOL, SUI · 24/7 market flow · Live · Kraken
+          </p>
+          <div className="flex gap-1 flex-wrap">
+            {["BTC","ETH","SOL","SUI"].map(c => (
+              <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-full font-mono font-semibold"
+                style={{ background: "rgba(20,184,166,0.12)", border: `1px solid ${cryptoA.border}`, color: cryptoA.text }}>
+                {c}
+              </span>
+            ))}
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Markets inline nav item (with accordion sub-items) ───────────────────────
+function MarketsNavItem({
+  isSidebarOpen, location, showFlyout, hideFlyout,
+}: {
+  isSidebarOpen: boolean;
+  location: string;
+  showFlyout: (name: string, el: HTMLElement) => void;
+  hideFlyout: () => void;
+}) {
+  const [hovered, setHovered] = React.useState(false);
+  const isActive = location.startsWith("/markets");
+  const isStocks = location === "/markets" || location === "/markets/stocks";
+  const isCrypto = location === "/markets/crypto";
+  const showSub  = isSidebarOpen && (hovered || isActive);
+
+  const mktA    = TAB_ACCENTS["Markets"]!;
+  const stocksA = TAB_ACCENTS["Stock Market"]!;
+  const cryptoA = TAB_ACCENTS["Crypto Market"]!;
+
+  return (
+    <div className="space-y-0.5">
+      <motion.div
+        whileHover={{ x: isSidebarOpen ? 3 : 0 }}
+        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+        onMouseEnter={(e) => {
+          setHovered(true);
+          if (!isSidebarOpen) showFlyout("Markets", e.currentTarget);
+        }}
+        onMouseLeave={() => { setHovered(false); hideFlyout(); }}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative overflow-hidden",
+          "transition-all duration-200",
+          isActive ? "" : "text-muted-foreground hover:text-foreground"
+        )}
+        style={isActive
+          ? { background: mktA.bg, border: `1px solid ${mktA.border}`, color: mktA.text, boxShadow: `0 0 20px ${mktA.bg}` }
+          : { border: "1px solid transparent" }
+        }
+      >
+        {isActive && (
+          <motion.div
+            layoutId="activeBeam"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+            style={{ background: mktA.beam, animation: "active-beam-pulse 3s ease-in-out infinite" }}
+            initial={false}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          />
+        )}
+        {!isActive && (
+          <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            style={{ background: "rgba(255,255,255,0.02)" }} />
+        )}
+        <motion.div whileHover={{ scale: 1.12 }} transition={{ duration: 0.15 }}
+          className={cn("flex-shrink-0 transition-colors duration-200",
+            isActive ? "" : "text-muted-foreground group-hover:text-foreground")}
+          style={isActive ? { color: mktA.text } : {}}>
+          <LineChart className="w-[18px] h-[18px]" />
+        </motion.div>
+        {isSidebarOpen && (
+          <>
+            <span className={cn("font-medium text-sm transition-colors duration-200 flex-1 min-w-0",
+              isActive ? "" : "group-hover:text-foreground")}
+              style={isActive ? { color: mktA.text } : {}}>
+              Markets
+            </span>
+            <motion.div animate={{ rotate: showSub ? 90 : 0 }} transition={{ duration: 0.2 }}
+              className="text-muted-foreground/35 flex-shrink-0">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </motion.div>
+          </>
+        )}
+        {isActive && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
+            <div className="absolute inset-y-0 w-1/2"
+              style={{ backgroundImage: `linear-gradient(90deg,transparent,${mktA.text}18,transparent)`,
+                animation: "shimmer-right 5s ease-in-out infinite" }} />
+          </div>
+        )}
+      </motion.div>
+
+      <AnimatePresence>
+        {showSub && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden pl-3"
+          >
+            <Link href="/markets/stocks">
+              <motion.div whileHover={{ x: 3 }} transition={{ duration: 0.15 }}
+                className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                  isStocks ? "" : "text-muted-foreground hover:text-foreground")}
+                style={isStocks
+                  ? { background: stocksA.bg, border: `1px solid ${stocksA.border}` }
+                  : { border: "1px solid transparent" }}>
+                <BarChart3 className="w-3.5 h-3.5 flex-shrink-0"
+                  style={{ color: isStocks ? stocksA.text : undefined }} />
+                <span className="text-xs font-medium flex-1"
+                  style={{ color: isStocks ? stocksA.text : undefined }}>Stock Market</span>
+                {isStocks && (
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: stocksA.text }} />
+                )}
+              </motion.div>
+            </Link>
+            <Link href="/markets/crypto">
+              <motion.div whileHover={{ x: 3 }} transition={{ duration: 0.15 }}
+                className={cn("flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                  isCrypto ? "" : "text-muted-foreground hover:text-foreground")}
+                style={isCrypto
+                  ? { background: cryptoA.bg, border: `1px solid ${cryptoA.border}` }
+                  : { border: "1px solid transparent" }}>
+                <Coins className="w-3.5 h-3.5 flex-shrink-0"
+                  style={{ color: isCrypto ? cryptoA.text : undefined }} />
+                <span className="text-xs font-medium flex-1"
+                  style={{ color: isCrypto ? cryptoA.text : undefined }}>Crypto Market</span>
+                {isCrypto && (
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: cryptoA.text, boxShadow: `0 0 6px ${cryptoA.text}60` }} />
+                )}
+              </motion.div>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── AI suggestions ───────────────────────────────────────────────────────────
 const AI_SUGGESTIONS = [
   { icon: "⚡", label: "NVDA research"          },
@@ -213,7 +407,7 @@ const AI_SUGGESTIONS = [
 
 // ─── AppShell ─────────────────────────────────────────────────────────────────
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [flyout, setFlyout]               = React.useState<{ name: string; top: number } | null>(null);
   const flyoutTimeout                     = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -287,87 +481,96 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-            {navItems.map((navItem) => {
-              const isActive = location === navItem.href ||
-                (navItem.href !== "/" && location.startsWith(navItem.href));
-              const accent   = TAB_ACCENTS[navItem.name] ?? TAB_ACCENTS["Command Center"]!;
+          <nav className="flex-1 overflow-y-auto py-2 px-2">
+            {(() => {
+              const renderRow = (ni: typeof navItems[0]) => {
+                const isActive = location === ni.href ||
+                  (ni.href !== "/" && location.startsWith(ni.href));
+                const accent = TAB_ACCENTS[ni.name] ?? TAB_ACCENTS["Command Center"]!;
+                return (
+                  <Link key={ni.name} href={ni.href}>
+                    <motion.div
+                      whileHover={{ x: isSidebarOpen ? 3 : 0 }}
+                      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                      onMouseEnter={(e) => showFlyout(ni.name, e.currentTarget)}
+                      onMouseLeave={hideFlyout}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative overflow-hidden",
+                        "transition-all duration-200",
+                        isActive ? "" : "text-muted-foreground hover:text-foreground"
+                      )}
+                      style={isActive
+                        ? { background: accent.bg, border: `1px solid ${accent.border}`, color: accent.text, boxShadow: `0 0 20px ${accent.bg}` }
+                        : { border: "1px solid transparent" }
+                      }
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeBeam"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                          style={{ background: accent.beam, animation: "active-beam-pulse 3s ease-in-out infinite" }}
+                          initial={false}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                      {!isActive && (
+                        <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          style={{ background: "rgba(255,255,255,0.02)" }} />
+                      )}
+                      <motion.div whileHover={{ scale: 1.12 }} transition={{ duration: 0.15 }}
+                        className={cn("flex-shrink-0 transition-colors duration-200",
+                          isActive ? "" : "text-muted-foreground group-hover:text-foreground")}
+                        style={isActive ? { color: accent.text } : {}}>
+                        <ni.icon className="w-[18px] h-[18px]" />
+                      </motion.div>
+                      {isSidebarOpen && (
+                        <span className={cn("font-medium text-sm transition-colors duration-200 flex-1 min-w-0",
+                          isActive ? "" : "group-hover:text-foreground")}
+                          style={isActive ? { color: accent.text } : {}}>
+                          {ni.name}
+                        </span>
+                      )}
+                      {isActive && (
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
+                          <div className="absolute inset-y-0 w-1/2"
+                            style={{ backgroundImage: `linear-gradient(90deg,transparent,${accent.text}18,transparent)`,
+                              animation: "shimmer-right 5s ease-in-out infinite" }} />
+                        </div>
+                      )}
+                    </motion.div>
+                  </Link>
+                );
+              };
+
+              const SectionLabel = ({ children }: { children: string }) => isSidebarOpen ? (
+                <div className="px-3 pt-4 pb-1.5">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/25">
+                    {children}
+                  </span>
+                </div>
+              ) : <div className="pt-2" />;
 
               return (
-                <Link key={navItem.name} href={navItem.href}>
-                  <motion.div
-                    whileHover={{ x: isSidebarOpen ? 3 : 0 }}
-                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                    onMouseEnter={(e) => showFlyout(navItem.name, e.currentTarget)}
-                    onMouseLeave={hideFlyout}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative overflow-hidden",
-                      "transition-all duration-200",
-                      isActive ? "" : "text-muted-foreground hover:text-foreground"
-                    )}
-                    style={isActive
-                      ? { background: accent.bg, border: `1px solid ${accent.border}`, color: accent.text, boxShadow: `0 0 20px ${accent.bg}` }
-                      : { border: "1px solid transparent" }
-                    }
-                  >
-                    {/* Per-tab accent left beam */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeBeam"
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                        style={{ background: accent.beam, animation: "active-beam-pulse 3s ease-in-out infinite" }}
-                        initial={false}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
+                <>
+                  <SectionLabel>Intelligence</SectionLabel>
+                  {renderRow(navItems[0]!)}
 
-                    {/* Hover glow layer */}
-                    {!isActive && (
-                      <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        style={{ background: "rgba(255,255,255,0.02)", borderRadius: "inherit" }}
-                      />
-                    )}
+                  <SectionLabel>Markets</SectionLabel>
+                  <MarketsNavItem
+                    isSidebarOpen={isSidebarOpen}
+                    location={location}
+                    showFlyout={showFlyout}
+                    hideFlyout={hideFlyout}
+                  />
 
-                    {/* Icon */}
-                    <motion.div
-                      whileHover={{ scale: 1.12 }}
-                      transition={{ duration: 0.15 }}
-                      className={cn("flex-shrink-0 transition-colors duration-200",
-                        isActive ? "" : "text-muted-foreground group-hover:text-foreground"
-                      )}
-                      style={isActive ? { color: accent.text } : {}}
-                    >
-                      <navItem.icon className="w-[18px] h-[18px]" />
-                    </motion.div>
+                  <SectionLabel>Systems</SectionLabel>
+                  {navItems.slice(2, 9).map(renderRow)}
 
-                    {/* Label */}
-                    {isSidebarOpen && (
-                      <span
-                        className={cn("font-medium text-sm transition-colors duration-200 flex-1 min-w-0",
-                          isActive ? "" : "group-hover:text-foreground"
-                        )}
-                        style={isActive ? { color: accent.text } : {}}
-                      >
-                        {navItem.name}
-                      </span>
-                    )}
-
-                    {/* Active shimmer sweep */}
-                    {isActive && (
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
-                        <div
-                          className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent to-transparent"
-                          style={{
-                            backgroundImage: `linear-gradient(90deg,transparent,${accent.text}18,transparent)`,
-                            animation: "shimmer-right 5s ease-in-out infinite",
-                          }}
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                </Link>
+                  <SectionLabel>Control</SectionLabel>
+                  {renderRow(navItems[9]!)}
+                </>
               );
-            })}
+            })()}
           </nav>
 
           {/* Bottom status */}
@@ -385,7 +588,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* ── Flyout panels (fixed — escapes sidebar overflow) ──────────────── */}
         <AnimatePresence>
-          {flyout && NAV_FLYOUTS[flyout.name] && (
+          {flyout && (flyout.name === "Markets" || !!NAV_FLYOUTS[flyout.name]) && (
             <motion.div
               key={flyout.name}
               style={{ position: "fixed", top: Math.max(8, flyout.top), left: sidebarW + 10, zIndex: 60 }}
@@ -396,7 +599,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onMouseEnter={keepFlyout}
               onMouseLeave={hideFlyout}
             >
-              <FlyoutPanel name={flyout.name} data={NAV_FLYOUTS[flyout.name]!} />
+              {flyout.name === "Markets"
+                ? <MarketsSubmenu onNavigate={(path) => { setFlyout(null); navigate(path); }} />
+                : <FlyoutPanel name={flyout.name} data={NAV_FLYOUTS[flyout.name]!} />
+              }
             </motion.div>
           )}
         </AnimatePresence>
