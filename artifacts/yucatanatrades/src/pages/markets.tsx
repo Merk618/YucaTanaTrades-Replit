@@ -197,6 +197,40 @@ function MiniQuoteCard({ q, label, teal = false, isHighlighted = false }: { q: Q
   );
 }
 
+// ─── Gainers / Losers row with price-flash animation ──────────────────────────
+function GainerLoserRow({ q, isGainer }: { q: Quote; isGainer: boolean }) {
+  const prev     = usePrevPrice(q.price);
+  const changed  = prev !== 0 && prev !== q.price;
+  const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
+  const flashKey = useRef(0);
+  if (changed) flashKey.current += 1;
+
+  return (
+    <div className="flex items-center justify-between py-1 border-b border-border/25 last:border-0">
+      <span className="font-mono text-sm font-bold text-primary">{q.symbol}</span>
+      <div className="flex items-center gap-2">
+        <span
+          key={flashKey.current}
+          className={cn(
+            "font-mono text-xs tabular-nums rounded px-0.5 transition-colors",
+            flashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+            flashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+            !flashDir           && "text-muted-foreground/60",
+          )}
+        >
+          ${formatPrice(q.price)}
+        </span>
+        <span className={cn(
+          "font-mono text-xs font-semibold",
+          isGainer ? "text-emerald-400" : "text-red-400",
+        )}>
+          {isGainer ? "+" : ""}{q.changePercent.toFixed(2)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Symbol placeholder when quote not yet loaded or unavailable ───────────────
 function SymbolPlaceholder({ symbol, label }: { symbol: string; label?: string }) {
   return (
@@ -396,13 +430,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
               </div>
               <div className="space-y-2">
                 {gainers.map((q) => (
-                  <div key={q.symbol} className="flex items-center justify-between py-1 border-b border-border/25 last:border-0">
-                    <span className="font-mono text-sm font-bold text-primary">{q.symbol}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground/60">${formatPrice(q.price)}</span>
-                      <span className="font-mono text-xs text-emerald-400 font-semibold">+{q.changePercent.toFixed(2)}%</span>
-                    </div>
-                  </div>
+                  <GainerLoserRow key={q.symbol} q={q} isGainer={true} />
                 ))}
               </div>
             </div>
@@ -413,13 +441,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
               </div>
               <div className="space-y-2">
                 {losers.map((q) => (
-                  <div key={q.symbol} className="flex items-center justify-between py-1 border-b border-border/25 last:border-0">
-                    <span className="font-mono text-sm font-bold text-primary">{q.symbol}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground/60">${formatPrice(q.price)}</span>
-                      <span className="font-mono text-xs text-red-400 font-semibold">{q.changePercent.toFixed(2)}%</span>
-                    </div>
-                  </div>
+                  <GainerLoserRow key={q.symbol} q={q} isGainer={false} />
                 ))}
               </div>
             </div>
