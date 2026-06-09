@@ -69,6 +69,9 @@ export function TickerTape() {
   // Pause scroll on hover — declared before any early returns to satisfy Rules of Hooks.
   const [isPaused, setIsPaused] = React.useState(false);
 
+  // Track which specific ticker item the cursor is over.
+  const [hoveredKey, setHoveredKey] = React.useState<string | null>(null);
+
   // Track previous prices so we can detect changes and fire flash animations.
   const prevPricesRef = React.useRef<Record<string, number>>({});
   const [flashes, setFlashes] = React.useState<FlashMap>({});
@@ -110,7 +113,7 @@ export function TickerTape() {
     <div
       className="relative flex overflow-hidden border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm"
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => { setIsPaused(false); setHoveredKey(null); }}
     >
       {/* Gold gradient fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-background to-transparent" />
@@ -187,14 +190,26 @@ export function TickerTape() {
         {[...quotes, ...quotes, ...quotes].map((item, i) => {
           const flash = flashes[item.symbol];
           const badge = quoteBadge(item);
+          const itemKey = `${item.symbol}-${i}`;
+          const isHovered = hoveredKey === itemKey;
+          const isDimmed = hoveredKey !== null && !isHovered;
 
           return (
             <div
-              key={`${item.symbol}-${i}`}
+              key={itemKey}
               title={quoteTooltip(item)}
-              className="flex items-center mx-5 gap-2 group cursor-help"
+              onMouseEnter={() => setHoveredKey(itemKey)}
+              onMouseLeave={() => setHoveredKey(null)}
+              className={cn(
+                "flex items-center mx-5 gap-2 group cursor-help rounded px-1.5 -mx-0.5 transition-all duration-200",
+                isHovered && "bg-primary/10 ring-1 ring-primary/20 shadow-[0_0_8px_hsl(43_63%_52%/0.15)]",
+                isDimmed && "opacity-35",
+              )}
             >
-              <span className="font-bold text-foreground/90 tracking-wide group-hover:text-primary transition-colors duration-200">
+              <span className={cn(
+                "font-bold tracking-wide transition-colors duration-200",
+                isHovered ? "text-primary" : "text-foreground/90 group-hover:text-primary",
+              )}>
                 {item.symbol}
               </span>
 
