@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart,
   Area,
@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2 } from "lucide-react";
+import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle } from "lucide-react";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
@@ -72,6 +72,8 @@ function generateHistory(finalTotals: { roth: number; indiv: number; crypto: num
 
 const PERIOD_SLICES = { "1W": 5, "1M": 22, "3M": 65 } as const;
 type Period = keyof typeof PERIOD_SLICES;
+
+const FRESHNESS_WARNING_MS = 15 * 60 * 1000; // 15 minutes
 
 // ─── Sleeve config ────────────────────────────────────────────────────────────
 const SLEEVES = [
@@ -266,6 +268,11 @@ export default function Portfolio() {
 
   const holdingsSorted = [...holdings].sort((a, b) => b.value - a.value);
 
+  const isDataStale = useMemo(() => {
+    if (!oldestTimestamp) return false;
+    return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
+  }, [oldestTimestamp, now]);
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       {/* Header */}
@@ -282,6 +289,34 @@ export default function Portfolio() {
         </div>
         <p className="text-muted-foreground text-sm ml-8">Prices from live market data · Chart shows simulated history</p>
       </motion.div>
+
+      {/* Freshness warning banner */}
+      <AnimatePresence>
+        {isDataStale && oldestTimestamp && (
+          <motion.div
+            key="freshness-banner"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-amber-300">
+                  Markets may be closed —{" "}
+                </span>
+                <span className="text-sm text-amber-300/80">
+                  prices last updated{" "}
+                  <span className="font-mono font-semibold">{freshnessLabel(oldestTimestamp, now)}</span>.
+                  Portfolio values may not reflect current market conditions.
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* KPI row */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.06 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
