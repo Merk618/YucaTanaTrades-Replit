@@ -6,7 +6,7 @@ import {
   Clock, Flame, BarChart2, Lock,
 } from "lucide-react";
 import {
-  mockPortfolioData, mockScannerResults,
+  mockScannerResults,
   mockBotStatus, mockNewsCatalysts,
 } from "@/data/mockData";
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
@@ -69,6 +69,20 @@ const CAPABILITY_BADGES = [
   { label: "Journal",    icon: Flame     },
   { label: "AI Briefing",icon: Zap       },
 ];
+
+// ─── Metric card skeleton (loading state) ────────────────────────────────────
+function MetricCardSkeleton({ label, icon: Icon }: { label: string; icon?: React.ElementType }) {
+  return (
+    <div className="glass-card p-5 animate-pulse">
+      <div className="flex items-start justify-between mb-2">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
+        {Icon && <Icon className="w-3.5 h-3.5 text-muted-foreground/20" />}
+      </div>
+      <div className="h-7 w-28 rounded bg-muted/40 mb-2" />
+      <div className="h-3 w-20 rounded bg-muted/30" />
+    </div>
+  );
+}
 
 // ─── Metric card with count-up ───────────────────────────────────────────────
 function MetricCard({
@@ -324,7 +338,7 @@ function RevealSection({ children, className, delay = 0 }: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Home() {
-  const { data: portfolioSummary } = useGetPortfolioSummary();
+  const { data: portfolioSummary, isLoading: portfolioLoading, isError: portfolioError } = useGetPortfolioSummary();
   const { data: botStatus } = useGetBotsStatus();
   const { data: session } = useMarketSession();
   const { data: quoteData } = useMarketQuotes(INDEX_SYMBOLS);
@@ -347,11 +361,11 @@ export default function Home() {
     : "Checking session…";
 
   const portfolio = portfolioSummary ?? {
-    totalValue:    mockPortfolioData.rothIra.total + mockPortfolioData.individual.total + mockPortfolioData.crypto.total,
-    dayChange:     mockPortfolioData.rothIra.dayChange + mockPortfolioData.individual.dayChange + mockPortfolioData.crypto.dayChange,
-    dayChangePct:  0.62,
-    totalGain:     42183.44,
-    totalGainPct:  23.6,
+    totalValue:   0,
+    dayChange:    0,
+    dayChangePct: 0,
+    totalGain:    0,
+    totalGainPct: 0,
   };
 
   const bots   = botStatus ?? mockBotStatus;
@@ -438,31 +452,50 @@ export default function Home() {
       </motion.div>
 
       {/* ── KPI Metrics ────────────────────────────────────────────────────── */}
+      {portfolioError && (
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-mono"
+          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)", color: "#f87171" }}
+        >
+          <Activity className="w-3.5 h-3.5 flex-shrink-0" />
+          Portfolio summary unavailable — API error. Check server connection.
+        </div>
+      )}
       <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard
-          label="Total Portfolio"
-          rawValue={Math.round(portfolio.totalValue)}
-          format={(n) => `$${n.toLocaleString("en-US")}`}
-          sub={`${portfolio.dayChangePct >= 0 ? "+" : ""}${portfolio.dayChangePct.toFixed(2)}% today`}
-          up={portfolio.dayChangePct >= 0}
-          icon={TrendingUp}
-        />
-        <MetricCard
-          label="Day P&L"
-          rawValue={Math.round(Math.abs(portfolio.dayChange))}
-          format={(n) => `${portfolio.dayChange >= 0 ? "+" : "-"}$${n.toLocaleString("en-US")}`}
-          sub={portfolio.dayChange >= 0 ? "Positive session" : "Negative session"}
-          up={portfolio.dayChange >= 0}
-          icon={Activity}
-        />
-        <MetricCard
-          label="Total Gain"
-          rawValue={Math.round(portfolio.totalGain ?? 0)}
-          format={(n) => `+$${n.toLocaleString("en-US")}`}
-          sub={`+${portfolio.totalGainPct?.toFixed(1) ?? "—"}% all-time`}
-          up
-          icon={ArrowUpRight}
-        />
+        {portfolioLoading ? (
+          <>
+            <MetricCardSkeleton label="Total Portfolio" icon={TrendingUp} />
+            <MetricCardSkeleton label="Day P&L" icon={Activity} />
+            <MetricCardSkeleton label="Total Gain" icon={ArrowUpRight} />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              label="Total Portfolio"
+              rawValue={Math.round(portfolio.totalValue)}
+              format={(n) => `$${n.toLocaleString("en-US")}`}
+              sub={`${portfolio.dayChangePct >= 0 ? "+" : ""}${portfolio.dayChangePct.toFixed(2)}% today`}
+              up={portfolio.dayChangePct >= 0}
+              icon={TrendingUp}
+            />
+            <MetricCard
+              label="Day P&L"
+              rawValue={Math.round(Math.abs(portfolio.dayChange))}
+              format={(n) => `${portfolio.dayChange >= 0 ? "+" : "-"}$${n.toLocaleString("en-US")}`}
+              sub={portfolio.dayChange >= 0 ? "Positive session" : "Negative session"}
+              up={portfolio.dayChange >= 0}
+              icon={Activity}
+            />
+            <MetricCard
+              label="Total Gain"
+              rawValue={Math.round(portfolio.totalGain ?? 0)}
+              format={(n) => `${(portfolio.totalGain ?? 0) >= 0 ? "+" : "-"}$${n.toLocaleString("en-US")}`}
+              sub={`${(portfolio.totalGainPct ?? 0) >= 0 ? "+" : ""}${portfolio.totalGainPct?.toFixed(1) ?? "0.0"}% all-time`}
+              up={(portfolio.totalGain ?? 0) >= 0}
+              icon={ArrowUpRight}
+            />
+          </>
+        )}
         <MetricCard
           label="Active Bots"
           rawValue={2}
