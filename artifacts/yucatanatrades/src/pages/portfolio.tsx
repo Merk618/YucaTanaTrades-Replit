@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2, Upload, FileText, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2, Upload, FileText, ChevronRight, CheckCircle2, AlertCircle, ChevronDown, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
@@ -23,6 +23,7 @@ import {
   useBulkCreatePositions,
   getListPositionsQueryKey,
   PortfolioPositionSleeve,
+  useListJournalEntries,
 } from "@workspace/api-client-react";
 import type { PortfolioPosition, PortfolioPositionInput, PortfolioPositionUpdate } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -996,6 +997,10 @@ export default function Portfolio() {
   const [period, setPeriod] = useState<Period>("3M");
   const [chartView, setChartView] = useState<"total" | "sleeves">("total");
 
+  // Gain breakdown state
+  const [showGainBreakdown, setShowGainBreakdown] = useState(false);
+  const { data: journalEntries = [] } = useListJournalEntries();
+
   // Modal state
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<PortfolioPosition | null>(null);
@@ -1049,6 +1054,19 @@ export default function Portfolio() {
   const totalCost      = holdings.reduce((s, h) => s + h.avgCost * h.shares, 0);
   const totalGainPct   = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
 
+  // Realized gain: sum of closed journal entries that have a recorded P&L
+  const realizedGain = useMemo(() => {
+    return journalEntries
+      .filter((e) => e.outcome !== "open" && e.pnl != null)
+      .reduce((s, e) => s + Number(e.pnl), 0);
+  }, [journalEntries]);
+
+  const realizedTradeCount = useMemo(
+    () => journalEntries.filter((e) => e.outcome !== "open" && e.pnl != null).length,
+    [journalEntries],
+  );
+
+
   const finalTotals = totalValue > 0 ? {
     roth:   sleeveData["Roth IRA"]!.total,
     indiv:  sleeveData["Individual"]!.total,
@@ -1089,6 +1107,14 @@ export default function Portfolio() {
   }, [holdings]);
 
   const holdingsSorted = [...holdings].sort((a, b) => b.value - a.value);
+
+  // Per-position cost basis for the breakdown panel
+  const positionCostBasis = holdingsSorted.map((h) => ({
+    ...h,
+    costBasis: h.avgCost * h.shares,
+    gain:      h.price > 0 ? (h.price - h.avgCost) * h.shares : 0,
+    gainPct:   h.price > 0 && h.avgCost > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0,
+  }));
 
   const isDataStale = useMemo(() => {
     if (!oldestTimestamp) return false;
@@ -1182,26 +1208,242 @@ export default function Portfolio() {
 
       {/* KPI row */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.06 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Value",   value: totalValue > 0 ? `$${totalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—",    sub: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)} today`,   up: totalDayChange >= 0, freshness: oldestTimestamp },
-          { label: "Day Change",    value: `${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)}`,                         sub: `${(totalValue > 0 ? totalDayChange / totalValue * 100 : 0).toFixed(2)}% today`,     up: totalDayChange >= 0, freshness: undefined },
-          { label: "Total Gain",    value: totalGain !== 0 ? `${totalGain >= 0 ? "+" : ""}$${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—", sub: `${totalGainPct.toFixed(1)}% all-time`, up: totalGain >= 0, freshness: undefined },
-          { label: "Holdings",      value: String(positions.length),                                                                              sub: "across 3 sleeves",                                                                  up: true, freshness: undefined },
-        ].map((stat) => (
-          <div key={stat.label} className="glass-card p-5 group cursor-default">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className="font-mono text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", stat.up ? "text-emerald-400" : "text-red-400")}>
-              {stat.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}{stat.sub}
-            </p>
-            {stat.freshness && (
-              <p className="text-[10px] font-mono text-muted-foreground mt-1.5">
-                as of {freshnessLabel(stat.freshness, now)}
-              </p>
-            )}
+        {/* Total Value */}
+        <div className="glass-card p-5 group cursor-default">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Total Value</p>
+          <p className="font-mono text-2xl font-bold text-foreground">{totalValue > 0 ? `$${totalValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}</p>
+          <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", totalDayChange >= 0 ? "text-emerald-400" : "text-red-400")}>
+            {totalDayChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {totalDayChange >= 0 ? "+" : ""}${Math.abs(totalDayChange).toFixed(0)} today
+          </p>
+          {oldestTimestamp && (
+            <p className="text-[10px] font-mono text-muted-foreground mt-1.5">as of {freshnessLabel(oldestTimestamp, now)}</p>
+          )}
+        </div>
+        {/* Day Change */}
+        <div className="glass-card p-5 group cursor-default">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Day Change</p>
+          <p className="font-mono text-2xl font-bold text-foreground">{`${totalDayChange >= 0 ? "+" : ""}$${Math.abs(totalDayChange).toFixed(0)}`}</p>
+          <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", totalDayChange >= 0 ? "text-emerald-400" : "text-red-400")}>
+            {totalDayChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {(totalValue > 0 ? totalDayChange / totalValue * 100 : 0).toFixed(2)}% today
+          </p>
+        </div>
+        {/* Total Gain — clickable to toggle breakdown */}
+        <button
+          onClick={() => setShowGainBreakdown((v) => !v)}
+          className="glass-card p-5 group cursor-pointer text-left hover:border-primary/40 transition-colors relative"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Total Gain</p>
+            <ChevronDown className={cn("w-3.5 h-3.5 text-primary/60 transition-transform duration-200", showGainBreakdown && "rotate-180")} />
           </div>
-        ))}
+          <p className="font-mono text-2xl font-bold text-foreground">
+            {totalGain !== 0 ? `${totalGain >= 0 ? "+" : ""}$${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
+          </p>
+          <p className={cn("text-xs mt-1 flex items-center gap-1 font-mono", totalGain >= 0 ? "text-emerald-400" : "text-red-400")}>
+            {totalGain >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {totalGainPct.toFixed(1)}% unrealized
+          </p>
+          <p className="text-[10px] font-mono text-primary/50 mt-1.5 group-hover:text-primary/70 transition-colors">
+            Tap for breakdown ↓
+          </p>
+        </button>
+        {/* Holdings */}
+        <div className="glass-card p-5 group cursor-default">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Holdings</p>
+          <p className="font-mono text-2xl font-bold text-foreground">{String(positions.length)}</p>
+          <p className="text-xs mt-1 flex items-center gap-1 font-mono text-emerald-400">
+            <ArrowUpRight className="w-3 h-3" />across 3 sleeves
+          </p>
+        </div>
       </motion.div>
+
+      {/* Gain Breakdown Panel */}
+      <AnimatePresence>
+        {showGainBreakdown && (
+          <motion.div
+            key="gain-breakdown"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: undefined }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="glass-card border-primary/20 overflow-hidden">
+              {/* Panel header */}
+              <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  <h3 className="font-display font-semibold text-sm text-foreground">Gain Breakdown</h3>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 border border-border/50 text-muted-foreground">
+                    Unrealized vs. Realized
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowGainBreakdown(false)}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted/60"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-5">
+                {/* Three summary cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Unrealized */}
+                  <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
+                        <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Unrealized P&L</p>
+                    </div>
+                    <p className={cn("font-mono text-xl font-bold", totalGain >= 0 ? "text-emerald-400" : "text-red-400")}>
+                      {totalGain >= 0 ? "+" : ""}${Math.abs(totalGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">
+                      {totalGainPct >= 0 ? "+" : ""}{totalGainPct.toFixed(2)}% on ${(totalCost / 1000).toFixed(1)}k cost
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">Open positions · not yet realized</p>
+                  </div>
+
+                  {/* Realized */}
+                  <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <TrendingDown className="w-3.5 h-3.5 text-blue-400" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Realized P&L</p>
+                    </div>
+                    <p className={cn("font-mono text-xl font-bold", realizedGain >= 0 ? "text-emerald-400" : "text-red-400")}>
+                      {realizedGain === 0 ? "—" : `${realizedGain >= 0 ? "+" : ""}$${Math.abs(realizedGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+                    </p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">
+                      {realizedTradeCount} closed trade{realizedTradeCount !== 1 ? "s" : ""} from journal
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">From Trade Journal · taxable events</p>
+                  </div>
+
+                  {/* Combined */}
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/25 flex items-center justify-center">
+                        <BarChart2 className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Combined Total</p>
+                    </div>
+                    <p className={cn("font-mono text-xl font-bold", (totalGain + realizedGain) >= 0 ? "text-emerald-400" : "text-red-400")}>
+                      {(totalGain + realizedGain) === 0 ? "—" : `${(totalGain + realizedGain) >= 0 ? "+" : ""}$${Math.abs(totalGain + realizedGain).toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+                    </p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">
+                      Unrealized + Realized
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">All-time P&L across all activity</p>
+                  </div>
+                </div>
+
+                {/* Visual split bar */}
+                {(Math.abs(totalGain) + Math.abs(realizedGain)) > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mb-1.5">
+                      <span>Unrealized share</span>
+                      <span>Realized share</span>
+                    </div>
+                    <div className="h-2.5 rounded-full overflow-hidden bg-muted flex">
+                      {(() => {
+                        const total = Math.abs(totalGain) + Math.abs(realizedGain);
+                        const unrealizedPct = total > 0 ? (Math.abs(totalGain) / total) * 100 : 50;
+                        return (
+                          <>
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${unrealizedPct}%` }}
+                              transition={{ duration: 0.7, ease: "easeOut" }}
+                              className={cn("h-full rounded-l-full", totalGain >= 0 ? "bg-emerald-500" : "bg-red-500")}
+                            />
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${100 - unrealizedPct}%` }}
+                              transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+                              className={cn("h-full rounded-r-full", realizedGain >= 0 ? "bg-blue-500" : "bg-orange-500")}
+                            />
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mt-1.5">
+                      <span className="flex items-center gap-1">
+                        <span className={cn("w-2 h-2 rounded-full", totalGain >= 0 ? "bg-emerald-500" : "bg-red-500")} />
+                        {Math.abs(totalGain) > 0 ? `$${(Math.abs(totalGain) / 1000).toFixed(1)}k` : "$0"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className={cn("w-2 h-2 rounded-full", realizedGain >= 0 ? "bg-blue-500" : "bg-orange-500")} />
+                        {Math.abs(realizedGain) > 0 ? `$${(Math.abs(realizedGain) / 1000).toFixed(1)}k` : "$0"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Per-position cost basis table */}
+                {positionCostBasis.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Cost Basis by Position</p>
+                    <div className="overflow-x-auto rounded-lg border border-border/40">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border/50 bg-muted/30">
+                            {["Ticker", "Shares", "Avg Cost", "Cost Basis", "Market Value", "Unrealized Gain", "Gain %"].map((h) => (
+                              <th key={h} className="text-left px-3 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {positionCostBasis.map((pos, i) => (
+                            <motion.tr
+                              key={pos.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: i * 0.03 }}
+                              className="border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors"
+                            >
+                              <td className="px-3 py-2.5">
+                                <span className="font-mono font-bold text-primary">{pos.ticker}</span>
+                              </td>
+                              <td className="px-3 py-2.5 font-mono text-foreground">{pos.shares}</td>
+                              <td className="px-3 py-2.5 font-mono text-muted-foreground">
+                                ${pos.avgCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-3 py-2.5 font-mono font-semibold text-foreground">
+                                ${pos.costBasis.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                              </td>
+                              <td className="px-3 py-2.5 font-mono text-foreground">
+                                {pos.value > 0 ? `$${pos.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
+                              </td>
+                              <td className={cn("px-3 py-2.5 font-mono font-semibold", pos.price > 0 ? (pos.gain >= 0 ? "text-emerald-400" : "text-red-400") : "text-muted-foreground")}>
+                                {pos.price > 0 ? `${pos.gain >= 0 ? "+" : ""}$${Math.abs(pos.gain).toFixed(0)}` : "—"}
+                              </td>
+                              <td className={cn("px-3 py-2.5 font-mono font-semibold", pos.price > 0 ? (pos.gainPct >= 0 ? "text-emerald-400" : "text-red-400") : "text-muted-foreground")}>
+                                {pos.price > 0 ? `${pos.gainPct >= 0 ? "+" : ""}${pos.gainPct.toFixed(1)}%` : "—"}
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {positionCostBasis.length === 0 && realizedTradeCount === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Add positions and log closed trades to see your gain breakdown.
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Performance Chart */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="glass-card overflow-hidden">
@@ -1404,7 +1646,7 @@ export default function Portfolio() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">
-                {["Ticker", "Name", "Sleeve", "Shares", "Avg Cost", "Price", "Value", "Gain $", "Gain %", ""].map((h) => (
+                {["Ticker", "Name", "Sleeve", "Shares", "Avg Cost", "Cost Basis", "Price", "Value", "Gain $", "Gain %", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider last:w-20">{h}</th>
                 ))}
               </tr>
@@ -1443,6 +1685,9 @@ export default function Portfolio() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-foreground">{h.shares}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">${h.avgCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-foreground/80">
+                      ${(h.avgCost * h.shares).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-mono text-xs text-foreground">
                         {h.price > 0 ? `$${h.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
@@ -1486,7 +1731,7 @@ export default function Portfolio() {
               })}
               {holdingsSorted.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={11} className="px-4 py-12 text-center text-sm text-muted-foreground">
                     No positions yet.{" "}
                     <button onClick={openAdd} className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
                       Add your first position
