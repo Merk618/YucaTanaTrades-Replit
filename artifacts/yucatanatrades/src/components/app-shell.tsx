@@ -286,15 +286,17 @@ function MarketsNavItem({
   const cryptoA = TAB_ACCENTS["Crypto Market"]!;
 
   return (
-    <div className="space-y-0.5">
+    <div
+      className="space-y-0.5"
+      onMouseEnter={(e) => {
+        setHovered(true);
+        if (!isSidebarOpen) showFlyout("Markets", e.currentTarget);
+      }}
+      onMouseLeave={() => { setHovered(false); hideFlyout(); }}
+    >
       <motion.div
         whileHover={{ x: isSidebarOpen ? 3 : 0 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        onMouseEnter={(e) => {
-          setHovered(true);
-          if (!isSidebarOpen) showFlyout("Markets", e.currentTarget);
-        }}
-        onMouseLeave={() => { setHovered(false); hideFlyout(); }}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative overflow-hidden",
           "transition-all duration-200",
