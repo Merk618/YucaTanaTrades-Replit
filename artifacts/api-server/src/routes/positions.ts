@@ -9,6 +9,12 @@ import {
   DeletePositionParams,
 } from "@workspace/api-zod";
 
+import { z } from "zod";
+const BulkCreateBody = z.object({
+  positions: CreatePositionBody.array().min(1).max(500),
+});
+type BulkPositionItem = z.infer<typeof CreatePositionBody>;
+
 const router: IRouter = Router();
 
 function mapRow(row: typeof positionsTable.$inferSelect) {
@@ -23,6 +29,30 @@ function mapRow(row: typeof positionsTable.$inferSelect) {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
+router.post("/positions/bulk", async (req, res) => {
+  try {
+    const { positions } = BulkCreateBody.parse(req.body);
+    const rows = await db
+      .insert(positionsTable)
+      .values(
+        positions.map((p: BulkPositionItem) => ({
+          ticker: p.ticker.toUpperCase(),
+          name: p.name,
+          shares: String(p.shares),
+          avgCost: String(p.avgCost),
+          sleeve: p.sleeve,
+          sector: p.sector,
+        })),
+      )
+      .returning();
+    const mapped = rows.map(mapRow);
+    res.status(201).json({ created: mapped.length, positions: mapped });
+  } catch (err) {
+    req.log.error({ err }, "Failed to bulk-create positions");
+    res.status(400).json({ error: "Invalid position data" });
+  }
+});
 
 router.get("/positions", async (req, res) => {
   try {

@@ -10,6 +10,8 @@ export * from './botsStatus';
 export * from './botStatus';
 export * from './botStatusHealth';
 export * from './botStatusStatus';
+export * from './bulkCreatePositionsInput';
+export * from './bulkCreatePositionsResult';
 export * from './getMarketQuotesParams';
 export * from './getSourceHealthParams';
 export * from './healthStatus';

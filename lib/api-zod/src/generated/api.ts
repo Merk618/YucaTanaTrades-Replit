@@ -230,6 +230,24 @@ export const GetPortfolioSummaryResponse = zod.object({
 
 
 /**
+ * @summary Bulk-create portfolio positions (CSV import)
+ */
+
+
+
+export const BulkCreatePositionsBody = zod.object({
+  "positions": zod.array(zod.object({
+  "ticker": zod.string(),
+  "name": zod.string(),
+  "shares": zod.number(),
+  "avgCost": zod.number(),
+  "sleeve": zod.enum(['rothIra', 'individual', 'crypto']),
+  "sector": zod.string()
+})).min(1)
+})
+
+
+/**
  * @summary List all portfolio positions
  */
 export const ListPositionsResponseItem = zod.object({

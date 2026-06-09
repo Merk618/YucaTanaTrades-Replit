@@ -10,8 +10,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2 } from "lucide-react";
+import { Briefcase, ArrowUpRight, ArrowDownRight, BarChart2, AlertTriangle, Pencil, Trash2, Plus, X, Loader2, Upload, FileText, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { useMarketQuotes, isQuoteUsable, quoteBadge, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
 import {
@@ -19,6 +20,7 @@ import {
   useCreatePosition,
   useUpdatePosition,
   useDeletePosition,
+  useBulkCreatePositions,
   getListPositionsQueryKey,
   PortfolioPositionSleeve,
 } from "@workspace/api-client-react";
@@ -477,6 +479,512 @@ function DeleteConfirmModal({
   );
 }
 
+// ─── CSV helpers ──────────────────────────────────────────────────────────────
+
+function parseCsvText(text: string): { headers: string[]; rows: string[][] } {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
+  if (lines.length < 2) return { headers: [], rows: [] };
+
+  // detect delimiter: tab > semicolon > comma
+  const firstLine = lines[0]!;
+  const delim = firstLine.includes("\t") ? "\t" : firstLine.includes(";") ? ";" : ",";
+
+  function splitLine(line: string): string[] {
+    const result: string[] = [];
+    let cur = "";
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]!;
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if (ch === delim && !inQuote) {
+        result.push(cur.trim()); cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  const headers = splitLine(lines[0]!).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const rows = lines.slice(1).map(splitLine);
+  return { headers, rows };
+}
+
+const FIELD_ALIASES: Record<string, string[]> = {
+  ticker:  ["ticker", "symbol", "sym", "tick", "stock", "asset"],
+  shares:  ["shares", "qty", "quantity", "units", "amount", "numshares", "sharesowned"],
+  avgCost: ["avgcost", "averagecost", "avgprice", "averageprice", "costbasis", "cost", "price", "purchaseprice", "buyprice"],
+  name:    ["name", "description", "company", "companyname", "securityname", "assetname"],
+  sleeve:  ["sleeve", "account", "acct", "accounttype", "portfolio"],
+  sector:  ["sector", "industry", "assetclass", "category"],
+};
+
+function autoDetect(headers: string[]): Record<string, string> {
+  const detected: Record<string, string> = {};
+  for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+    for (const alias of aliases) {
+      const match = headers.find((h) => h === alias || h.startsWith(alias));
+      if (match) { detected[field] = match; break; }
+    }
+  }
+  return detected;
+}
+
+const SLEEVE_MAP: Record<string, PortfolioPositionSleeve> = {
+  rothira: "rothIra", roth: "rothIra", ira: "rothIra",
+  individual: "individual", indiv: "individual", taxable: "individual", brokerage: "individual",
+  crypto: "crypto", cryptocurrency: "crypto",
+};
+
+function parseSleeve(raw: string): PortfolioPositionSleeve {
+  const key = raw.toLowerCase().replace(/[^a-z]/g, "");
+  return SLEEVE_MAP[key] ?? "individual";
+}
+
+type PreviewRow = PortfolioPositionInput & { _valid: boolean; _errors: string[] };
+
+function buildPreviewRows(
+  rows: string[][],
+  headers: string[],
+  mapping: Record<string, string>,
+): PreviewRow[] {
+  const idx = (field: string) => {
+    const col = mapping[field];
+    return col ? headers.indexOf(col) : -1;
+  };
+
+  return rows.map((row) => {
+    const errors: string[] = [];
+    const get = (field: string) => {
+      const i = idx(field);
+      return i >= 0 ? (row[i] ?? "").trim() : "";
+    };
+
+    const rawTicker = get("ticker").toUpperCase().replace(/[^A-Z0-9./-]/g, "");
+    if (!rawTicker) errors.push("ticker missing");
+
+    const rawShares = parseFloat(get("shares").replace(/[$,]/g, ""));
+    if (isNaN(rawShares) || rawShares <= 0) errors.push("shares invalid");
+
+    const rawAvgCost = parseFloat(get("avgCost").replace(/[$,]/g, ""));
+    if (isNaN(rawAvgCost) || rawAvgCost <= 0) errors.push("avg cost invalid");
+
+    const rawName = get("name") || rawTicker || "Unknown";
+    const rawSleeve = get("sleeve") ? parseSleeve(get("sleeve")) : "individual";
+    const rawSector = get("sector") || "Other";
+
+    return {
+      ticker:  rawTicker || "???",
+      name:    rawName,
+      shares:  isNaN(rawShares)  ? 0 : rawShares,
+      avgCost: isNaN(rawAvgCost) ? 0 : rawAvgCost,
+      sleeve:  rawSleeve,
+      sector:  rawSector,
+      _valid:  errors.length === 0,
+      _errors: errors,
+    };
+  });
+}
+
+// ─── CSV Import Modal ─────────────────────────────────────────────────────────
+type ImportStep = "input" | "map" | "confirm" | "done";
+
+function CsvImportModal({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const bulkMutation = useBulkCreatePositions();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [step, setStep] = useState<ImportStep>("input");
+  const [rawText, setRawText] = useState("");
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [rows, setRows] = useState<string[][]>([]);
+  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<PreviewRow[]>([]);
+  const [doneCount, setDoneCount] = useState(0);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  function loadText(text: string) {
+    setRawText(text);
+    const { headers: h, rows: r } = parseCsvText(text);
+    setHeaders(h);
+    setRows(r);
+  }
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => loadText(e.target?.result as string);
+    reader.readAsText(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleParse() {
+    setGlobalError(null);
+    const { headers: h, rows: r } = parseCsvText(rawText);
+    if (h.length === 0) { setGlobalError("Could not detect any column headers. Make sure the first row is a header row."); return; }
+    if (r.length === 0) { setGlobalError("No data rows found after the header row."); return; }
+    setHeaders(h);
+    setRows(r);
+    const detected = autoDetect(h);
+    setMapping(detected);
+    setStep("map");
+  }
+
+  function handleGoConfirm() {
+    setGlobalError(null);
+    if (!mapping.ticker) { setGlobalError("You must map the Ticker column."); return; }
+    if (!mapping.shares) { setGlobalError("You must map the Shares column."); return; }
+    if (!mapping.avgCost) { setGlobalError("You must map the Avg Cost column."); return; }
+    const p = buildPreviewRows(rows, headers, mapping);
+    setPreview(p);
+    setStep("confirm");
+  }
+
+  async function handleImport() {
+    const valid = preview.filter((r) => r._valid);
+    if (valid.length === 0) { setGlobalError("No valid rows to import."); return; }
+    setGlobalError(null);
+    try {
+      const result = await bulkMutation.mutateAsync({
+        data: {
+          positions: valid.map(({ _valid: _v, _errors: _e, ...pos }) => pos as PortfolioPositionInput),
+        },
+      });
+      await qc.invalidateQueries({ queryKey: getListPositionsQueryKey() });
+      setDoneCount(result.created);
+      setStep("done");
+    } catch {
+      setGlobalError("Import failed. Please try again.");
+    }
+  }
+
+  const validCount = preview.filter((r) => r._valid).length;
+  const invalidCount = preview.length - validCount;
+
+  const inputCls = "w-full bg-muted/40 border border-border/60 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-colors font-mono";
+  const labelCls = "text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block";
+
+  const FIELD_LABELS: Record<string, { label: string; required: boolean; hint: string }> = {
+    ticker:  { label: "Ticker / Symbol", required: true,  hint: "e.g. NVDA, BTC" },
+    shares:  { label: "Shares / Qty",    required: true,  hint: "number of shares" },
+    avgCost: { label: "Avg Cost ($)",     required: true,  hint: "average purchase price" },
+    name:    { label: "Name",            required: false, hint: "company/asset name (optional)" },
+    sleeve:  { label: "Sleeve / Account",required: false, hint: "Roth IRA / Individual / Crypto" },
+    sector:  { label: "Sector",          required: false, hint: "Tech, Crypto, etc." },
+  };
+
+  const displayHeaders = headers.map((h) => {
+    const original = h.charAt(0).toUpperCase() + h.slice(1);
+    return { key: h, label: original };
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 12 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="relative z-10 glass-card w-full max-w-2xl shadow-2xl border-primary/20 flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Upload className="w-4 h-4 text-primary" />
+            <h2 className="font-display font-semibold text-base text-foreground">Import Holdings from CSV</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Step indicator */}
+            <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+              {(["input", "map", "confirm", "done"] as ImportStep[]).map((s, i) => (
+                <span key={s} className="flex items-center gap-1">
+                  <span className={cn("w-1.5 h-1.5 rounded-full", step === s ? "bg-primary" : i < (["input","map","confirm","done"] as ImportStep[]).indexOf(step) ? "bg-primary/40" : "bg-muted-foreground/30")} />
+                  {i < 3 && <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/40" />}
+                </span>
+              ))}
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted/60">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+          {/* ── Step: input ── */}
+          {step === "input" && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Paste CSV text from your broker (Fidelity, Schwab, etc.) or upload a <span className="font-mono">.csv</span> file.
+                The first row must be a header row with column names.
+              </p>
+
+              {/* Upload zone */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
+                  isDragging
+                    ? "border-primary/60 bg-primary/5"
+                    : "border-border/50 hover:border-primary/40 hover:bg-primary/3"
+                )}
+              >
+                <FileText className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-sm font-medium text-foreground/70">Drop a CSV file here or <span className="text-primary underline underline-offset-2">browse</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Comma, tab, or semicolon delimited</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.tsv,.txt"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border/50" />
+                <span className="text-xs text-muted-foreground">or paste CSV text</span>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+
+              <textarea
+                className={cn(inputCls, "min-h-[140px] resize-y font-mono text-xs leading-relaxed")}
+                placeholder={"ticker,shares,avg_cost,sleeve,sector\nNVDA,10,580.00,rothIra,Semis\nBTC,0.5,45000,crypto,Crypto"}
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+                spellCheck={false}
+              />
+
+              {globalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {globalError}
+                </p>
+              )}
+            </>
+          )}
+
+          {/* ── Step: map ── */}
+          {step === "map" && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Map your CSV columns to the required fields.
+                Detected <span className="font-mono text-foreground">{rows.length}</span> data rows across <span className="font-mono text-foreground">{headers.length}</span> columns.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {Object.entries(FIELD_LABELS).map(([field, { label, required, hint }]) => (
+                  <div key={field}>
+                    <label className={cn(labelCls, "flex items-center gap-1.5")}>
+                      {label}
+                      {required
+                        ? <span className="text-red-400">*</span>
+                        : <span className="text-muted-foreground/50">(optional)</span>
+                      }
+                    </label>
+                    <select
+                      className={inputCls}
+                      value={mapping[field] ?? ""}
+                      onChange={(e) => setMapping((m) => ({ ...m, [field]: e.target.value }))}
+                    >
+                      <option value="">— {hint} —</option>
+                      {displayHeaders.map((h) => (
+                        <option key={h.key} value={h.key}>{h.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini preview */}
+              {rows.length > 0 && (
+                <div>
+                  <p className={labelCls}>Preview (first 3 rows)</p>
+                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border/40 bg-muted/20">
+                          {Object.keys(FIELD_LABELS).map((f) => (
+                            <th key={f} className="px-3 py-2 text-left text-muted-foreground font-semibold uppercase tracking-wider text-[9px]">
+                              {FIELD_LABELS[f]!.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {buildPreviewRows(rows.slice(0, 3), headers, mapping).map((row, i) => (
+                          <tr key={i} className={cn("border-b border-border/30 last:border-0", !row._valid && "bg-red-500/5")}>
+                            <td className="px-3 py-1.5 font-mono font-bold text-primary">{row.ticker}</td>
+                            <td className="px-3 py-1.5 font-mono">{row.shares}</td>
+                            <td className="px-3 py-1.5 font-mono">${row.avgCost}</td>
+                            <td className="px-3 py-1.5 text-foreground/70 truncate max-w-[100px]">{row.name}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">{row.sleeve}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">{row.sector}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {globalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {globalError}
+                </p>
+              )}
+            </>
+          )}
+
+          {/* ── Step: confirm ── */}
+          {step === "confirm" && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {validCount} valid row{validCount !== 1 ? "s" : ""} ready to import
+                </div>
+                {invalidCount > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {invalidCount} row{invalidCount !== 1 ? "s" : ""} will be skipped
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border/50 overflow-x-auto max-h-[320px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0">
+                    <tr className="border-b border-border/40 bg-card">
+                      {["Ticker", "Name", "Shares", "Avg Cost", "Sleeve", "Sector", ""].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-muted-foreground font-semibold uppercase tracking-wider text-[9px]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.map((row, i) => (
+                      <tr
+                        key={i}
+                        className={cn(
+                          "border-b border-border/30 last:border-0 transition-colors",
+                          row._valid ? "hover:bg-primary/5" : "bg-red-500/5 opacity-60"
+                        )}
+                      >
+                        <td className="px-3 py-1.5 font-mono font-bold text-primary">{row.ticker}</td>
+                        <td className="px-3 py-1.5 text-foreground/70 truncate max-w-[120px]">{row.name}</td>
+                        <td className="px-3 py-1.5 font-mono">{row.shares}</td>
+                        <td className="px-3 py-1.5 font-mono">${row.avgCost.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{row.sleeve}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{row.sector}</td>
+                        <td className="px-3 py-1.5">
+                          {row._valid
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            : <span title={row._errors.join(", ")}><AlertCircle className="w-3.5 h-3.5 text-red-400" /></span>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {globalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {globalError}
+                </p>
+              )}
+            </>
+          )}
+
+          {/* ── Step: done ── */}
+          {step === "done" && (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h3 className="font-display font-semibold text-lg text-foreground">Import complete!</h3>
+              <p className="text-sm text-muted-foreground">
+                Successfully added <span className="font-mono font-bold text-emerald-400">{doneCount}</span> position{doneCount !== 1 ? "s" : ""} to your portfolio.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-border/50 flex items-center gap-3 flex-shrink-0">
+          {step === "input" && (
+            <>
+              <button onClick={onClose} className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleParse}
+                disabled={rawText.trim().length === 0}
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                Parse CSV <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+          {step === "map" && (
+            <>
+              <button onClick={() => { setStep("input"); setGlobalError(null); }} className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
+                Back
+              </button>
+              <button
+                onClick={handleGoConfirm}
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              >
+                Preview Import <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+          {step === "confirm" && (
+            <>
+              <button onClick={() => { setStep("map"); setGlobalError(null); }} className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
+                Back
+              </button>
+              <button
+                onClick={handleImport}
+                disabled={bulkMutation.isPending || validCount === 0}
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-primary/20"
+              >
+                {bulkMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Import {validCount} Position{validCount !== 1 ? "s" : ""}
+              </button>
+            </>
+          )}
+          {step === "done" && (
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Done
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Portfolio() {
   const now = useNow();
@@ -492,6 +1000,7 @@ export default function Portfolio() {
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<PortfolioPosition | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PortfolioPosition | null>(null);
+  const [showCsvImport, setShowCsvImport] = useState(false);
 
   function openAdd() { setModalMode("add"); setEditTarget(null); }
   function openEdit(p: PortfolioPosition) { setModalMode("edit"); setEditTarget(p); }
@@ -611,6 +1120,12 @@ export default function Portfolio() {
             key="delete-modal"
             position={deleteTarget}
             onClose={closeDelete}
+          />
+        )}
+        {showCsvImport && (
+          <CsvImportModal
+            key="csv-import-modal"
+            onClose={() => setShowCsvImport(false)}
           />
         )}
       </AnimatePresence>
@@ -870,6 +1385,13 @@ export default function Portfolio() {
               Sorted by value · {positions.length} positions · {sourceLabel ?? "Loading prices…"}
             </span>
             <button
+              onClick={() => setShowCsvImport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/60 border border-border/50 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Import CSV
+            </button>
+            <button
               onClick={openAdd}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 border border-primary/25 text-primary hover:bg-primary/20 hover:border-primary/40 transition-colors"
             >
@@ -894,7 +1416,7 @@ export default function Portfolio() {
                 const rawPosition = positions.find((p) => p.id === h.id)!;
                 return (
                   <motion.tr
-                    key={h.ticker}
+                    key={h.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.04 }}

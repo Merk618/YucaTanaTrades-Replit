@@ -208,6 +208,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/PortfolioSummary"
 
+  /positions/bulk:
+    post:
+      operationId: bulkCreatePositions
+      tags: [portfolio]
+      summary: Bulk-create portfolio positions (CSV import)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCreatePositionsInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkCreatePositionsResult"
+
   /positions:
     get:
       operationId: listPositions
@@ -644,6 +663,27 @@ components:
           $ref: "#/components/schemas/PortfolioPositionSleeve"
         sector:
           type: string
+
+    BulkCreatePositionsInput:
+      type: object
+      required: [positions]
+      properties:
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioPositionInput"
+          minItems: 1
+
+    BulkCreatePositionsResult:
+      type: object
+      required: [created, positions]
+      properties:
+        created:
+          type: integer
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioPosition"
 
     Quote:
       type: object

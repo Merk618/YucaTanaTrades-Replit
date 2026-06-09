@@ -21,6 +21,8 @@ import type {
 
 import type {
   BotsStatus,
+  BulkCreatePositionsInput,
+  BulkCreatePositionsResult,
   GetMarketQuotesParams,
   GetSourceHealthParams,
   HealthStatus,
@@ -943,6 +945,77 @@ export function useGetPortfolioSummary<TData = Awaited<ReturnType<typeof getPort
 
 
 
+
+export const getBulkCreatePositionsUrl = () => {
+
+
+
+
+  return `/api/positions/bulk`
+}
+
+/**
+ * @summary Bulk-create portfolio positions (CSV import)
+ */
+export const bulkCreatePositions = async (bulkCreatePositionsInput: BulkCreatePositionsInput, options?: RequestInit): Promise<BulkCreatePositionsResult> => {
+
+  return customFetch<BulkCreatePositionsResult>(getBulkCreatePositionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkCreatePositionsInput,)
+  }
+);}
+
+
+
+
+export const getBulkCreatePositionsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext> => {
+
+const mutationKey = ['bulkCreatePositions'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkCreatePositions>>, {data: BodyType<BulkCreatePositionsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkCreatePositions(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkCreatePositionsMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCreatePositions>>>
+    export type BulkCreatePositionsMutationBody = BodyType<BulkCreatePositionsInput>
+    export type BulkCreatePositionsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Bulk-create portfolio positions (CSV import)
+ */
+export const useBulkCreatePositions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkCreatePositions>>,
+        TError,
+        {data: BodyType<BulkCreatePositionsInput>},
+        TContext
+      > => {
+      return useMutation(getBulkCreatePositionsMutationOptions(options));
+    }
 
 export const getListPositionsUrl = () => {
 

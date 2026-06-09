@@ -273,6 +273,16 @@ export interface PortfolioPositionUpdate {
   sector?: string;
 }
 
+export interface BulkCreatePositionsInput {
+  /** @minItems 1 */
+  positions: PortfolioPositionInput[];
+}
+
+export interface BulkCreatePositionsResult {
+  created: number;
+  positions: PortfolioPosition[];
+}
+
 export type QuoteAssetClass = typeof QuoteAssetClass[keyof typeof QuoteAssetClass];
 
 
