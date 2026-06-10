@@ -178,6 +178,58 @@ describe("market router — crypto fallback chain", () => {
     expect(vi.mocked(fetchCoinGeckoQuotes)).not.toHaveBeenCalled();
   });
 
+  it("falls back to Coinbase when Kraken resolves with an empty Map for DOT", async () => {
+    // Kraken succeeds at the network level but returns an empty Map — no entry
+    // at all for DOT. The router must treat a missing entry the same as an Error
+    // value and continue to the next provider rather than silently dropping the
+    // symbol or returning an empty/zero quote.
+    // DOT is unused by prior tests so there is no stale cache hit.
+    vi.mocked(fetchKrakenQuotes).mockResolvedValue(new Map());
+    vi.mocked(fetchCoinbaseQuotes).mockResolvedValue(rawMap("DOT"));
+    // CoinGecko must not be reached — Coinbase resolved the symbol.
+    vi.mocked(fetchCoinGeckoQuotes).mockResolvedValue(new Map());
+
+    const quotes = await getQuotes(["DOT"]);
+
+    expect(quotes).toHaveLength(1);
+    const dot = quotes[0]!;
+    expect(dot.symbol).toBe("DOT");
+    expect(dot.provider).toBe("coinbase");
+    expect(dot.isFallback).toBe(true);
+    expect(dot.price).toBe(50_000);
+    expect(dot.error).toBeNull();
+
+    expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    // CoinGecko must not have been called — Coinbase resolved the symbol.
+    expect(vi.mocked(fetchCoinGeckoQuotes)).not.toHaveBeenCalled();
+  });
+
+  it("returns an error quote when all three providers resolve with empty Maps for ADA", async () => {
+    // Every provider resolves successfully at the network level but none includes
+    // ADA in its result map. After exhausting all three providers the router must
+    // produce an honest error quote (error !== null, price 0, provider "none")
+    // rather than silently returning a zero/blank quote.
+    // ADA is unused by prior tests so there is no stale cache hit.
+    vi.mocked(fetchKrakenQuotes).mockResolvedValue(new Map());
+    vi.mocked(fetchCoinbaseQuotes).mockResolvedValue(new Map());
+    vi.mocked(fetchCoinGeckoQuotes).mockResolvedValue(new Map());
+
+    const quotes = await getQuotes(["ADA"]);
+
+    expect(quotes).toHaveLength(1);
+    const ada = quotes[0]!;
+    expect(ada.symbol).toBe("ADA");
+    expect(ada.provider).toBe("none");
+    expect(ada.price).toBe(0);
+    expect(ada.error).not.toBeNull();
+
+    // All three providers were tried in priority order.
+    expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinGeckoQuotes)).toHaveBeenCalledOnce();
+  });
+
   it("falls back to CoinGecko when both Kraken and Coinbase return per-symbol errors for SOL", async () => {
     // Both primary providers resolve successfully but each maps SOL to an Error.
     // CoinGecko is the last-resort fallback and should serve the quote.
