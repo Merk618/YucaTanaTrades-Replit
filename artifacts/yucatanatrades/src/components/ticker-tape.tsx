@@ -217,11 +217,19 @@ export function TickerTape() {
                 isDimmed && "opacity-35",
               )}
             >
-              <span className={cn(
-                "font-bold tracking-wide transition-colors duration-200",
-                isHovered ? "text-primary" : "text-foreground/90 group-hover:text-primary",
-              )}>
-                {item.symbol}
+              <span className="flex items-center gap-1">
+                <span className={cn(
+                  "font-bold tracking-wide transition-colors duration-200",
+                  isHovered ? "text-primary" : "text-foreground/90 group-hover:text-primary",
+                )}>
+                  {item.symbol}
+                </span>
+                {item.isFallback && (
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/80 flex-shrink-0"
+                    aria-label="Fallback source in use"
+                  />
+                )}
               </span>
 
               {/* Price — flashes green/red when it changes */}
