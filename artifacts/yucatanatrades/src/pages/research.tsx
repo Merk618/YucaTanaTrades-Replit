@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearch } from "wouter";
 import { motion } from "framer-motion";
 import { TerminalSquare, Send, Sparkles, TrendingUp, FileText, ChevronRight } from "lucide-react";
@@ -34,10 +34,16 @@ export default function Research() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const sym = new URLSearchParams(search).get("symbol");
-    if (sym) setInput(`What is the analysis for $${sym}?`);
+    if (sym) {
+      const query = `What is the analysis for $${sym}?`;
+      send(query);
+      setInput(query);
+      chatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, [search]);
 
   const send = (text?: string) => {
@@ -76,7 +82,7 @@ export default function Research() {
 
       <div className="flex gap-6 flex-1 min-h-0">
         {/* Chat */}
-        <div className="flex-1 flex flex-col glass-card overflow-hidden">
+        <div ref={chatRef} className="flex-1 flex flex-col glass-card overflow-hidden">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, i) => (
