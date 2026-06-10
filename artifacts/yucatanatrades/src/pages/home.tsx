@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "wouter";
 import { motion, type Variants } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Bot, Zap, Shield, Activity,
@@ -11,7 +12,7 @@ import {
 } from "@/data/mockData";
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
-  useMarketQuotes, useMarketSession, useTickerQuotes, INDEX_SYMBOLS,
+  useMarketQuotes, useMarketSession, useTickerQuotes, INDEX_SYMBOLS, CRYPTO_TICKER_SYMBOLS,
   isQuoteUsable, quoteTooltip, freshnessLabel, useNow, type Quote,
 } from "@/hooks/use-market";
 import { RefreshCountdownBadges } from "@/components/refresh-countdown-badges";
@@ -137,6 +138,8 @@ function IndexCard({ symbol, price, change, changePercent, tooltip, timestamp, n
 }) {
   const isUp = change >= 0;
   const sparkData = TICKER_SPARKLINES[symbol] ?? [price * 0.96, price * 0.98, price];
+  const isCrypto = (CRYPTO_TICKER_SYMBOLS as readonly string[]).includes(symbol);
+  const href = isCrypto ? `/markets/crypto?symbol=${symbol}` : `/markets?symbol=${symbol}`;
 
   const prevPriceRef = React.useRef<number>(price);
   const [flashDir, setFlashDir] = React.useState<"up" | "down" | null>(null);
@@ -153,10 +156,11 @@ function IndexCard({ symbol, price, change, changePercent, tooltip, timestamp, n
   }, [price]);
 
   return (
-    <div
+    <Link
+      href={href}
       title={tooltip}
       className={cn(
-        "p-3 rounded-lg border transition-all duration-300 cursor-help group relative overflow-hidden",
+        "block p-3 rounded-lg border transition-all duration-300 cursor-pointer group relative overflow-hidden",
         isUp
           ? "bg-background/60 border-border/40 hover:border-emerald-500/30 hover:shadow-[0_0_16px_rgba(34,197,94,0.08)]"
           : "bg-background/60 border-border/40 hover:border-red-500/25 hover:shadow-[0_0_16px_rgba(239,68,68,0.06)]"
@@ -196,7 +200,7 @@ function IndexCard({ symbol, price, change, changePercent, tooltip, timestamp, n
           as of {freshnessLabel(timestamp, now)}
         </p>
       )}
-    </div>
+    </Link>
   );
 }
 
