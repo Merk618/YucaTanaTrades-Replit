@@ -21,6 +21,43 @@ import {
 
 type FlashMap = Record<string, "up" | "down">;
 
+// ---------------------------------------------------------------------------
+// Hover tooltip — "↗ View on Markets" — rendered via portal so the tape's
+// overflow:hidden doesn't clip it.
+// ---------------------------------------------------------------------------
+interface HoverTooltipProps {
+  anchorRect: DOMRect;
+}
+
+function HoverTooltip({ anchorRect }: HoverTooltipProps) {
+  const tooltipWidth = 140;
+  const left = Math.min(
+    Math.max(anchorRect.left + anchorRect.width / 2 - tooltipWidth / 2, 8),
+    (typeof window !== "undefined" ? window.innerWidth : 1200) - tooltipWidth - 8,
+  );
+  const top = anchorRect.bottom + 6;
+
+  return ReactDOM.createPortal(
+    <div
+      aria-hidden="true"
+      style={{
+        position: "fixed",
+        top,
+        left,
+        width: tooltipWidth,
+        zIndex: 9998,
+        pointerEvents: "none",
+      }}
+      className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-md bg-card/90 border border-primary/30 shadow-[0_4px_16px_hsl(43_63%_52%/0.2)] animate-in fade-in duration-100"
+    >
+      <span className="text-[10px] font-semibold text-primary/90 tracking-wide select-none whitespace-nowrap">
+        ↗ View on Markets
+      </span>
+    </div>,
+    document.body,
+  );
+}
+
 function formatVolume(v: number): string {
   if (!Number.isFinite(v) || v <= 0) return "—";
   if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)}B`;
@@ -309,6 +346,9 @@ export function TickerTape() {
   // Track which specific ticker item the cursor is over.
   const [hoveredKey, setHoveredKey] = React.useState<string | null>(null);
 
+  // Bounding rect of the currently hovered ticker item (for the tooltip portal).
+  const [hoveredRect, setHoveredRect] = React.useState<DOMRect | null>(null);
+
   // Pinned quote panel state.
   const [pinnedQuote, setPinnedQuote] = React.useState<Quote | null>(null);
   const [pinnedX, setPinnedX] = React.useState(0);
@@ -366,12 +406,18 @@ export function TickerTape() {
         />
       )}
 
+      {/* Hover tooltip — only shown when hovering and no pinned panel is open */}
+      {!pinnedQuote && hoveredRect && (
+        <HoverTooltip anchorRect={hoveredRect} />
+      )}
+
       <div
         className="relative flex overflow-hidden border-b border-primary/10 py-1.5 font-mono text-xs whitespace-nowrap z-50 bg-background/95 backdrop-blur-sm"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => {
           if (!pinnedQuote) setIsPaused(false);
           setHoveredKey(null);
+          setHoveredRect(null);
         }}
       >
         {/* Gold gradient fade edges */}
@@ -478,8 +524,14 @@ export function TickerTape() {
                 tabIndex={0}
                 aria-label={`Pin ${item.symbol} detail panel`}
                 aria-pressed={isPinned}
-                onMouseEnter={() => setHoveredKey(itemKey)}
-                onMouseLeave={() => setHoveredKey(null)}
+                onMouseEnter={(e) => {
+                  setHoveredKey(itemKey);
+                  setHoveredRect((e.currentTarget as HTMLElement).getBoundingClientRect());
+                }}
+                onMouseLeave={() => {
+                  setHoveredKey(null);
+                  setHoveredRect(null);
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isPinned) {
