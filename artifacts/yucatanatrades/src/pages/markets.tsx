@@ -249,11 +249,20 @@ const MEDALS = ["🥇", "🥈", "🥉", ""];
 function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
   const up       = q.changePercent >= 0;
   const width    = Math.min(100, Math.abs(q.changePercent) * 14);
+
+  // price flash
   const prev     = usePrevPrice(q.price);
   const changed  = prev !== 0 && prev !== q.price;
   const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
   const flashKey = useRef(0);
   if (changed) flashKey.current += 1;
+
+  // % change badge flash
+  const prevPct     = usePrevPrice(q.changePercent);
+  const pctChanged  = prevPct !== 0 && prevPct !== q.changePercent;
+  const pctFlashDir = pctChanged ? (q.changePercent > prevPct ? "up" : "down") : null;
+  const pctFlashKey = useRef(0);
+  if (pctChanged) pctFlashKey.current += 1;
 
   return (
     <div className="flex items-center gap-3">
@@ -267,8 +276,15 @@ function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
           style={{ background: up ? "rgba(20,184,166,0.75)" : "rgba(239,68,68,0.60)" }}
         />
       </div>
-      <span className={cn("font-mono text-xs font-semibold w-16 text-right",
-        up ? "text-emerald-400" : "text-red-400")}>
+      <span
+        key={pctFlashKey.current}
+        className={cn(
+          "font-mono text-xs font-semibold w-16 text-right rounded px-0.5 transition-colors",
+          pctFlashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+          pctFlashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+          !pctFlashDir           && (up ? "text-emerald-400" : "text-red-400"),
+        )}
+      >
         {up ? "+" : ""}{q.changePercent.toFixed(2)}%
       </span>
       <span
