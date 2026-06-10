@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Bot, Zap, Shield, Activity,
   ArrowUpRight, ArrowDownRight, Newspaper, Brain, Target,
-  Clock, Flame, BarChart2, Lock, PieChart,
+  Clock, Flame, BarChart2, Lock, PieChart, AlertTriangle,
 } from "lucide-react";
 import {
   mockScannerResults,
@@ -354,6 +354,10 @@ export default function Home() {
   // Honest source label for the Index Overview footer, derived from the quotes.
   const hasDelayed = indexQuotes.some((q) => q.isDelayed);
   const hasCrypto = indexQuotes.some((q) => q.assetClass === "crypto");
+  const hasCryptoFallback = indexQuotes.some((q) => q.assetClass === "crypto" && q.isFallback);
+  const cryptoFallbackProvider = hasCryptoFallback
+    ? (indexQuotes.find((q) => q.assetClass === "crypto" && q.isFallback)?.provider ?? "backup")
+    : null;
   const indexSourceLabel = indexQuotes.length === 0
     ? "Awaiting source data"
     : [hasDelayed ? "Equities delayed ~15min" : null, hasCrypto ? "Crypto reference" : null]
@@ -629,8 +633,14 @@ export default function Home() {
           <RevealSection>
             <SpotlightCard className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xs font-display font-semibold text-primary uppercase tracking-widest">Index Overview</h2>
+                  {hasCryptoFallback && cryptoFallbackProvider && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 border border-amber-500/25 text-amber-400">
+                      <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                      Crypto prices via {cryptoFallbackProvider.charAt(0).toUpperCase() + cryptoFallbackProvider.slice(1)}
+                    </span>
+                  )}
                 </div>
                 <span className="text-[10px] text-muted-foreground/50 font-mono">{indexSourceLabel}</span>
               </div>
