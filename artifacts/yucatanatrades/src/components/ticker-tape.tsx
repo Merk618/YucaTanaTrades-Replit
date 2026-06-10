@@ -38,6 +38,12 @@ function useRefreshCountdown(lastFetchedAt: number, intervalMs: number) {
   return { secondsLeft, progressPercent };
 }
 
+/** Returns animation duration in seconds — shorter as the deadline approaches. */
+function countdownPulseDuration(secondsLeft: number): number {
+  // 5s remaining → 1.0s pulse, 1s remaining → 0.2s pulse (linear, clamped)
+  return Math.max(0.2, secondsLeft * 0.2);
+}
+
 function formatCountdown(seconds: number): string {
   if (seconds >= 60) {
     const m = Math.floor(seconds / 60);
@@ -165,21 +171,37 @@ export function TickerTape() {
         <div className="flex flex-col items-end gap-px">
           <span
             className={cn(
-              "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
-              eqSecondsLeft <= 5
-                ? "text-primary/90 animate-[countdown-pulse-gold_1s_ease-in-out_infinite]"
-                : "text-muted-foreground/40",
+              "countdown-badge font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
+              eqSecondsLeft <= 5 ? "text-primary/90" : "text-muted-foreground/40",
             )}
+            style={
+              eqSecondsLeft <= 5
+                ? {
+                    animationName: "countdown-pulse-gold",
+                    animationDuration: `${countdownPulseDuration(eqSecondsLeft)}s`,
+                    animationTimingFunction: "ease-in-out",
+                    animationIterationCount: "infinite",
+                  }
+                : undefined
+            }
           >
             EQ&thinsp;{formatCountdown(eqSecondsLeft)}
           </span>
           <span
             className={cn(
-              "font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
-              cryptoSecondsLeft <= 5
-                ? "text-emerald-400/90 animate-[countdown-pulse-emerald_1s_ease-in-out_infinite]"
-                : "text-muted-foreground/40",
+              "countdown-badge font-mono text-[9px] tabular-nums select-none transition-colors duration-500",
+              cryptoSecondsLeft <= 5 ? "text-emerald-400/90" : "text-muted-foreground/40",
             )}
+            style={
+              cryptoSecondsLeft <= 5
+                ? {
+                    animationName: "countdown-pulse-emerald",
+                    animationDuration: `${countdownPulseDuration(cryptoSecondsLeft)}s`,
+                    animationTimingFunction: "ease-in-out",
+                    animationIterationCount: "infinite",
+                  }
+                : undefined
+            }
           >
             ₿&thinsp;{formatCountdown(cryptoSecondsLeft)}
           </span>
@@ -299,8 +321,7 @@ export function TickerTape() {
           .animate-\\[ticker_35s_linear_infinite\\]   { animation: none; }
           .animate-\\[price-flash-up_0\\.9s_ease-out\\]   { animation: none; }
           .animate-\\[price-flash-down_0\\.9s_ease-out\\] { animation: none; }
-          .animate-\\[countdown-pulse-gold_1s_ease-in-out_infinite\\]    { animation: none; }
-          .animate-\\[countdown-pulse-emerald_1s_ease-in-out_infinite\\] { animation: none; }
+          .countdown-badge { animation: none !important; }
         }
       `,
         }}
