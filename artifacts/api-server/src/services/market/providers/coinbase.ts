@@ -77,6 +77,9 @@ export async function fetchCoinbaseQuotes(
           }
           const change = price - open;
           const changePercent = open > 0 ? (change / open) * 100 : 0;
+          const high   = parseFloat(stats.high);
+          const low    = parseFloat(stats.low);
+          const volume = parseFloat(stats.volume);
           const inst = classify(sym);
           out.set(sym, {
             symbol: inst.symbol,
@@ -85,6 +88,10 @@ export async function fetchCoinbaseQuotes(
             change,
             changePercent,
             timestamp: new Date().toISOString(),
+            open:   Number.isFinite(open)   ? open   : null,
+            high:   Number.isFinite(high)   ? high   : null,
+            low:    Number.isFinite(low)    ? low    : null,
+            volume: Number.isFinite(volume) ? volume : null,
           });
         } catch (err) {
           out.set(sym, err instanceof Error ? err : new Error(String(err)));

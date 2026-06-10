@@ -404,7 +404,11 @@ export const GetMarketQuotesResponse = zod.object({
   "isDemo": zod.boolean(),
   "marketSession": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
   "confidence": zod.number(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "open": zod.number().nullish().describe('Day open price; null when provider does not supply OHLC.'),
+  "high": zod.number().nullish().describe('Day high price; null when provider does not supply OHLC.'),
+  "low": zod.number().nullish().describe('Day low price; null when provider does not supply OHLC.'),
+  "volume": zod.number().nullish().describe('Day\/24h volume; null when provider does not supply it.')
 }))
 })
 
@@ -491,7 +495,11 @@ export const TestQuoteFetchResponse = zod.object({
   "isDemo": zod.boolean(),
   "marketSession": zod.enum(['open', 'pre', 'post', 'closed', 'holiday', '24h']),
   "confidence": zod.number(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "open": zod.number().nullish().describe('Day open price; null when provider does not supply OHLC.'),
+  "high": zod.number().nullish().describe('Day high price; null when provider does not supply OHLC.'),
+  "low": zod.number().nullish().describe('Day low price; null when provider does not supply OHLC.'),
+  "volume": zod.number().nullish().describe('Day\/24h volume; null when provider does not supply it.')
 }))
 })
 

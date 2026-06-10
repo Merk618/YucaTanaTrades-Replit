@@ -94,6 +94,12 @@ export interface Quote {
   marketSession: MarketSessionState;
   confidence: number; // 0..1
   error: string | null;
+  // OHLC + volume — present when the upstream provider supplies them.
+  // All null when the provider only returns a last-trade price.
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  volume: number | null;
 }
 
 // Raw result returned by a provider adapter before router-level enrichment.
@@ -105,6 +111,11 @@ export interface RawQuote {
   changePercent: number;
   // Data timestamp from the provider, ISO. Null = unknown.
   timestamp: string | null;
+  // OHLC + volume — optional; providers set these when available.
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  volume?: number | null;
 }
 
 export interface MarketSessionInfo {

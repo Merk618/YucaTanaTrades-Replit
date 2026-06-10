@@ -26,4 +26,24 @@ export interface Quote {
   confidence: number;
   /** @nullable */
   error: string | null;
+  /**
+     * Day open price; null when provider does not supply OHLC.
+     * @nullable
+     */
+  open?: number | null;
+  /**
+     * Day high price; null when provider does not supply OHLC.
+     * @nullable
+     */
+  high?: number | null;
+  /**
+     * Day low price; null when provider does not supply OHLC.
+     * @nullable
+     */
+  low?: number | null;
+  /**
+     * Day/24h volume; null when provider does not supply it.
+     * @nullable
+     */
+  volume?: number | null;
 }

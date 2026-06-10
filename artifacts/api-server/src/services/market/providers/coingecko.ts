@@ -15,6 +15,7 @@ function coingeckoIdFor(symbol: string): string | null {
 interface CoinGeckoPrice {
   usd?: number;
   usd_24h_change?: number;
+  usd_24h_vol?: number;
   last_updated_at?: number; // unix seconds
 }
 
@@ -33,7 +34,7 @@ export async function fetchCoinGeckoQuotes(
   if (idBySymbol.size === 0) return out;
 
   const ids = [...new Set(idBySymbol.values())].join(",");
-  const url = `${BASE}?ids=${encodeURIComponent(ids)}&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true`;
+  const url = `${BASE}?ids=${encodeURIComponent(ids)}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -69,6 +70,10 @@ export async function fetchCoinGeckoQuotes(
         change,
         changePercent,
         timestamp,
+        open:   null,
+        high:   null,
+        low:    null,
+        volume: typeof row.usd_24h_vol === "number" ? row.usd_24h_vol : null,
       });
     }
   } catch (err) {

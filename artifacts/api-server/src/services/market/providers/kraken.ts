@@ -39,6 +39,9 @@ function findTicker(result: Record<string, KrakenTicker>, pair: string): KrakenT
 interface KrakenTicker {
   c: [string, string]; // [last trade closed price, lot volume]
   o: string;           // today's opening price
+  h: [string, string]; // [today's high, last 24h high]
+  l: [string, string]; // [today's low, last 24h low]
+  v: [string, string]; // [today's volume, last 24h volume]
 }
 
 interface KrakenResponse {
@@ -99,6 +102,9 @@ export async function fetchKrakenQuotes(
       }
       const change = price - openPrice;
       const changePercent = openPrice > 0 ? (change / openPrice) * 100 : 0;
+      const high   = ticker.h?.[0] ? parseFloat(ticker.h[0]) : null;
+      const low    = ticker.l?.[0] ? parseFloat(ticker.l[0]) : null;
+      const volume = ticker.v?.[0] ? parseFloat(ticker.v[0]) : null;
       const inst = classify(sym);
       out.set(sym, {
         symbol: inst.symbol,
@@ -107,6 +113,10 @@ export async function fetchKrakenQuotes(
         change,
         changePercent,
         timestamp: new Date().toISOString(),
+        open:   Number.isFinite(openPrice) ? openPrice : null,
+        high:   high !== null && Number.isFinite(high) ? high : null,
+        low:    low  !== null && Number.isFinite(low)  ? low  : null,
+        volume: volume !== null && Number.isFinite(volume) ? volume : null,
       });
     }
   } catch (err) {

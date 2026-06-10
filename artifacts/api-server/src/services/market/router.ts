@@ -78,6 +78,10 @@ function errorQuote(symbol: string, assetClass: AssetClass, message: string): Qu
     isDelayed: false,
     isStale: false,
     isFallback: false,
+    open: null,
+    high: null,
+    low: null,
+    volume: null,
     isDemo: false,
     marketSession: assetClass === "crypto" ? "24h" : "closed",
     confidence: 0,
@@ -121,6 +125,10 @@ function enrich(
     marketSession,
     confidence,
     error: null,
+    open:   raw.open   ?? null,
+    high:   raw.high   ?? null,
+    low:    raw.low    ?? null,
+    volume: raw.volume ?? null,
   };
 }
 

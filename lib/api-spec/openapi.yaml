@@ -758,6 +758,18 @@ components:
           type: number
         error:
           type: ["string", "null"]
+        open:
+          type: ["number", "null"]
+          description: Day open price; null when provider does not supply OHLC.
+        high:
+          type: ["number", "null"]
+          description: Day high price; null when provider does not supply OHLC.
+        low:
+          type: ["number", "null"]
+          description: Day low price; null when provider does not supply OHLC.
+        volume:
+          type: ["number", "null"]
+          description: Day/24h volume; null when provider does not supply it.
 
     QuoteList:
       type: object

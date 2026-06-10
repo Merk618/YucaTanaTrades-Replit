@@ -13,6 +13,10 @@ interface YahooChartMeta {
   chartPreviousClose?: number;
   previousClose?: number;
   regularMarketTime?: number; // unix seconds
+  regularMarketOpen?: number;
+  regularMarketDayHigh?: number;
+  regularMarketDayLow?: number;
+  regularMarketVolume?: number;
 }
 
 async function fetchOne(symbol: string, signal: AbortSignal): Promise<RawQuote> {
@@ -43,6 +47,10 @@ async function fetchOne(symbol: string, signal: AbortSignal): Promise<RawQuote> 
     change,
     changePercent,
     timestamp,
+    open:   typeof meta.regularMarketOpen === "number" ? meta.regularMarketOpen : null,
+    high:   typeof meta.regularMarketDayHigh === "number" ? meta.regularMarketDayHigh : null,
+    low:    typeof meta.regularMarketDayLow === "number" ? meta.regularMarketDayLow : null,
+    volume: typeof meta.regularMarketVolume === "number" ? meta.regularMarketVolume : null,
   };
 }
 
