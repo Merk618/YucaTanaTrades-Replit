@@ -9,49 +9,13 @@ import {
   quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
+import {
+  useRefreshCountdown,
+  countdownPulseDuration,
+  formatCountdown,
+} from "@/hooks/use-refresh-countdown";
 
 type FlashMap = Record<string, "up" | "down">;
-
-/**
- * Tracks how many seconds remain until the next data refresh and returns a
- * 0–100 progress value (100 = just fetched, 0 = due now).
- */
-function useRefreshCountdown(lastFetchedAt: number, intervalMs: number) {
-  const totalSeconds = Math.max(1, Math.round(intervalMs / 1000));
-
-  const computeSecondsLeft = React.useCallback(() => {
-    if (!lastFetchedAt) return totalSeconds;
-    const elapsed = Date.now() - lastFetchedAt;
-    return Math.max(0, Math.round((intervalMs - elapsed) / 1000));
-  }, [lastFetchedAt, intervalMs, totalSeconds]);
-
-  const [secondsLeft, setSecondsLeft] = React.useState<number>(computeSecondsLeft);
-
-  React.useEffect(() => {
-    setSecondsLeft(computeSecondsLeft());
-    const id = setInterval(() => setSecondsLeft(computeSecondsLeft()), 1000);
-    return () => clearInterval(id);
-  }, [computeSecondsLeft]);
-
-  const progressPercent = (secondsLeft / totalSeconds) * 100;
-
-  return { secondsLeft, progressPercent };
-}
-
-/** Returns animation duration in seconds — shorter as the deadline approaches. */
-function countdownPulseDuration(secondsLeft: number): number {
-  // 5s remaining → 1.0s pulse, 1s remaining → 0.2s pulse (linear, clamped)
-  return Math.max(0.2, secondsLeft * 0.2);
-}
-
-function formatCountdown(seconds: number): string {
-  if (seconds >= 60) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  }
-  return `${seconds}s`;
-}
 
 export function TickerTape() {
   const [, navigate] = useLocation();
@@ -309,19 +273,10 @@ export function TickerTape() {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
         }
-        @keyframes countdown-pulse-gold {
-          0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(43 63% 52% / 0.5); }
-          50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(43 63% 52% / 0.9); }
-        }
-        @keyframes countdown-pulse-emerald {
-          0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(160 100% 39% / 0.5); }
-          50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(160 100% 39% / 0.9); }
-        }
         @media (prefers-reduced-motion: reduce) {
           .animate-\\[ticker_35s_linear_infinite\\]   { animation: none; }
           .animate-\\[price-flash-up_0\\.9s_ease-out\\]   { animation: none; }
           .animate-\\[price-flash-down_0\\.9s_ease-out\\] { animation: none; }
-          .countdown-badge { animation: none !important; }
         }
       `,
         }}

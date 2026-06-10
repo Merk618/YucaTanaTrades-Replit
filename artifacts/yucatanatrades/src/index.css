@@ -290,8 +290,19 @@
   100% { transform: translateX(400%); }
 }
 
+/* Refresh countdown badges — used in ticker-tape and page section headers */
+@keyframes countdown-pulse-gold {
+  0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(43 63% 52% / 0.5); }
+  50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(43 63% 52% / 0.9); }
+}
+@keyframes countdown-pulse-emerald {
+  0%, 100% { opacity: 1; text-shadow: 0 0 4px hsl(160 100% 39% / 0.5); }
+  50%       { opacity: 0.55; text-shadow: 0 0 8px hsl(160 100% 39% / 0.9); }
+}
+
 /* Reduced motion: disable ALL custom animations */
 @media (prefers-reduced-motion: reduce) {
+  .countdown-badge { animation: none !important; }
   .btn-gold,
   .btn-gold::after,
   .gold-skeleton,

@@ -11,9 +11,10 @@ import {
 } from "@/data/mockData";
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
-  useMarketQuotes, useMarketSession, INDEX_SYMBOLS,
+  useMarketQuotes, useMarketSession, useTickerQuotes, INDEX_SYMBOLS,
   isQuoteUsable, quoteTooltip, freshnessLabel, useNow, type Quote,
 } from "@/hooks/use-market";
+import { RefreshCountdownBadges } from "@/components/refresh-countdown-badges";
 import { cn } from "@/lib/utils";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -348,6 +349,12 @@ export default function Home() {
   const { data: botStatus } = useGetBotsStatus();
   const { data: session } = useMarketSession();
   const { data: quoteData } = useMarketQuotes(INDEX_SYMBOLS);
+  const {
+    equityRefetchMs,
+    cryptoRefetchMs,
+    equityDataUpdatedAt,
+    cryptoDataUpdatedAt,
+  } = useTickerQuotes();
   const now = useNow();
 
   const indexQuotes: Quote[] = (quoteData?.quotes ?? []).filter(isQuoteUsable);
@@ -642,7 +649,15 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-muted-foreground/50 font-mono">{indexSourceLabel}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted-foreground/50 font-mono">{indexSourceLabel}</span>
+                  <RefreshCountdownBadges
+                    equityDataUpdatedAt={equityDataUpdatedAt}
+                    equityRefetchMs={equityRefetchMs}
+                    cryptoDataUpdatedAt={cryptoDataUpdatedAt}
+                    cryptoRefetchMs={cryptoRefetchMs}
+                  />
+                </div>
               </div>
               {indexQuotes.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground/50 font-mono">

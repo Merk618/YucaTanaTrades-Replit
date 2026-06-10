@@ -11,6 +11,7 @@ import {
   isQuoteUsable, formatPrice, quoteBadge, quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
+import { RefreshCountdownBadges } from "@/components/refresh-countdown-badges";
 import { cn } from "@/lib/utils";
 
 const FRESHNESS_WARNING_MS = 15 * 60 * 1000;
@@ -464,6 +465,11 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider">Index Overview</h2>
           <span className="text-[10px] text-muted-foreground/50 font-mono">Delayed ~15min · Yahoo</span>
+          <RefreshCountdownBadges
+            equityDataUpdatedAt={equityDataUpdatedAt}
+            equityRefetchMs={equitiesOpen ? 30_000 : 5 * 60_000}
+            className="ml-auto"
+          />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {INDEX_SYMS.map((sym, i) => {
@@ -800,6 +806,11 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
               <span className="text-[10px] text-muted-foreground/50 font-mono">
                 {isLive ? "Live · Kraken" : "Reference · CoinGecko"}
               </span>
+              <RefreshCountdownBadges
+                cryptoDataUpdatedAt={cryptoDataUpdatedAt}
+                cryptoRefetchMs={cryptoRefetch}
+                className="ml-auto"
+              />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {byChange.map((q, i) => (
