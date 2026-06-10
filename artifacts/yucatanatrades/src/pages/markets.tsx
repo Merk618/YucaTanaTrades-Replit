@@ -286,6 +286,145 @@ function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
   );
 }
 
+// ─── Price-grid table row with price-flash animation ─────────────────────────
+function PriceGridRow({ q, label }: { q: Quote; label?: string }) {
+  const up       = q.changePercent >= 0;
+  const badge    = quoteBadge(q);
+  const prev     = usePrevPrice(q.price);
+  const changed  = prev !== 0 && prev !== q.price;
+  const flashDir = changed ? (q.price > prev ? "up" : "down") : null;
+  const flashKey = useRef(0);
+  if (changed) flashKey.current += 1;
+
+  return (
+    <tr className="border-b border-border/20 hover:bg-white/[0.02] transition-colors group">
+      <td className="py-2.5 pl-4 pr-2 w-28">
+        <span className="font-mono text-sm font-bold text-primary">{q.symbol}</span>
+        {label && (
+          <span className="text-[9px] text-muted-foreground/45 block leading-tight truncate max-w-[80px]">
+            {label}
+          </span>
+        )}
+      </td>
+      <td className="py-2.5 px-2 text-right w-32">
+        <span
+          key={flashKey.current}
+          className={cn(
+            "font-mono text-sm tabular-nums rounded px-1 transition-colors",
+            flashDir === "up"   && "animate-[price-flash-up_0.9s_ease-out] text-emerald-300",
+            flashDir === "down" && "animate-[price-flash-down_0.9s_ease-out] text-red-300",
+            !flashDir           && "text-foreground",
+          )}
+        >
+          ${formatPrice(q.price)}
+        </span>
+      </td>
+      <td className="py-2.5 px-2 text-right w-24">
+        <span className={cn("font-mono text-sm font-semibold tabular-nums",
+          up ? "text-emerald-400" : "text-red-400")}>
+          {up ? "+" : ""}{q.changePercent.toFixed(2)}%
+        </span>
+      </td>
+      <td className="py-2.5 px-2 text-right w-24">
+        <span className={cn("font-mono text-xs tabular-nums",
+          up ? "text-emerald-400/70" : "text-red-400/70")}>
+          {up ? "+" : ""}{q.change.toFixed(q.price < 1 ? 4 : 2)}
+        </span>
+      </td>
+      <td className="py-2.5 pr-4 text-right w-20 hidden sm:table-cell">
+        <span className={cn("inline-block text-[8px] font-mono px-1 py-0.5 rounded border",
+          BADGE_TONE[badge.tone])}>{badge.text}</span>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Tabbed price-grid table (Stocks / Crypto / ETFs) ─────────────────────────
+const GRID_TABS = ["Stocks", "Crypto", "ETFs"] as const;
+type GridTab = typeof GRID_TABS[number];
+
+function PriceGrid({ allQuotes }: { allQuotes: Quote[] }) {
+  const [tab, setTab] = useState<GridTab>("Stocks");
+  const usable = allQuotes.filter(isQuoteUsable);
+
+  const rows = useMemo(() => {
+    if (tab === "Stocks") {
+      return MEGACAP_SYMS.map(s => usable.find(q => q.symbol === s)).filter(Boolean) as Quote[];
+    }
+    if (tab === "Crypto") {
+      return [...CRYPTO_MAJOR_SYMS, ...CRYPTO_WATCH_SYMS]
+        .map(s => usable.find(q => q.symbol === s)).filter(Boolean) as Quote[];
+    }
+    return [...INDEX_SYMS, ...SECTOR_SYMS]
+      .map(s => usable.find(q => q.symbol === s)).filter(Boolean) as Quote[];
+  }, [tab, usable]);
+
+  const getLabel = (sym: string): string | undefined => {
+    if (tab === "ETFs") return SECTOR_LABELS[sym];
+    return undefined;
+  };
+
+  return (
+    <div className="glass-card overflow-hidden">
+      <div className="flex items-center gap-0 border-b border-border/30 px-4 pt-3">
+        <h2 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider mr-4">
+          Price Grid
+        </h2>
+        {GRID_TABS.map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "px-4 py-2 text-xs font-mono font-semibold transition-colors border-b-2 -mb-px",
+              tab === t
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground/50 hover:text-foreground/70",
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border/20">
+              <th className="py-2 pl-4 pr-2 text-left text-[9px] font-mono text-muted-foreground/35 uppercase tracking-wider">
+                Symbol
+              </th>
+              <th className="py-2 px-2 text-right text-[9px] font-mono text-muted-foreground/35 uppercase tracking-wider">
+                Price
+              </th>
+              <th className="py-2 px-2 text-right text-[9px] font-mono text-muted-foreground/35 uppercase tracking-wider">
+                Chg %
+              </th>
+              <th className="py-2 px-2 text-right text-[9px] font-mono text-muted-foreground/35 uppercase tracking-wider">
+                Chg $
+              </th>
+              <th className="py-2 pr-4 text-right text-[9px] font-mono text-muted-foreground/35 uppercase tracking-wider hidden sm:table-cell">
+                Source
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground/40 font-mono">
+                  No data available
+                </td>
+              </tr>
+            ) : (
+              rows.map(q => (
+                <PriceGridRow key={q.symbol} q={q} label={getLabel(q.symbol)} />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Symbol placeholder when quote not yet loaded or unavailable ───────────────
 function SymbolPlaceholder({ symbol, label }: { symbol: string; label?: string }) {
   return (
@@ -553,8 +692,13 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
         </motion.section>
       )}
 
+      {/* Tabbed Price Grid */}
+      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}>
+        <PriceGrid allQuotes={allQuotes} />
+      </motion.section>
+
       {/* Intelligence widgets (unavailable states) */}
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
         <h2 className="text-xs font-display font-semibold text-foreground uppercase tracking-wider mb-3">Market Intelligence</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <UnavailableCard
