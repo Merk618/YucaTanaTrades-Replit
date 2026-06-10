@@ -46,6 +46,16 @@ function errorMap(...symbols: string[]): Map<string, RawQuote | Error> {
   return new Map(symbols.map((s) => [s, new Error(`${s}: provider error`)]));
 }
 
+function mixedMap(
+  good: string[],
+  bad: string[],
+): Map<string, RawQuote | Error> {
+  const m: Map<string, RawQuote | Error> = new Map();
+  for (const s of good) m.set(s, makeRawQuote(s));
+  for (const s of bad) m.set(s, new Error(`${s}: kraken_no_data`));
+  return m;
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("market router — crypto fallback chain", () => {
@@ -127,6 +137,44 @@ describe("market router — crypto fallback chain", () => {
 
     expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
     expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinGeckoQuotes)).not.toHaveBeenCalled();
+  });
+
+  it("serves XRP from Kraken and falls back to Coinbase for DOGE when Kraken returns a mixed result", async () => {
+    // Kraken resolves successfully but returns a per-symbol Error for DOGE
+    // (e.g. the pair is halted) while XRP has a valid quote.
+    // XRP should be served directly from Kraken (isFallback: false).
+    // DOGE should fall through to Coinbase (isFallback: true).
+    // XRP and DOGE are unused by prior tests so there are no stale cache hits.
+    vi.mocked(fetchKrakenQuotes).mockResolvedValue(
+      mixedMap(["XRP"], ["DOGE"]),
+    );
+    vi.mocked(fetchCoinbaseQuotes).mockResolvedValue(rawMap("DOGE"));
+    // CoinGecko must not be reached — Coinbase resolves the only remaining symbol.
+    vi.mocked(fetchCoinGeckoQuotes).mockResolvedValue(new Map());
+
+    const quotes = await getQuotes(["DOGE", "XRP"]);
+
+    expect(quotes).toHaveLength(2);
+
+    const xrp = quotes.find((q) => q.symbol === "XRP")!;
+    expect(xrp).toBeDefined();
+    expect(xrp.provider).toBe("kraken");
+    expect(xrp.isFallback).toBe(false);
+    expect(xrp.price).toBe(50_000);
+    expect(xrp.error).toBeNull();
+
+    const doge = quotes.find((q) => q.symbol === "DOGE")!;
+    expect(doge).toBeDefined();
+    expect(doge.provider).toBe("coinbase");
+    expect(doge.isFallback).toBe(true);
+    expect(doge.price).toBe(50_000);
+    expect(doge.error).toBeNull();
+
+    // Kraken was called once; Coinbase was called as fallback for DOGE only.
+    expect(vi.mocked(fetchKrakenQuotes)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchCoinbaseQuotes)).toHaveBeenCalledOnce();
+    // CoinGecko must not have been called — DOGE was resolved by Coinbase.
     expect(vi.mocked(fetchCoinGeckoQuotes)).not.toHaveBeenCalled();
   });
 
