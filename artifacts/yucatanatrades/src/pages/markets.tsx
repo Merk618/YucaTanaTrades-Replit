@@ -265,13 +265,18 @@ function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
   if (pctChanged) pctFlashKey.current += 1;
 
   return (
-    <div className="flex items-center gap-3">
+    <motion.div
+      layout
+      layoutId={`rs-${q.symbol}`}
+      transition={{ layout: { duration: 0.45, ease: "easeInOut" } }}
+      className="flex items-center gap-3"
+    >
       <span className="text-xs w-5 text-center">{MEDALS[rank] ?? ""}</span>
       <span className="font-mono text-sm font-bold w-12" style={{ color: "#22D3EE" }}>{q.symbol}</span>
       <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
         <motion.div
           initial={{ width: 0 }} animate={{ width: `${width}%` }}
-          transition={{ delay: rank * 0.08 + 0.2, duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="h-full rounded-full"
           style={{ background: up ? "rgba(20,184,166,0.75)" : "rgba(239,68,68,0.60)" }}
         />
@@ -298,7 +303,7 @@ function RelStrengthRow({ q, rank }: { q: Quote; rank: number }) {
       >
         ${formatPrice(q.price)}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
