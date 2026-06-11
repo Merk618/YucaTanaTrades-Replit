@@ -7,7 +7,7 @@ import {
   ShieldAlert, CircleOff, Layers, WifiOff,
 } from "lucide-react";
 import {
-  useMarketQuotes, useMarketSession, useNow, freshnessLabel,
+  useMarketQuotes, useMarketSession, useNow, freshnessLabel, freshnessColor,
   isQuoteUsable, formatPrice, quoteBadge, quoteTooltip,
   type Quote,
 } from "@/hooks/use-market";
@@ -138,7 +138,7 @@ function QuoteCard({
         )}
       </div>
       {q.timestamp && now !== undefined && (
-        <p className="font-mono text-[8px] text-muted-foreground/30 mt-1.5 truncate">
+        <p className={cn("font-mono text-[8px] mt-1.5 truncate transition-colors duration-1000", freshnessColor(q.timestamp, now))}>
           as of {freshnessLabel(q.timestamp, now)}
         </p>
       )}
@@ -202,7 +202,7 @@ function MiniQuoteCard({ q, label, teal = false, isHighlighted = false, now }: {
           BADGE_TONE[badge.tone])}>{badge.text}</span>
       </div>
       {q.timestamp && now !== undefined && (
-        <p className="font-mono text-[7px] text-muted-foreground/28 mt-1 truncate">
+        <p className={cn("font-mono text-[7px] mt-1 truncate transition-colors duration-1000", freshnessColor(q.timestamp, now))}>
           {freshnessLabel(q.timestamp, now)}
         </p>
       )}

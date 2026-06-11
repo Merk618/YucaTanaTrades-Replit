@@ -13,7 +13,7 @@ import {
 import { useGetPortfolioSummary, useGetBotsStatus } from "@workspace/api-client-react";
 import {
   useMarketQuotes, useMarketSession, useTickerQuotes, INDEX_SYMBOLS, CRYPTO_TICKER_SYMBOLS,
-  isQuoteUsable, quoteTooltip, freshnessLabel, useNow, type Quote,
+  isQuoteUsable, quoteTooltip, freshnessLabel, freshnessColor, useNow, type Quote,
 } from "@/hooks/use-market";
 import { RefreshCountdownBadges } from "@/components/refresh-countdown-badges";
 import { cn } from "@/lib/utils";
@@ -196,7 +196,7 @@ function IndexCard({ symbol, price, change, changePercent, tooltip, timestamp, n
         {isUp ? "▲" : "▼"} {Math.abs(changePercent).toFixed(2)}%
       </p>
       {timestamp && now !== undefined && (
-        <p className="font-mono text-[9px] text-muted-foreground/35 mt-1 truncate">
+        <p className={cn("font-mono text-[9px] mt-1 truncate transition-colors duration-1000", freshnessColor(timestamp, now))}>
           as of {freshnessLabel(timestamp, now)}
         </p>
       )}

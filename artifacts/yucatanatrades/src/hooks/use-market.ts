@@ -161,6 +161,21 @@ export function useNow(): number {
   return now;
 }
 
+/**
+ * Color class for a freshness label based on data age:
+ *   < 2 min  → muted (no urgency)
+ *   2–10 min → amber (getting stale)
+ *   > 10 min → red   (stale — matches isStale logic elsewhere)
+ */
+export function freshnessColor(iso: string | undefined, now: number = Date.now()): string {
+  if (!iso) return "text-muted-foreground/35";
+  const ageMs = now - new Date(iso).getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0) return "text-muted-foreground/35";
+  if (ageMs > 10 * 60_000) return "text-red-400/70";
+  if (ageMs > 2 * 60_000)  return "text-amber-400/70";
+  return "text-muted-foreground/35";
+}
+
 // Human-readable freshness, e.g. "12s ago" / "3m ago".
 // Pass `now` (from useNow()) to keep the label ticking every second.
 export function freshnessLabel(iso: string | undefined, now: number = Date.now()): string {
