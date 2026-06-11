@@ -8,7 +8,7 @@ import {
   getListWatchlistItemsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMarketQuotes, isQuoteUsable, formatPrice, type Quote } from "@/hooks/use-market";
+import { useMarketQuotes, isQuoteUsable, formatPrice, useNow, freshnessLabel, type Quote } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 
@@ -40,6 +40,7 @@ export default function Watchlist() {
   const [filterPriority, setFilterPriority] = useState<Priority | "all">("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
+  const now = useNow();
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useListWatchlistItems();
   const addItem = useAddWatchlistItem();
@@ -268,6 +269,11 @@ export default function Watchlist() {
                         </span>
                         <span className="text-muted-foreground/35 text-[10px]">· {q.sourceLabel}</span>
                       </div>
+                      {q.timestamp && (
+                        <p className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">
+                          as of {freshnessLabel(q.timestamp, now)}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="mb-3">

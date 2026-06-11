@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Radar, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Zap } from "lucide-react";
-import { useMarketQuotes, isQuoteUsable } from "@/hooks/use-market";
+import { useMarketQuotes, isQuoteUsable, useNow, freshnessLabel } from "@/hooks/use-market";
 import { cn } from "@/lib/utils";
 
 const SCANNER_TABS = ["Momentum", "Breakouts", "Dip-Buy", "Oversold", "Options", "Unusual Volume"];
@@ -54,6 +54,7 @@ export default function Scanners() {
   const [sortKey, setSortKey] = useState<"score" | "change">("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
+  const now = useNow();
   const { data: quotesData, isLoading } = useMarketQuotes(SCANNER_SYMBOLS, 60_000);
 
   const quoteMap = useMemo(() => {
@@ -69,9 +70,10 @@ export default function Scanners() {
       const hasRealData = q && isQuoteUsable(q);
       return {
         ...def,
-        price:  hasRealData ? q.price        : 0,
-        change: hasRealData ? q.changePercent : 0,
-        sourceLabel: hasRealData ? q.sourceLabel : null,
+        price:       hasRealData ? q.price        : 0,
+        change:      hasRealData ? q.changePercent : 0,
+        sourceLabel: hasRealData ? q.sourceLabel  : null,
+        timestamp:   hasRealData ? q.timestamp    : null,
       };
     });
   }, [quoteMap]);
@@ -229,11 +231,21 @@ export default function Scanners() {
                 >
                   <td className="px-4 py-3 font-mono font-bold text-primary group-hover:text-primary">{row.symbol}</td>
                   <td className="px-4 py-3 text-foreground/70 text-xs">{row.name}</td>
-                  <td className="px-4 py-3 font-mono text-foreground">
-                    {row.price > 0
-                      ? `$${row.price.toLocaleString("en-US", { minimumFractionDigits: row.price < 10 ? 4 : 2, maximumFractionDigits: row.price < 10 ? 4 : 2 })}`
-                      : <span className="text-muted-foreground text-xs">Loading…</span>
-                    }
+                  <td className="px-4 py-3">
+                    {row.price > 0 ? (
+                      <div>
+                        <span className="font-mono text-foreground">
+                          ${row.price.toLocaleString("en-US", { minimumFractionDigits: row.price < 10 ? 4 : 2, maximumFractionDigits: row.price < 10 ? 4 : 2 })}
+                        </span>
+                        {row.timestamp && (
+                          <p className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
+                            {freshnessLabel(row.timestamp, now)}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Loading…</span>
+                    )}
                   </td>
                   <td className="px-4 py-3"><SetupBadge setup={row.setup} /></td>
                   <td className={cn("px-4 py-3 text-right font-mono font-semibold", row.change >= 0 ? "text-emerald-400" : "text-red-400")}>
