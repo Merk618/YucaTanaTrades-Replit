@@ -595,7 +595,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
           </p>
           {equityDataUpdatedAt > 0 && (
             <span className="text-[10px] font-mono text-muted-foreground/40">
-              fetched {lastUpdated}
+              last updated {lastUpdated}
             </span>
           )}
         </div>
@@ -920,7 +920,7 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
           </p>
           {cryptoDataUpdatedAt > 0 && (
             <span className="text-[10px] font-mono text-muted-foreground/40">
-              fetched {freshnessLabel(new Date(cryptoDataUpdatedAt).toISOString(), now)}
+              last updated {freshnessLabel(new Date(cryptoDataUpdatedAt).toISOString(), now)}
             </span>
           )}
         </div>

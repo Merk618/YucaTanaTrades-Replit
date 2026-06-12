@@ -186,9 +186,16 @@ export default function Risk() {
             </span>
           )}
         </div>
-        <p className="text-muted-foreground text-sm ml-8">
-          Allocations computed from real market prices · Beta and drawdown are estimated
-        </p>
+        <div className="flex items-center gap-4 ml-8">
+          <p className="text-muted-foreground text-sm">
+            Allocations computed from real market prices · Beta and drawdown are estimated
+          </p>
+          {oldestTimestamp && (
+            <span className="text-[10px] font-mono text-muted-foreground/40">
+              last updated {freshnessLabel(oldestTimestamp, now)}
+            </span>
+          )}
+        </div>
       </motion.div>
 
       {/* Freshness warning banner */}
