@@ -563,6 +563,15 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
     return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
   }, [oldestTimestamp, now]);
 
+  const [staleDismissed, setStaleDismissed] = useState(false);
+  const prevStaleTs = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (oldestTimestamp !== prevStaleTs.current) {
+      prevStaleTs.current = oldestTimestamp;
+      if (oldestTimestamp) setStaleDismissed(false);
+    }
+  }, [oldestTimestamp]);
+
   const statusClass = equitiesOpen
     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
     : "bg-muted/40 text-muted-foreground border-border/40";
@@ -594,7 +603,7 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
 
       {/* Freshness warning banner */}
       <AnimatePresence>
-        {isDataStale && oldestTimestamp && (
+        {isDataStale && oldestTimestamp && !staleDismissed && (
           <motion.div
             key="freshness-banner"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -603,8 +612,8 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-amber-300">
                   Markets may be closed —{" "}
@@ -615,6 +624,13 @@ function StocksView({ allQuotes, isFetching, equitiesOpen, equityDataUpdatedAt, 
                   Displayed quotes may not reflect current market conditions.
                 </span>
               </div>
+              <button
+                onClick={() => setStaleDismissed(true)}
+                className="shrink-0 text-amber-400/60 hover:text-amber-300 transition-colors p-0.5 rounded"
+                aria-label="Dismiss warning"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}
@@ -865,6 +881,15 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
     }
   }, [anyFallback]);
 
+  const [cryptoStaleDismissed, setCryptoStaleDismissed] = useState(false);
+  const prevCryptoStaleTs = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (oldestTimestamp !== prevCryptoStaleTs.current) {
+      prevCryptoStaleTs.current = oldestTimestamp;
+      if (oldestTimestamp) setCryptoStaleDismissed(false);
+    }
+  }, [oldestTimestamp]);
+
   // Batch flash key
   const [batchFlashKey, setBatchFlashKey] = useState(0);
   const prevUpdatedAt = useRef(cryptoDataUpdatedAt);
@@ -930,7 +955,7 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
 
       {/* Freshness warning banner */}
       <AnimatePresence>
-        {isDataStale && oldestTimestamp && (
+        {isDataStale && oldestTimestamp && !cryptoStaleDismissed && (
           <motion.div
             key="crypto-freshness-banner"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -939,8 +964,8 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-amber-300">
                   Markets may be closed —{" "}
@@ -951,6 +976,13 @@ function CryptoView({ allQuotes, isFetching, cryptoRefetch, cryptoDataUpdatedAt,
                   Displayed quotes may not reflect current market conditions.
                 </span>
               </div>
+              <button
+                onClick={() => setCryptoStaleDismissed(true)}
+                className="shrink-0 text-amber-400/60 hover:text-amber-300 transition-colors p-0.5 rounded"
+                aria-label="Dismiss warning"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}

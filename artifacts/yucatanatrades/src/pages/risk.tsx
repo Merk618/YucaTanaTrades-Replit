@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldAlert, AlertTriangle, CheckCircle, TrendingDown } from "lucide-react";
+import { ShieldAlert, AlertTriangle, CheckCircle, TrendingDown, X } from "lucide-react";
 import { useMarketQuotes, isQuoteUsable, freshnessLabel, useNow } from "@/hooks/use-market";
 import { sleeveLabel } from "@/data/positions";
 import { useListPositions } from "@workspace/api-client-react";
@@ -165,6 +165,15 @@ export default function Risk() {
     return now - new Date(oldestTimestamp).getTime() > FRESHNESS_WARNING_MS;
   }, [oldestTimestamp, now]);
 
+  const [staleDismissed, setStaleDismissed] = useState(false);
+  const prevStaleTs = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (oldestTimestamp !== prevStaleTs.current) {
+      prevStaleTs.current = oldestTimestamp;
+      if (oldestTimestamp) setStaleDismissed(false);
+    }
+  }, [oldestTimestamp]);
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -184,7 +193,7 @@ export default function Risk() {
 
       {/* Freshness warning banner */}
       <AnimatePresence>
-        {isDataStale && oldestTimestamp && (
+        {isDataStale && oldestTimestamp && !staleDismissed && (
           <motion.div
             key="freshness-banner"
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -193,8 +202,8 @@ export default function Risk() {
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/8 px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-amber-300">
                   Markets may be closed —{" "}
@@ -205,6 +214,13 @@ export default function Risk() {
                   Risk metrics may not reflect current market conditions.
                 </span>
               </div>
+              <button
+                onClick={() => setStaleDismissed(true)}
+                className="shrink-0 text-amber-400/60 hover:text-amber-300 transition-colors p-0.5 rounded"
+                aria-label="Dismiss warning"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </motion.div>
         )}
