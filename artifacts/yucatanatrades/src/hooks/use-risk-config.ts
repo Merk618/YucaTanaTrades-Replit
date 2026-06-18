@@ -31,7 +31,7 @@ export function useUpdateRiskConfigMutation() {
   const queryClient = useQueryClient();
   return useUpdateRiskConfig({
     mutation: {
-      onSuccess: (data) => {
+      onSuccess: (data: RiskConfig) => {
         queryClient.setQueryData(getGetRiskConfigQueryKey(), data);
       },
     },

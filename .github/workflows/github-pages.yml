@@ -43,11 +43,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build API client declarations
+        run: pnpm --filter @workspace/api-client-react run build
+
       - name: Typecheck app
-        run: pnpm -r --filter @workspace/yucatanatrades... --if-present run typecheck
+        run: pnpm --filter @workspace/yucatanatrades run typecheck
 
       - name: Build app
-        run: pnpm -r --filter @workspace/yucatanatrades... --if-present run build
+        run: pnpm --filter @workspace/yucatanatrades run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
