@@ -161,7 +161,7 @@ The optional `developmentToken` response property is gated by `AUTH_EXPOSE_DEV_T
 
 ## Database schema proposal
 
-The migration is additive and ownership-safe. `lib/db/migrations/0001_auth_session_foundation.sql` is the concrete versioned proposal and matches the Drizzle schema. It is not applied automatically. The database store reports unavailable until the authentication tables exist. Recording and applying version `0001` through an approved migration runner remains a deployment step; this phase does not claim that a migration journal, deployment cutover, or rollback execution has occurred.
+The migration is additive and ownership-safe. `lib/db/migrations/0001_auth_session_foundation.sql` is the concrete versioned proposal and matches the Drizzle schema. It is intentionally one-shot and non-idempotent: transactional PostgreSQL DDL makes a failed first application atomic, while a second application must fail instead of silently accepting drift. It is not applied automatically. Before execution, an operator must confirm the approved PostgreSQL schema and `search_path`, verify that the unqualified object names do not collide, and record provenance. The file must be executed through an approved SQL migration runner because `drizzle-kit push` will not execute the required `auth_schema_versions` insert. The database store reports unavailable until the authentication tables and version row exist. The companion `lib/db/migrations/0001_auth_session_foundation.down.sql` is a reviewed rollback proposal, not an automatically runnable down migration. This phase does not claim that a migration journal, deployment cutover, or rollback execution has occurred.
 
 ### `users`
 
@@ -187,7 +187,7 @@ The migration is additive and ownership-safe. `lib/db/migrations/0001_auth_sessi
 - optional predecessor session ID for rotation audit
 - authentication version captured at issuance
 
-The table has a unique token-digest index, a user index, and a composite idle/absolute-expiry index. No device metadata is stored in this phase.
+The table has a unique token-digest index, a user index, and a composite idle/absolute-expiry index. The service enforces the invariant `idle_expires_at <= absolute_expires_at` whenever it creates or refreshes a session; the proposal intentionally does not add a database `CHECK`, so any future writer must preserve the same invariant. No device metadata is stored in this phase.
 
 ### `password_reset_tokens` and `email_verification_tokens`
 
@@ -220,6 +220,8 @@ The expiry indexes support a future bounded maintenance job that deletes expired
 - timestamp
 
 No device field or arbitrary JSON metadata object is stored in this phase.
+
+Audit events index both nullable foreign keys and the occurrence timestamp. User deletion cascades through sessions and one-time tokens, while audit references use `ON DELETE SET NULL` so retained security events do not keep user or session rows alive.
 
 ### User-scoped ownership migration
 

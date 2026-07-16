@@ -183,6 +183,7 @@ export const authAuditEventsTable = pgTable(
   },
   (table) => [
     index("auth_audit_events_user_id_idx").on(table.userId),
+    index("auth_audit_events_session_id_idx").on(table.sessionId),
     index("auth_audit_events_occurred_at_idx").on(table.occurredAt),
   ],
 );

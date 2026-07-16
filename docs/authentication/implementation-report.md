@@ -6,19 +6,26 @@
 - Branch: `codex/auth-session-foundation`
 - Approved UI-1 commit: `ab29ba4f23f571633d34cefed9d088da3ab28d2e`
 - Approved UI-1 tag: `ui-1-visual-approved`
-- Migration status: proposed in `lib/db/migrations/0001_auth_session_foundation.sql`; not applied
-- Merge/commit status: no commit and no merge were performed in this phase
+- Migration status: proposed in `lib/db/migrations/0001_auth_session_foundation.sql`; not applied in the local repository/runtime validation scope (external database state was not queried)
+- Checkpoint commit: `72bf90c034a87a82d3cf34201e411375d05c237f` (`Checkpoint authentication session foundation`)
+- Merge status: no merge into `main` was performed
 
 The branch was created directly from the approved UI-1 commit. The UI-1 shell, dashboard geometry, navigation rail, top bar, chart and intelligence composition, responsive rules, and motion system were not redesigned or broadly refactored.
 
-## Pre-implementation baseline
+## Baseline and Windows portability repair
 
-The frozen pnpm install linked the locked workspace packages without changing any manifest or lockfile. On this Windows host, the untouched repository had two platform-package failures before authentication source changed:
+Before the approved portability repair, the frozen pnpm install on Windows omitted the locked native Rollup and esbuild packages. Vitest stopped before collection because `@rollup/rollup-win32-x64-msvc` was absent, and the production build stopped for the same Rollup package while the API build also lacked `@esbuild/win32-x64`. The untouched full typecheck passed.
 
-- `pnpm -r --if-present run test` stopped before test collection because `@rollup/rollup-win32-x64-msvc` was absent from the frozen installation.
-- `pnpm run build` completed the TypeScript phase and then stopped in Vite/Rollup for the same missing native optional package. The API server's focused esbuild build also lacks the locked `@esbuild/win32-x64` platform binary.
+The repair preserved every package version and the existing package manager:
 
-The untouched full typecheck passed. These native-package failures remain reproducible and were not worked around by changing dependencies.
+- Removed only the Windows native-package exclusions for esbuild and Rollup, plus the matching Tailwind Oxide Windows exclusion exposed as required by the canonical build.
+- Replaced pnpm's legacy `onlyBuiltDependencies` spelling with the pnpm 11 `allowBuilds` mapping for the same four packages so the locked esbuild install script is permitted.
+- Replaced the shell-dependent root preinstall hook with `node ./scripts/preinstall.mjs`. The Node-only script preserves the original behavior: it removes npm/yarn lockfiles and rejects non-pnpm invocation with `Use pnpm instead`.
+- Regenerated `pnpm-lock.yaml` through `pnpm install --lockfile-only`; the dependency diff is limited to the three required Windows optional packages and their unavoidable exact-package/snapshot metadata.
+- Removed only installation artifacts and completed `pnpm install --frozen-lockfile --reporter=append-only` successfully.
+- Made build-time Vite configuration tolerate absent runtime-only variables. YucaTanaTrades defaults to the approved auth origin port `4173`, and its dev/preview scripts now defer host selection to the auth-aware loopback configuration instead of forcing `0.0.0.0`; the mockup sandbox defaults its build base to `/`.
+
+Installed native packages are `@esbuild/win32-x64@0.27.3`, `@rollup/rollup-win32-x64-msvc@4.60.3`, and `@tailwindcss/oxide-win32-x64-msvc@4.3.0`.
 
 The Phase 0.1 audit found no approved authentication document, auth route/status/feature-flag contract, or auth migration at the anchor. The repository provided only the generic Express, OpenAPI, Drizzle, Wouter, React Query, cookie-parser, and logger foundations. Legacy journal, watchlist, position, portfolio, risk, and provider credential data had no owner identity.
 
@@ -44,8 +51,8 @@ The Phase 0.1 audit found no approved authentication document, auth route/status
 
 - OpenAPI contracts for status, current session, sign-in, registration, sign-out, sign-out-all, forgot/reset password, and email verification request/completion.
 - Root cookie security plus explicit public/optional overrides, CSRF header parameters, reachable authentication errors, and ownership-migration failures on protected legacy operations.
-- Regenerated Zod request/response contracts and TypeScript schema models from the OpenAPI source. The existing Orval React-client generation remains blocked by the pre-existing missing esbuild platform binary, so the checked-in generated React client was not hand-edited.
-- Additive Drizzle schema and transactional SQL migration proposal for users, schema version marker, sessions, reset tokens, verification tokens, rate windows, and audit events.
+- Regenerated Zod request/response contracts and TypeScript schema models from the OpenAPI source. The checked-in generated React client was not hand-edited.
+- Additive Drizzle schema and one-shot transactional SQL migration proposal for users, schema version marker, sessions, reset tokens, verification tokens, rate windows, and audit events, with a separate reviewed rollback proposal.
 - Database readiness checks the completed auth migration version marker rather than a single table.
 - Password reset and email verification completion are transactional in the database store.
 - Legacy globally scoped user data fails closed with `503 ownership_migration_required`; no existing data is assigned to a fabricated owner.
@@ -62,31 +69,19 @@ The Phase 0.1 audit found no approved authentication document, auth route/status
 
 ## Validation results
 
-- Full workspace typecheck: passed after implementation. The final direct locked-compiler recheck also passed the root build plus API, UI, mockup, scripts, and generated-client TypeScript targets. A subsequent `pnpm run typecheck` wrapper retry stopped before invoking TypeScript because pnpm requested an interactive `node_modules` purge in a non-TTY (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`); no purge or installation was allowed.
-- Directly executable focused tests: 31/31 passed: 29 client-contract cases plus two bounded-store `node:test` cases (email contract, return routing, auth state, safe error policy/copy, mutation serialization, fragment-token handling, cookie/CSRF behavior, and store timeouts).
-- API-focused authentication source coverage contains 45 cases: 43 Vitest cases covering crypto, environment, memory store, service, atomic token behavior, session issuance limits, cache/parser headers, HTTP routes, logout, reset, verification, guards, fault recovery, and ownership, plus the two directly executed bounded-store cases. Vitest execution is blocked before collection by the pre-existing missing Rollup native package.
-- Full production build: TypeScript passed; workspace Vite build remains blocked by the same pre-existing Rollup package.
-- Focused API esbuild: remains blocked by the pre-existing missing esbuild platform package.
-- Focused production UI bundle using the already available external workspace Vite runtime passed at the bundle-validation checkpoint with 2,244 modules transformed. A stable-tree rerun requiring temporary output outside the repository was denied by the execution environment's usage gate; no dependency or source workaround was attempted.
-- `git diff --check`: passed.
-- Package manifests, `pnpm-lock.yaml`, and `pnpm-workspace.yaml`: unchanged.
-- OpenAPI YAML parse, unique-key check, protected-operation security audit, and CSRF audit: passed.
-- Latest memory-mode runtime booted with `DATABASE_URL` explicitly removed.
+- Full workspace typecheck: `pnpm run typecheck` passed with exit code 0 across the root build, API server, YucaTanaTrades UI, mockup sandbox, scripts, and generated client targets.
+- Full recursive Vitest run: `pnpm -r --if-present run test` passed 6/6 files and 50/50 tests, including all 43 authentication cases and seven market cases.
+- Node-native focused run: 10 files invoked, eight suites reported, and 34/34 tests passed. This includes three cross-platform preinstall tests and two bounded-store tests.
+- Canonical production build: `pnpm run build` passed with exit code 0. The API client, API server, mockup sandbox (30 modules), and YucaTanaTrades UI (2,272 modules) all built successfully. Only two non-fatal source-map location warnings and the existing bundle-size warning remained.
+- `git diff --check`: passed; Windows line-ending conversion notices are informational only.
+- OpenAPI YAML parse, unique-key check, protected-operation security audit, CSRF audit, ownership fail-closed checks, and sensitive-log/source scans passed.
+- Memory-mode runtime booted with `DATABASE_URL` removed, loopback-only bind/origin settings, and ephemeral development secrets.
 
-Runtime HTTP checks passed:
+Runtime HTTP validation passed for guest/current-session issuance, CSRF rejection, Origin rejection, Referer rejection, registration and session rotation, authenticated current-session identity, ownership fail-closed behavior, generic invalid credentials, email verification, sign-in and rotation, all-device sign-out, revoked-session rejection, forgot-password request, reset completion, reset-token replay rejection, new-password sign-in, and current-session sign-out. Raw session, reset, and verification tokens were not written to the test output or application logs. Expiration behavior is covered by the passing service tests and the browser's externally revoked-session transition.
 
-- registration `201`, verification request `202`, verification completion `200`;
-- authenticated current-session lookup returned verified server identity;
-- valid current-session lookups emitted no redundant `Set-Cookie`; auth responses, including malformed-JSON parser errors, were non-cacheable and emitted no ETag;
-- loopback cookie was `HttpOnly`, `SameSite=Lax`, `Path=/`, and intentionally not `Secure` on HTTP;
-- malformed email registration failed validation, and the eleventh distinct invalid verification completion was rate-limited after ten generic failures;
-- guest sign-out returned `401`, untrusted Origin returned `403`, quarantined ownership returned `503`, logout-all returned a guest context, and the revoked cookie resolved as `expired`.
+Local loopback browser validation used the memory store with `DATABASE_URL` absent and development-token exposure restricted to loopback. It passed protected-route redirect, registration into the frozen authenticated Meridian OS shell, server-derived identity, external all-device revocation, expired-session UI, unavailable fail-closed behavior, and retry recovery. At an 820×1180 tablet viewport the auth route had no horizontal overflow. With reduced motion enabled, the auth aurora animation resolved to `none`, submit transform resolved to `none`, and interface transition duration was limited to 80 ms. Production database, email-delivery, and provider runtimes were not exercised.
 
-Browser checks passed for registration, generic wrong-credential handling, sign-in, sign-out, password reset, old-password rejection, new-password sign-in, verification request/completion, route protection, externally revoked session handling, loading, unavailable/retry, and authenticated-shell identity. At an 820×1180 tablet viewport the auth routes had no horizontal overflow. The validation browser reported reduced motion enabled; four loaded reduced-motion media groups were active, auth aurora animation resolved to `none`, panel transform to `none`, and interface transition duration to 80 ms.
-
-The final failure/recovery check stopped the API while a fragment-derived reset token was held only in component memory. The UI failed closed to the unavailable boundary, the URL remained scrubbed, and retry after API recovery restored the same reset form without a “reset link required” state. This confirms the auth service-route boundary keeps the token-owning component mounted across transient loading/unavailable states.
-
-Temporary runtime evidence remains untracked under `.auth-runtime/evidence/`:
+Temporary runtime evidence remains intentionally untracked under `.auth-runtime/evidence/`:
 
 - `sign-in-desktop.png`
 - `authenticated-dashboard.png`
@@ -100,11 +95,11 @@ Temporary runtime evidence remains untracked under `.auth-runtime/evidence/`:
 
 Before production rollout:
 
-1. Review and apply the proposed migration through an approved migration runner.
+1. Preflight the approved PostgreSQL schema/search path, then apply the one-shot proposal through an approved SQL migration runner that executes the version-row insert; do not substitute `drizzle-kit push`.
 2. Configure a durable database, production session secret, exact HTTPS origins, and exact trusted proxies for the deployment topology.
 3. Add approved email delivery before enabling recovery or verification in production.
 4. Install a bounded cleanup job for expired/revoked guest sessions, consumed/expired one-time tokens, and stale limiter windows under an approved retention policy.
 5. Complete the separate ownership migration before enabling legacy user-scoped data routes.
-6. Restore the frozen installation's missing Windows optional platform packages through the approved dependency/install workflow, then rerun Vitest and the native production builds without changing package ranges.
+6. Repeat the frozen install and canonical validation in the target production build environment before deployment.
 
 Live market data, brokerage integration, production AI, the final Kimi globe, payments, subscription tiers, social login, passkeys, broad domain migration, and a main-branch merge remain outside this phase.

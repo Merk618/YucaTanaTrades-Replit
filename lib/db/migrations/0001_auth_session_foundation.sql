@@ -1,5 +1,12 @@
 -- Authentication/session foundation only. This migration intentionally does
 -- not alter legacy portfolio, journal, watchlist, risk, or provider tables.
+--
+-- One-shot, non-idempotent forward proposal. Apply this exact file once through
+-- an approved SQL migration runner that preserves the transaction and records
+-- provenance. Do not substitute `drizzle-kit push`: schema synchronization does
+-- not execute the required auth_schema_versions insert below. Before execution,
+-- verify the connection's schema/search_path and confirm that none of these
+-- unqualified objects already exist.
 
 BEGIN;
 
@@ -105,6 +112,7 @@ CREATE TABLE auth_audit_events (
   occurred_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX auth_audit_events_user_id_idx ON auth_audit_events (user_id);
+CREATE INDEX auth_audit_events_session_id_idx ON auth_audit_events (session_id);
 CREATE INDEX auth_audit_events_occurred_at_idx
   ON auth_audit_events (occurred_at);
 
