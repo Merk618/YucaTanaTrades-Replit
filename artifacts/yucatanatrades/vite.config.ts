@@ -20,6 +20,44 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH ?? "/YucaTanaTrades-Replit/";
 
+function getDevelopmentApiTarget(): string | null {
+  if (process.env.NODE_ENV === "production") return null;
+  const rawTarget = process.env.API_DEV_ORIGIN ?? "http://127.0.0.1:8080";
+
+  let target: URL;
+  try {
+    target = new URL(rawTarget);
+  } catch {
+    throw new Error("API_DEV_ORIGIN must be an absolute HTTP(S) origin.");
+  }
+
+  if (
+    !["http:", "https:"].includes(target.protocol) ||
+    target.username ||
+    target.password ||
+    target.pathname !== "/" ||
+    target.search ||
+    target.hash
+  ) {
+    throw new Error("API_DEV_ORIGIN must be an HTTP(S) origin without credentials, path, query, or hash.");
+  }
+
+  return target.origin;
+}
+
+const developmentApiTarget = getDevelopmentApiTarget();
+const developmentBindHost = process.env.AUTH_BIND_HOST?.trim() || "127.0.0.1";
+
+if (
+  process.env.AUTH_EXPOSE_DEV_TOKENS === "true" &&
+  developmentBindHost !== "127.0.0.1" &&
+  developmentBindHost !== "::1"
+) {
+  throw new Error(
+    "AUTH_EXPOSE_DEV_TOKENS requires the UI dev server to use an exact loopback AUTH_BIND_HOST.",
+  );
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
@@ -55,15 +93,25 @@ export default defineConfig({
   server: {
     port,
     strictPort: true,
-    host: "0.0.0.0",
+    host: developmentBindHost,
     allowedHosts: true,
     fs: {
       strict: true,
     },
+    ...(developmentApiTarget
+      ? {
+          proxy: {
+            "/api": {
+              target: developmentApiTarget,
+              changeOrigin: false,
+            },
+          },
+        }
+      : {}),
   },
   preview: {
     port,
-    host: "0.0.0.0",
+    host: developmentBindHost,
     allowedHosts: true,
   },
 });

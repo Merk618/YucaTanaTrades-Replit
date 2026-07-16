@@ -11,13 +11,26 @@ import {
   Command,
   Home,
   LineChart,
+  LogOut,
   Newspaper,
   Search,
   Settings,
+  ShieldOff,
   Sparkles,
   X,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/auth/auth-provider";
+import { safeAuthErrorMessage } from "@/auth/auth-error-copy";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { motionTokens } from "@/lib/motion";
 
 const topRoutes = [
@@ -52,7 +65,7 @@ function isRouteActive(location: string, href: string) {
   return location === href || location.startsWith(`${href}/`);
 }
 
-function BrandMark() {
+export function BrandMark() {
   return (
     <svg className="yt-brand-mark" viewBox="0 0 44 44" aria-hidden="true">
       <path d="M10 12.5c6 1.4 9.8 5.6 11.7 11.5M34 12.5c-6 1.4-9.8 5.6-11.7 11.5" />
@@ -221,6 +234,64 @@ function CommandPalette({
   );
 }
 
+function AccountMenu({ compact = false }: { compact?: boolean }) {
+  const { state, signOut, signOutAllDevices } = useAuth();
+  const { toast } = useToast();
+  const [pending, setPending] = React.useState<"current" | "all" | null>(null);
+
+  if (state.kind !== "authenticated") return null;
+
+  const primaryLabel = state.user.displayName?.trim() || state.user.email;
+
+  const runSignOut = async (allDevices: boolean) => {
+    setPending(allDevices ? "all" : "current");
+    try {
+      if (allDevices) await signOutAllDevices();
+      else await signOut();
+    } catch (error) {
+      toast({
+        title: "Secure sign-out unavailable",
+        description: safeAuthErrorMessage(error, "sign-out"),
+        variant: "destructive",
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        {compact ? (
+          <button className="yt-rail-link" type="button" aria-label="Open account session menu">
+            <CircleUserRound aria-hidden="true" />
+            <span className="yt-rail-tooltip" role="tooltip">Account session</span>
+          </button>
+        ) : (
+          <button className="yt-account-control" type="button" aria-label={`Account session for ${state.user.email}`}>
+            <CircleUserRound aria-hidden="true" />
+            <span><strong title={primaryLabel}>{primaryLabel}</strong><small>Meridian OS</small></span>
+            <ChevronDown aria-hidden="true" />
+          </button>
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={compact ? "start" : "end"} side={compact ? "right" : "bottom"} className="yt-account-menu">
+        <DropdownMenuLabel className="yt-account-menu-label">
+          <strong>{primaryLabel}</strong>
+          <span>{state.user.email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={pending !== null} onSelect={() => void runSignOut(false)}>
+          <LogOut aria-hidden="true" /> {pending === "current" ? "Signing out…" : "Sign out"}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={pending !== null} onSelect={() => void runSignOut(true)}>
+          <ShieldOff aria-hidden="true" /> {pending === "all" ? "Revoking sessions…" : "Sign out all devices"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [commandOpen, setCommandOpen] = React.useState(false);
@@ -279,10 +350,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             icon={Settings}
             active={isRouteActive(location, "/settings")}
           />
-          <button className="yt-rail-link" type="button" disabled aria-label="Account unavailable">
-            <CircleUserRound aria-hidden="true" />
-            <span className="yt-rail-tooltip" role="tooltip">Account · Unavailable</span>
-          </button>
+          <AccountMenu compact />
         </div>
       </motion.aside>
 
@@ -336,16 +404,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Bell aria-hidden="true" />
             </button>
-            <button
-              className="yt-account-control"
-              type="button"
-              disabled
-              aria-label="Guest workspace, account unavailable"
-            >
-              <CircleUserRound aria-hidden="true" />
-              <span><strong>Guest Workspace</strong><small>Account unavailable</small></span>
-              <ChevronDown aria-hidden="true" />
-            </button>
+            <AccountMenu />
           </div>
         </motion.header>
 

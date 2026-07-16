@@ -1,0 +1,616 @@
+.yt-auth-root,
+.yt-auth-root *,
+.yt-auth-root *::before,
+.yt-auth-root *::after {
+  box-sizing: border-box;
+}
+
+.yt-auth-root {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: auto;
+  padding: 0 clamp(22px, 4.5vw, 74px);
+  background:
+    radial-gradient(720px 480px at 18% 58%, rgba(39, 112, 126, 0.16), transparent 72%),
+    radial-gradient(660px 440px at 82% 36%, rgba(201, 168, 103, 0.1), transparent 74%),
+    linear-gradient(145deg, #020b13 0%, #041923 54%, #05232e 100%);
+  color: var(--yt-text);
+}
+
+.yt-auth-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(75, 122, 135, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(75, 122, 135, 0.08) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent);
+}
+
+.yt-auth-aurora {
+  position: fixed;
+  z-index: -2;
+  width: min(68vw, 980px);
+  height: min(68vw, 980px);
+  right: -28vw;
+  bottom: -58vw;
+  border: 1px solid rgba(225, 199, 143, 0.12);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 72px rgba(107, 171, 179, 0.018),
+    0 0 0 144px rgba(218, 188, 126, 0.014),
+    0 0 140px rgba(35, 133, 153, 0.12);
+  pointer-events: none;
+  animation: yt-auth-breathe 10s var(--yt-ease) infinite alternate;
+}
+
+@keyframes yt-auth-breathe {
+  from { opacity: 0.58; transform: scale(0.985); }
+  to { opacity: 0.92; transform: scale(1.025); }
+}
+
+.yt-auth-header,
+.yt-auth-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.yt-auth-header {
+  min-height: 82px;
+  border-bottom: 1px solid rgba(159, 191, 198, 0.1);
+}
+
+.yt-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--yt-text-warm);
+  font-size: 13px;
+  font-weight: 560;
+  letter-spacing: 0.32em;
+  text-decoration: none;
+}
+
+.yt-auth-brand .yt-brand-mark {
+  width: 34px;
+  height: 34px;
+}
+
+.yt-auth-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--yt-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.yt-auth-header-status svg {
+  width: 14px;
+  height: 14px;
+  color: var(--yt-gold);
+}
+
+.yt-auth-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.72fr);
+  gap: clamp(54px, 8vw, 126px);
+  align-items: center;
+  width: min(1120px, 100%);
+  min-height: calc(100dvh - 148px);
+  margin: 0 auto;
+  padding: 54px 0 64px;
+}
+
+.yt-auth-identity {
+  max-width: 620px;
+}
+
+.yt-auth-kicker,
+.yt-auth-panel-heading > span {
+  display: block;
+  color: var(--yt-gold);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.yt-auth-identity h1 {
+  max-width: 640px;
+  margin: 20px 0 18px;
+  color: #eef2ed;
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: clamp(38px, 4.1vw, 62px);
+  font-weight: 430;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.yt-auth-identity > p {
+  max-width: 570px;
+  margin: 0;
+  color: var(--yt-text-secondary);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.yt-auth-trust-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 36px;
+}
+
+.yt-auth-trust-list span {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 11px;
+  border: 1px solid var(--yt-border);
+  border-radius: 12px;
+  background: rgba(8, 29, 39, 0.44);
+  color: var(--yt-text-muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.yt-auth-trust-list svg {
+  width: 17px;
+  height: 17px;
+  color: var(--yt-gold);
+  stroke-width: 1.5;
+}
+
+.yt-auth-panel {
+  width: 100%;
+  padding: 30px;
+  border: 1px solid var(--yt-border-warm);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(22, 47, 57, 0.9), rgba(7, 27, 37, 0.91)),
+    rgba(6, 22, 31, 0.94);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.055),
+    0 34px 90px rgba(0, 0, 0, 0.34),
+    0 0 50px rgba(211, 178, 112, 0.045);
+  backdrop-filter: blur(18px);
+}
+
+.yt-auth-panel-heading h2 {
+  margin: 10px 0 8px;
+  color: var(--yt-text);
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.yt-auth-panel-heading p {
+  margin: 0 0 24px;
+  color: var(--yt-text-secondary);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.yt-auth-form {
+  display: grid;
+  gap: 16px;
+}
+
+.yt-auth-field {
+  display: grid;
+  gap: 7px;
+}
+
+.yt-auth-field label {
+  color: rgba(229, 235, 230, 0.82);
+  font-size: 10px;
+  font-weight: 560;
+  letter-spacing: 0.04em;
+}
+
+.yt-auth-input-wrap {
+  position: relative;
+}
+
+.yt-auth-input-wrap input {
+  width: 100%;
+  height: 44px;
+  padding: 0 44px 0 13px;
+  border: 1px solid rgba(159, 191, 198, 0.17);
+  border-radius: 11px;
+  background: rgba(2, 16, 24, 0.64);
+  color: var(--yt-text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color var(--yt-fast), box-shadow var(--yt-fast), background var(--yt-fast);
+}
+
+.yt-auth-input-wrap input:not([type="password"]):not([type="text"]) {
+  padding-right: 13px;
+}
+
+.yt-auth-input-wrap input:focus {
+  border-color: rgba(230, 199, 137, 0.55);
+  background: rgba(5, 24, 33, 0.84);
+  box-shadow: 0 0 0 3px rgba(217, 187, 122, 0.08);
+}
+
+.yt-auth-input-wrap.has-error input {
+  border-color: rgba(240, 100, 79, 0.58);
+}
+
+.yt-auth-reveal {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--yt-text-muted);
+}
+
+.yt-auth-reveal:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--yt-text-secondary);
+}
+
+.yt-auth-reveal svg {
+  width: 15px;
+  height: 15px;
+}
+
+.yt-auth-field small {
+  color: var(--yt-text-muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.yt-auth-field small.is-error {
+  color: #ef8777;
+}
+
+.yt-auth-submit,
+.yt-auth-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 620;
+  letter-spacing: 0.03em;
+  transition: transform var(--yt-fast) var(--yt-ease-out), box-shadow var(--yt-fast), opacity var(--yt-fast);
+}
+
+.yt-auth-submit {
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid rgba(247, 226, 177, 0.54);
+  background: linear-gradient(135deg, #e7ca8c, #b99354);
+  color: #10202a;
+  box-shadow: 0 12px 30px rgba(200, 158, 85, 0.14);
+}
+
+.yt-auth-submit:not(:disabled):hover,
+.yt-auth-secondary-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.yt-auth-submit:disabled,
+.yt-auth-secondary-button:disabled {
+  opacity: 0.58;
+}
+
+.yt-auth-secondary-button {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid var(--yt-border-warm);
+  background: rgba(13, 38, 48, 0.78);
+  color: var(--yt-text-secondary);
+}
+
+.yt-auth-secondary-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.yt-auth-notice {
+  margin-bottom: 16px;
+  padding: 11px 12px;
+  border: 1px solid var(--yt-border);
+  border-radius: 10px;
+  background: rgba(10, 35, 45, 0.7);
+  color: var(--yt-text-secondary);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.yt-auth-notice.is-warning {
+  border-color: rgba(217, 187, 122, 0.32);
+  color: #ddc390;
+}
+
+.yt-auth-notice.is-success {
+  border-color: rgba(119, 183, 122, 0.34);
+  color: #9ccc9e;
+}
+
+.yt-auth-notice.is-error {
+  border-color: rgba(240, 100, 79, 0.34);
+  color: #ef978a;
+}
+
+.yt-auth-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 18px;
+  margin-top: 19px;
+  color: var(--yt-text-muted);
+  font-size: 9.5px;
+}
+
+.yt-auth-actions a {
+  color: var(--yt-text-warm);
+  text-decoration: none;
+}
+
+.yt-auth-actions a:hover {
+  color: var(--yt-gold-bright);
+}
+
+.yt-auth-status-card {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid var(--yt-border);
+  border-radius: 12px;
+  background: rgba(5, 24, 33, 0.66);
+}
+
+.yt-auth-status-card > svg {
+  width: 24px;
+  height: 24px;
+  color: var(--yt-gold);
+  stroke-width: 1.5;
+}
+
+.yt-auth-status-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.yt-auth-status-card strong {
+  color: var(--yt-text);
+  font-size: 11px;
+  font-weight: 560;
+}
+
+.yt-auth-status-card span {
+  color: var(--yt-text-muted);
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.yt-auth-status-card.is-unavailable > svg {
+  color: #d8b474;
+}
+
+.yt-auth-spinner {
+  animation: yt-auth-spin 1s linear infinite;
+}
+
+.yt-auth-service-content {
+  display: contents;
+}
+
+.yt-auth-service-content[hidden] {
+  display: none;
+}
+
+@keyframes yt-auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+.yt-auth-footer {
+  min-height: 66px;
+  margin-top: -66px;
+  color: rgba(113, 132, 140, 0.66);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.yt-account-control span {
+  min-width: 0;
+}
+
+.yt-account-control {
+  width: 172px;
+  max-width: 172px;
+}
+
+@media (max-width: 1359px) {
+  .yt-account-control {
+    width: 145px;
+    max-width: 145px;
+  }
+}
+
+@media (max-width: 1179px) {
+  .yt-account-control {
+    width: 40px;
+    max-width: 40px;
+  }
+}
+
+.yt-account-control strong,
+.yt-account-control small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-account-control:not(:disabled):hover {
+  border-color: rgba(218, 194, 139, 0.34);
+  background: rgba(16, 38, 48, 0.86);
+}
+
+.yt-account-menu {
+  width: 224px;
+  border-color: var(--yt-border-warm) !important;
+  border-radius: 12px !important;
+  background: rgba(7, 27, 37, 0.98) !important;
+  color: var(--yt-text-secondary) !important;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.46) !important;
+  backdrop-filter: blur(18px);
+}
+
+.yt-account-menu-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px !important;
+}
+
+.yt-account-menu-label strong,
+.yt-account-menu-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-account-menu-label strong {
+  color: var(--yt-text);
+  font-size: 10px;
+  font-weight: 560;
+}
+
+.yt-account-menu-label span {
+  color: var(--yt-text-muted);
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.yt-account-menu [role="menuitem"] {
+  min-height: 34px;
+  border-radius: 8px;
+  color: var(--yt-text-secondary);
+  font-size: 10px;
+}
+
+.yt-account-menu [role="menuitem"]:focus {
+  background: rgba(217, 187, 122, 0.1);
+  color: var(--yt-text);
+}
+
+@media (max-width: 960px) {
+  .yt-auth-layout {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    width: min(620px, 100%);
+    align-content: center;
+    padding-top: 38px;
+  }
+
+  .yt-auth-identity {
+    max-width: none;
+  }
+
+  .yt-auth-identity h1 {
+    margin-top: 14px;
+    font-size: clamp(34px, 7vw, 48px);
+  }
+
+  .yt-auth-trust-list {
+    margin-top: 24px;
+  }
+
+  .yt-auth-footer {
+    position: relative;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .yt-auth-root {
+    padding-inline: 16px;
+  }
+
+  .yt-auth-header {
+    min-height: 68px;
+  }
+
+  .yt-auth-brand {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+  }
+
+  .yt-auth-header-status {
+    display: none;
+  }
+
+  .yt-auth-layout {
+    min-height: calc(100dvh - 68px);
+    padding: 30px 0 42px;
+  }
+
+  .yt-auth-identity h1 {
+    font-size: 34px;
+  }
+
+  .yt-auth-trust-list {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-auth-trust-list span {
+    min-height: 44px;
+  }
+
+  .yt-auth-panel {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-auth-aurora,
+  .yt-auth-spinner {
+    animation: none !important;
+  }
+
+  .yt-auth-submit,
+  .yt-auth-secondary-button,
+  .yt-auth-input-wrap input {
+    transition-duration: 80ms !important;
+  }
+
+  .yt-auth-submit:not(:disabled):hover,
+  .yt-auth-secondary-button:not(:disabled):hover {
+    transform: none;
+  }
+}

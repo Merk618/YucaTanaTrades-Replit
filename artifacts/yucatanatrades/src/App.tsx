@@ -1,6 +1,12 @@
 import { MotionConfig } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Router as WouterRouter, Switch } from "wouter";
+import { AuthProvider } from "@/auth/auth-provider";
+import {
+  AnonymousOnlyRoute,
+  AuthServiceRoute,
+  ProtectedRoute,
+} from "@/auth/auth-guards";
 import { AppShell } from "@/components/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,6 +18,11 @@ import Risk from "@/pages/risk";
 import Settings from "@/pages/settings";
 import Watchlist from "@/pages/watchlist";
 import NotFound from "@/pages/not-found";
+import SignInPage from "@/pages/sign-in";
+import RegisterPage from "@/pages/register";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
+import VerifyEmailPage from "@/pages/verify-email";
 import {
   ChartPreviewRoute,
   MarketPreviewRoute,
@@ -29,7 +40,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function WorkspaceRoutes() {
   return (
     <AppShell>
       <Switch>
@@ -54,16 +65,43 @@ function Router() {
   );
 }
 
+function Router() {
+  return (
+    <Switch>
+      <Route path="/sign-in">
+        <AnonymousOnlyRoute><SignInPage /></AnonymousOnlyRoute>
+      </Route>
+      <Route path="/register">
+        <AnonymousOnlyRoute><RegisterPage /></AnonymousOnlyRoute>
+      </Route>
+      <Route path="/forgot-password">
+        <AnonymousOnlyRoute><ForgotPasswordPage /></AnonymousOnlyRoute>
+      </Route>
+      <Route path="/reset-password">
+        <AuthServiceRoute><ResetPasswordPage /></AuthServiceRoute>
+      </Route>
+      <Route path="/verify-email">
+        <AuthServiceRoute><VerifyEmailPage /></AuthServiceRoute>
+      </Route>
+      <Route>
+        <ProtectedRoute><WorkspaceRoutes /></ProtectedRoute>
+      </Route>
+    </Switch>
+  );
+}
+
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </MotionConfig>
   );

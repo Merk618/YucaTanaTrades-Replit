@@ -7,6 +7,8 @@ export type ErrorType<T = unknown> = ApiError<T>;
 export type BodyType<T> = T;
 
 export type AuthTokenGetter = () => Promise<string | null> | string | null;
+export type CsrfTokenGetter = () => Promise<string | null> | string | null;
+export type ApiErrorHandler = (error: ApiError<unknown>) => void;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
@@ -17,6 +19,8 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _csrfTokenGetter: CsrfTokenGetter | null = null;
+let _apiErrorHandler: ApiErrorHandler | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +46,23 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Register an in-memory synchronizer-token getter for browser cookie sessions.
+ * The token is attached only to unsafe, same-origin requests and is never used
+ * as an authentication credential. Pass `null` to clear the getter.
+ */
+export function setCsrfTokenGetter(getter: CsrfTokenGetter | null): void {
+  _csrfTokenGetter = getter;
+}
+
+/**
+ * Observe parsed API failures without changing request error semantics.
+ * This is used by the web session provider to react to server-declared expiry.
+ */
+export function setApiErrorHandler(handler: ApiErrorHandler | null): void {
+  _apiErrorHandler = handler;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -76,6 +97,21 @@ function resolveUrl(input: RequestInfo | URL): string {
   if (typeof input === "string") return input;
   if (isUrl(input)) return input.toString();
   return input.url;
+}
+
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+
+function isSameOriginOrRelative(url: string): boolean {
+  const origin =
+    typeof window === "undefined"
+      ? "http://relative-request.local"
+      : window.location.origin;
+
+  try {
+    return new URL(url, origin).origin === origin;
+  } catch {
+    return false;
+  }
 }
 
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
@@ -360,11 +396,34 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  if (
+    _csrfTokenGetter &&
+    !SAFE_METHODS.has(method) &&
+    !headers.has("x-csrf-token") &&
+    isSameOriginOrRelative(requestInfo.url)
+  ) {
+    const token = await _csrfTokenGetter();
+    if (token) {
+      headers.set("x-csrf-token", token);
+    }
+  }
+
+  const response = await fetch(input, {
+    ...init,
+    credentials: "include",
+    method,
+    headers,
+  });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
-    throw new ApiError(response, errorData, requestInfo);
+    const error = new ApiError(response, errorData, requestInfo);
+    try {
+      _apiErrorHandler?.(error);
+    } catch {
+      // Error observers must never replace or mask the original API failure.
+    }
+    throw error;
   }
 
   return (await parseSuccessBody(response, responseType, requestInfo)) as T;

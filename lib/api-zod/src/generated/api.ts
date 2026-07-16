@@ -17,6 +17,260 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Get authentication service availability and feature flags
+ */
+export const GetAuthStatusResponse = zod.object({
+  "available": zod.boolean(),
+  "features": zod.object({
+  "registrationEnabled": zod.boolean(),
+  "passwordResetEnabled": zod.boolean(),
+  "emailVerificationEnabled": zod.boolean()
+}),
+  "message": zod.string().nullable()
+})
+
+
+/**
+ * Returns a valid current session without charging the guest-issuance limit. A missing, invalid, expired, or revoked cookie triggers replacement guest issuance, limited by an HMAC client-network key to 30 attempts per 15 minutes.
+ * @summary Get the current guest or authenticated server-side session
+ */
+export const getCurrentSessionResponseCsrfTokenMin = 32;
+
+
+
+export const GetCurrentSessionResponse = zod.object({
+  "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "user": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "displayName": zod.string().nullable(),
+  "emailVerified": zod.boolean()
+}),zod.null()]),
+  "expiresAt": zod.coerce.date().nullable(),
+  "csrfToken": zod.string().min(getCurrentSessionResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
+})
+
+
+/**
+ * @summary Sign in and rotate the current guest session
+ */
+export const signInHeaderXCSRFTokenMin = 32;
+export const signInHeaderXCSRFTokenMax = 256;
+
+
+
+export const SignInHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(signInHeaderXCSRFTokenMin).max(signInHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const signInBodyEmailMax = 320;
+
+export const signInBodyPasswordMax = 1024;
+
+
+
+export const SignInBody = zod.object({
+  "email": zod.string().email().max(signInBodyEmailMax),
+  "password": zod.string().min(1).max(signInBodyPasswordMax)
+})
+
+export const signInResponseCsrfTokenMin = 32;
+
+
+
+export const SignInResponse = zod.object({
+  "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "user": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "displayName": zod.string().nullable(),
+  "emailVerified": zod.boolean()
+}),zod.null()]),
+  "expiresAt": zod.coerce.date().nullable(),
+  "csrfToken": zod.string().min(signInResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
+})
+
+
+/**
+ * @summary Register an account and rotate into an authenticated session
+ */
+export const registerAccountHeaderXCSRFTokenMin = 32;
+export const registerAccountHeaderXCSRFTokenMax = 256;
+
+
+
+export const RegisterAccountHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(registerAccountHeaderXCSRFTokenMin).max(registerAccountHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const registerAccountBodyEmailMax = 320;
+
+export const registerAccountBodyPasswordMin = 12;
+export const registerAccountBodyPasswordMax = 256;
+
+export const registerAccountBodyDisplayNameMax = 100;
+
+
+
+export const RegisterAccountBody = zod.object({
+  "email": zod.string().email().max(registerAccountBodyEmailMax),
+  "password": zod.string().min(registerAccountBodyPasswordMin).max(registerAccountBodyPasswordMax),
+  "displayName": zod.string().max(registerAccountBodyDisplayNameMax).nullish().describe('Optional presentation name. Null, omission, or an empty\/whitespace-only value is stored as no display name.')
+})
+
+
+/**
+ * @summary Revoke the current session and rotate to a guest session
+ */
+export const signOutHeaderXCSRFTokenMin = 32;
+export const signOutHeaderXCSRFTokenMax = 256;
+
+
+
+export const SignOutHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(signOutHeaderXCSRFTokenMin).max(signOutHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const signOutResponseCsrfTokenMin = 32;
+
+
+
+export const SignOutResponse = zod.object({
+  "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "user": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "displayName": zod.string().nullable(),
+  "emailVerified": zod.boolean()
+}),zod.null()]),
+  "expiresAt": zod.coerce.date().nullable(),
+  "csrfToken": zod.string().min(signOutResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
+})
+
+
+/**
+ * @summary Revoke every active session for the current user
+ */
+export const signOutAllDevicesHeaderXCSRFTokenMin = 32;
+export const signOutAllDevicesHeaderXCSRFTokenMax = 256;
+
+
+
+export const SignOutAllDevicesHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(signOutAllDevicesHeaderXCSRFTokenMin).max(signOutAllDevicesHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const signOutAllDevicesResponseCsrfTokenMin = 32;
+
+
+
+export const SignOutAllDevicesResponse = zod.object({
+  "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "user": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "displayName": zod.string().nullable(),
+  "emailVerified": zod.boolean()
+}),zod.null()]),
+  "expiresAt": zod.coerce.date().nullable(),
+  "csrfToken": zod.string().min(signOutAllDevicesResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
+})
+
+
+/**
+ * Always returns a generic accepted response regardless of whether the normalized email belongs to an account or its issuance limit is exceeded. Limited requests record a blocked audit outcome and do not persist a reset token.
+ * @summary Request a password-reset message
+ */
+export const requestPasswordResetHeaderXCSRFTokenMin = 32;
+export const requestPasswordResetHeaderXCSRFTokenMax = 256;
+
+
+
+export const RequestPasswordResetHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(requestPasswordResetHeaderXCSRFTokenMin).max(requestPasswordResetHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const requestPasswordResetBodyEmailMax = 320;
+
+
+
+export const RequestPasswordResetBody = zod.object({
+  "email": zod.string().email().max(requestPasswordResetBodyEmailMax)
+})
+
+
+/**
+ * @summary Complete a password reset with a single-use token
+ */
+export const completePasswordResetHeaderXCSRFTokenMin = 32;
+export const completePasswordResetHeaderXCSRFTokenMax = 256;
+
+
+
+export const CompletePasswordResetHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(completePasswordResetHeaderXCSRFTokenMin).max(completePasswordResetHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const completePasswordResetBodyTokenMin = 32;
+export const completePasswordResetBodyTokenMax = 2048;
+
+export const completePasswordResetBodyPasswordMin = 12;
+export const completePasswordResetBodyPasswordMax = 256;
+
+
+
+export const CompletePasswordResetBody = zod.object({
+  "token": zod.string().min(completePasswordResetBodyTokenMin).max(completePasswordResetBodyTokenMax),
+  "password": zod.string().min(completePasswordResetBodyPasswordMin).max(completePasswordResetBodyPasswordMax)
+})
+
+export const CompletePasswordResetResponse = zod.object({
+  "accepted": zod.boolean(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Request a new email-verification message
+ */
+export const requestEmailVerificationHeaderXCSRFTokenMin = 32;
+export const requestEmailVerificationHeaderXCSRFTokenMax = 256;
+
+
+
+export const RequestEmailVerificationHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(requestEmailVerificationHeaderXCSRFTokenMin).max(requestEmailVerificationHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+
+/**
+ * @summary Complete email verification with a single-use token
+ */
+export const completeEmailVerificationHeaderXCSRFTokenMin = 32;
+export const completeEmailVerificationHeaderXCSRFTokenMax = 256;
+
+
+
+export const CompleteEmailVerificationHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(completeEmailVerificationHeaderXCSRFTokenMin).max(completeEmailVerificationHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const completeEmailVerificationBodyTokenMin = 32;
+export const completeEmailVerificationBodyTokenMax = 2048;
+
+
+
+export const CompleteEmailVerificationBody = zod.object({
+  "token": zod.string().min(completeEmailVerificationBodyTokenMin).max(completeEmailVerificationBodyTokenMax)
+})
+
+export const CompleteEmailVerificationResponse = zod.object({
+  "accepted": zod.boolean(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary List all trade journal entries
  */
 export const ListJournalEntriesResponseItem = zod.object({
@@ -43,6 +297,15 @@ export const ListJournalEntriesResponse = zod.array(ListJournalEntriesResponseIt
 /**
  * @summary Create a new journal entry
  */
+export const createJournalEntryHeaderXCSRFTokenMin = 32;
+export const createJournalEntryHeaderXCSRFTokenMax = 256;
+
+
+
+export const CreateJournalEntryHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(createJournalEntryHeaderXCSRFTokenMin).max(createJournalEntryHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const CreateJournalEntryBody = zod.object({
   "ticker": zod.string(),
   "setupType": zod.string(),
@@ -95,6 +358,15 @@ export const UpdateJournalEntryParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateJournalEntryHeaderXCSRFTokenMin = 32;
+export const updateJournalEntryHeaderXCSRFTokenMax = 256;
+
+
+
+export const UpdateJournalEntryHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(updateJournalEntryHeaderXCSRFTokenMin).max(updateJournalEntryHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const UpdateJournalEntryBody = zod.object({
   "ticker": zod.string().optional(),
   "setupType": zod.string().optional(),
@@ -139,6 +411,15 @@ export const DeleteJournalEntryParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const deleteJournalEntryHeaderXCSRFTokenMin = 32;
+export const deleteJournalEntryHeaderXCSRFTokenMax = 256;
+
+
+
+export const DeleteJournalEntryHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(deleteJournalEntryHeaderXCSRFTokenMin).max(deleteJournalEntryHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 
 /**
  * @summary Get win/loss summary stats
@@ -173,6 +454,15 @@ export const ListWatchlistItemsResponse = zod.array(ListWatchlistItemsResponseIt
 /**
  * @summary Add ticker to watchlist
  */
+export const addWatchlistItemHeaderXCSRFTokenMin = 32;
+export const addWatchlistItemHeaderXCSRFTokenMax = 256;
+
+
+
+export const AddWatchlistItemHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(addWatchlistItemHeaderXCSRFTokenMin).max(addWatchlistItemHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const AddWatchlistItemBody = zod.object({
   "ticker": zod.string(),
   "sector": zod.string().nullish(),
@@ -186,6 +476,15 @@ export const AddWatchlistItemBody = zod.object({
  */
 export const RemoveWatchlistItemParams = zod.object({
   "id": zod.coerce.number()
+})
+
+export const removeWatchlistItemHeaderXCSRFTokenMin = 32;
+export const removeWatchlistItemHeaderXCSRFTokenMax = 256;
+
+
+
+export const RemoveWatchlistItemHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(removeWatchlistItemHeaderXCSRFTokenMin).max(removeWatchlistItemHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
 })
 
 
@@ -232,6 +531,15 @@ export const GetPortfolioSummaryResponse = zod.object({
 /**
  * @summary Bulk-create portfolio positions (CSV import)
  */
+export const bulkCreatePositionsHeaderXCSRFTokenMin = 32;
+export const bulkCreatePositionsHeaderXCSRFTokenMax = 256;
+
+
+
+export const BulkCreatePositionsHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(bulkCreatePositionsHeaderXCSRFTokenMin).max(bulkCreatePositionsHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 
 
 
@@ -266,6 +574,15 @@ export const ListPositionsResponse = zod.array(ListPositionsResponseItem)
 /**
  * @summary Create a new portfolio position
  */
+export const createPositionHeaderXCSRFTokenMin = 32;
+export const createPositionHeaderXCSRFTokenMax = 256;
+
+
+
+export const CreatePositionHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(createPositionHeaderXCSRFTokenMin).max(createPositionHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const CreatePositionBody = zod.object({
   "ticker": zod.string(),
   "name": zod.string(),
@@ -302,6 +619,15 @@ export const UpdatePositionParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updatePositionHeaderXCSRFTokenMin = 32;
+export const updatePositionHeaderXCSRFTokenMax = 256;
+
+
+
+export const UpdatePositionHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(updatePositionHeaderXCSRFTokenMin).max(updatePositionHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const UpdatePositionBody = zod.object({
   "ticker": zod.string().optional(),
   "name": zod.string().optional(),
@@ -330,6 +656,15 @@ export const DeletePositionParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const deletePositionHeaderXCSRFTokenMin = 32;
+export const deletePositionHeaderXCSRFTokenMax = 256;
+
+
+
+export const DeletePositionHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(deletePositionHeaderXCSRFTokenMin).max(deletePositionHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 
 /**
  * @summary Get the active risk threshold configuration
@@ -348,6 +683,15 @@ export const GetRiskConfigResponse = zod.object({
 /**
  * @summary Update risk threshold configuration
  */
+export const updateRiskConfigHeaderXCSRFTokenMin = 32;
+export const updateRiskConfigHeaderXCSRFTokenMax = 256;
+
+
+
+export const UpdateRiskConfigHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(updateRiskConfigHeaderXCSRFTokenMin).max(updateRiskConfigHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
 export const updateRiskConfigBodySinglePositionLimitMax = 100;
 
 export const updateRiskConfigBodyCryptoPositionLimitMax = 100;

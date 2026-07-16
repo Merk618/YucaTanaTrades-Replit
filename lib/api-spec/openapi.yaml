@@ -6,9 +6,13 @@ info:
 servers:
   - url: /api
     description: Base API path
+security:
+  - cookieAuth: []
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Opaque cookie-session authentication and account recovery. Every response uses Cache-Control `no-store, private`, Pragma `no-cache`, Expires `0`, and Vary `Cookie`; the application does not emit ETags.
   - name: journal
     description: Trade journal entries
   - name: watchlist
@@ -27,6 +31,7 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
+      security: []
       responses:
         "200":
           description: Healthy
@@ -34,6 +39,370 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/status:
+    get:
+      operationId: getAuthStatus
+      tags: [auth]
+      summary: Get authentication service availability and feature flags
+      security: []
+      responses:
+        "200":
+          description: Authentication service status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthStatus"
+        "503":
+          description: Authentication service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /auth/session:
+    get:
+      operationId: getCurrentSession
+      tags: [auth]
+      summary: Get the current guest or authenticated server-side session
+      description: Returns a valid current session without charging the guest-issuance limit. A missing, invalid, expired, or revoked cookie triggers replacement guest issuance, limited by an HMAC client-network key to 30 attempts per 15 minutes.
+      security:
+        - {}
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current session state and synchronizer CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "429":
+          description: Guest-session issuance rate limit exceeded; no replacement session is created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          description: Authentication service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /auth/sign-in:
+    post:
+      operationId: signIn
+      tags: [auth]
+      summary: Sign in and rotate the current guest session
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInInput"
+      responses:
+        "200":
+          description: Authenticated session created and rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "401":
+          description: Generic credential failure or missing/expired guest session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Invalid synchronizer CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/register:
+    post:
+      operationId: registerAccount
+      tags: [auth]
+      summary: Register an account and rotate into an authenticated session
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Account and authenticated session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "400":
+          description: Generic registration failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Registration disabled or synchronizer CSRF token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/sign-out:
+    post:
+      operationId: signOut
+      tags: [auth]
+      summary: Revoke the current session and rotate to a guest session
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "200":
+          description: Current session revoked and guest session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Invalid synchronizer CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/sign-out-all:
+    post:
+      operationId: signOutAllDevices
+      tags: [auth]
+      summary: Revoke every active session for the current user
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "200":
+          description: All user sessions revoked and a guest session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Invalid synchronizer CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/password/forgot:
+    post:
+      operationId: requestPasswordReset
+      tags: [auth]
+      summary: Request a password-reset message
+      description: Always returns a generic accepted response regardless of whether the normalized email belongs to an account or its issuance limit is exceeded. Limited requests record a blocked audit outcome and do not persist a reset token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "202":
+          description: Request accepted without disclosing account existence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevelopmentTokenActionResponse"
+        "400":
+          $ref: "#/components/responses/InvalidAuthRequest"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Feature disabled or synchronizer CSRF token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/password/reset:
+    post:
+      operationId: completePasswordReset
+      tags: [auth]
+      summary: Complete a password reset with a single-use token
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password reset completed and prior sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericActionResponse"
+        "400":
+          description: Invalid, expired, or consumed reset request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Feature disabled or synchronizer CSRF token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/email-verification/request:
+    post:
+      operationId: requestEmailVerification
+      tags: [auth]
+      summary: Request a new email-verification message
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      responses:
+        "202":
+          description: Verification request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevelopmentTokenActionResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Feature disabled or synchronizer CSRF token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
+  /auth/email-verification/complete:
+    post:
+      operationId: completeEmailVerification
+      tags: [auth]
+      summary: Complete email verification with a single-use token
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteEmailVerificationInput"
+      responses:
+        "200":
+          description: Email verification completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericActionResponse"
+        "400":
+          description: Invalid, expired, or consumed verification request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Feature disabled or synchronizer CSRF token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
   /journal:
     get:
@@ -49,10 +418,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/JournalEntry"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     post:
       operationId: createJournalEntry
       tags: [journal]
       summary: Create a new journal entry
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -66,6 +441,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalEntry"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /journal/{id}:
     get:
@@ -87,11 +468,16 @@ paths:
                 $ref: "#/components/schemas/JournalEntry"
         "404":
           description: Not found
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     patch:
       operationId: updateJournalEntry
       tags: [journal]
       summary: Update a journal entry
       parameters:
+        - $ref: "#/components/parameters/CsrfToken"
         - name: id
           in: path
           required: true
@@ -110,11 +496,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalEntry"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     delete:
       operationId: deleteJournalEntry
       tags: [journal]
       summary: Delete a journal entry
       parameters:
+        - $ref: "#/components/parameters/CsrfToken"
         - name: id
           in: path
           required: true
@@ -123,6 +516,12 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /journal/summary:
     get:
@@ -136,6 +535,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JournalSummary"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /watchlist:
     get:
@@ -151,10 +554,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WatchlistItem"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     post:
       operationId: addWatchlistItem
       tags: [watchlist]
       summary: Add ticker to watchlist
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -168,6 +577,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WatchlistItem"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /watchlist/{id}:
     delete:
@@ -175,6 +590,7 @@ paths:
       tags: [watchlist]
       summary: Remove item from watchlist
       parameters:
+        - $ref: "#/components/parameters/CsrfToken"
         - name: id
           in: path
           required: true
@@ -183,6 +599,12 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /bots/status:
     get:
@@ -196,6 +618,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BotsStatus"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
   /portfolio/summary:
     get:
@@ -209,12 +635,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PortfolioSummary"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /positions/bulk:
     post:
       operationId: bulkCreatePositions
       tags: [portfolio]
       summary: Bulk-create portfolio positions (CSV import)
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -228,6 +660,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BulkCreatePositionsResult"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /positions:
     get:
@@ -243,10 +681,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PortfolioPosition"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     post:
       operationId: createPosition
       tags: [portfolio]
       summary: Create a new portfolio position
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -260,6 +704,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PortfolioPosition"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /positions/{id}:
     get:
@@ -281,11 +731,16 @@ paths:
                 $ref: "#/components/schemas/PortfolioPosition"
         "404":
           description: Not found
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     patch:
       operationId: updatePosition
       tags: [portfolio]
       summary: Update a portfolio position
       parameters:
+        - $ref: "#/components/parameters/CsrfToken"
         - name: id
           in: path
           required: true
@@ -304,11 +759,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PortfolioPosition"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     delete:
       operationId: deletePosition
       tags: [portfolio]
       summary: Delete a portfolio position
       parameters:
+        - $ref: "#/components/parameters/CsrfToken"
         - name: id
           in: path
           required: true
@@ -317,6 +779,12 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /settings/risk:
     get:
@@ -330,10 +798,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RiskConfig"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
     put:
       operationId: updateRiskConfig
       tags: [settings]
       summary: Update risk threshold configuration
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -349,6 +823,12 @@ paths:
                 $ref: "#/components/schemas/RiskConfig"
         "400":
           description: Validation error
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/RequestOriginRejected"
+        "503":
+          $ref: "#/components/responses/OwnershipOrAuthUnavailable"
 
   /market/quotes:
     get:
@@ -369,6 +849,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuoteList"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
   /market/health:
     get:
@@ -389,6 +873,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SourceHealth"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
   /market/session:
     get:
@@ -402,6 +890,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MarketSession"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
   /market/test:
     get:
@@ -415,8 +907,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuoteList"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-ytt_session
+      description: Opaque Secure session cookie used for HTTPS production and preview environments. Local loopback HTTP development uses the non-Secure ytt_session name while preserving HttpOnly, SameSite, Path, and server-side session semantics.
+  responses:
+    InvalidAuthRequest:
+      description: Invalid authentication request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+    AuthRequired:
+      description: Missing, expired, or revoked authenticated/session context
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+    RequestOriginRejected:
+      description: Request origin or synchronizer CSRF verification failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+    AuthUnavailable:
+      description: Authentication service or storage unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+    OwnershipOrAuthUnavailable:
+      description: Authentication service unavailable or user-data ownership migration required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+  parameters:
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: Synchronizer token returned in SessionEnvelope for the current server-side session.
+      schema:
+        type: string
+        minLength: 32
+        maxLength: 256
   schemas:
     HealthStatus:
       type: object
@@ -425,6 +968,157 @@ components:
           type: string
       required:
         - status
+
+    AuthStatus:
+      type: object
+      required: [available, features, message]
+      properties:
+        available:
+          type: boolean
+        features:
+          $ref: "#/components/schemas/AuthFeatures"
+        message:
+          type: ["string", "null"]
+
+    AuthFeatures:
+      type: object
+      required: [registrationEnabled, passwordResetEnabled, emailVerificationEnabled]
+      properties:
+        registrationEnabled:
+          type: boolean
+        passwordResetEnabled:
+          type: boolean
+        emailVerificationEnabled:
+          type: boolean
+
+    SessionState:
+      type: string
+      enum: [guest, authenticated, expired]
+
+    SessionUser:
+      type: object
+      required: [id, email, displayName, emailVerified]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: ["string", "null"]
+        emailVerified:
+          type: boolean
+
+    SessionEnvelope:
+      type: object
+      required: [state, user, expiresAt, csrfToken]
+      properties:
+        state:
+          $ref: "#/components/schemas/SessionState"
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/SessionUser"
+            - type: "null"
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        csrfToken:
+          type: string
+          minLength: 32
+          description: Synchronizer token for unsafe requests in this session; never a session credential.
+
+    SignInInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          minLength: 1
+          maxLength: 1024
+
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          minLength: 12
+          maxLength: 256
+        displayName:
+          type: ["string", "null"]
+          maxLength: 100
+          description: Optional presentation name. Null, omission, or an empty/whitespace-only value is stored as no display name.
+
+    ForgotPasswordInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+
+    ResetPasswordInput:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 2048
+        password:
+          type: string
+          minLength: 12
+          maxLength: 256
+
+    CompleteEmailVerificationInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 2048
+
+    GenericActionResponse:
+      type: object
+      required: [accepted, message]
+      properties:
+        accepted:
+          type: boolean
+        message:
+          type: string
+
+    DevelopmentTokenActionResponse:
+      type: object
+      required: [accepted, message]
+      properties:
+        accepted:
+          type: boolean
+        message:
+          type: string
+        developmentToken:
+          type: string
+          description: Explicitly gated nonproduction-only token channel enabled by AUTH_EXPOSE_DEV_TOKENS; never present in production. A forgot-password value may be a nonpersisted decoy for an unknown or limited request.
+
+    AuthError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [invalid_request, invalid_credentials, unauthorized, csrf_invalid, session_expired, rate_limited, unavailable, ownership_migration_required]
+        message:
+          type: string
 
     JournalEntry:
       type: object
