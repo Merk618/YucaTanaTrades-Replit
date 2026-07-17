@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 interface AuthFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "id"> {
   id: string;
@@ -13,11 +13,16 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
     const [revealed, setRevealed] = React.useState(false);
     const isPassword = type === "password";
     const descriptionId = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+    const wrapClassName = [
+      "yt-auth-input-wrap",
+      error ? "has-error" : "",
+      isPassword ? "has-reveal" : "",
+    ].filter(Boolean).join(" ");
 
     return (
       <div className="yt-auth-field">
         <label htmlFor={id}>{label}</label>
-        <div className={error ? "yt-auth-input-wrap has-error" : "yt-auth-input-wrap"}>
+        <div className={wrapClassName} data-revealed={isPassword ? revealed : undefined}>
           <input
             {...props}
             ref={ref}
@@ -32,8 +37,13 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
               className="yt-auth-reveal"
               onClick={() => setRevealed((current) => !current)}
               aria-label={revealed ? "Hide password" : "Show password"}
+              aria-controls={id}
+              aria-pressed={revealed}
+              title={revealed ? "Hide password" : "Show password"}
             >
-              {revealed ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              <span aria-hidden="true">
+                {revealed ? <EyeOff /> : <Eye />}
+              </span>
             </button>
           )}
         </div>
@@ -55,7 +65,9 @@ export function AuthSubmitButton({
 }) {
   return (
     <button className="yt-auth-submit" type="submit" disabled={pending} aria-busy={pending}>
-      <span>{pending ? "Working…" : children}</span>
+      {pending ? <LoaderCircle className="yt-auth-submit-spinner" aria-hidden="true" /> : null}
+      <span aria-live="polite">{pending ? "Working…" : children}</span>
+      {!pending ? <ArrowRight className="yt-auth-submit-arrow" aria-hidden="true" /> : null}
     </button>
   );
 }

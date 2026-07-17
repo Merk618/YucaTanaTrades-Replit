@@ -9,14 +9,34 @@
   position: relative;
   isolation: isolate;
   width: 100%;
+  height: 100dvh;
   min-height: 100dvh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0 clamp(22px, 4.5vw, 74px);
   background:
     radial-gradient(720px 480px at 18% 58%, rgba(39, 112, 126, 0.16), transparent 72%),
     radial-gradient(660px 440px at 82% 36%, rgba(201, 168, 103, 0.1), transparent 74%),
     linear-gradient(145deg, #020b13 0%, #041923 54%, #05232e 100%);
   color: var(--yt-text);
+}
+
+.yt-auth-root.yt-auth-motion-paused .yt-auth-aurora {
+  animation-play-state: paused !important;
+}
+
+.yt-command-input-row {
+  transition: border-color var(--yt-fast), background var(--yt-fast), box-shadow var(--yt-fast);
+}
+
+.yt-command-input-row:focus-within {
+  border-bottom-color: rgba(217, 187, 122, 0.32);
+  background: rgba(217, 187, 122, 0.025);
+  box-shadow: inset 0 -1px rgba(217, 187, 122, 0.08);
+}
+
+.yt-route-content:focus {
+  outline: none;
 }
 
 .yt-auth-grid {
@@ -46,12 +66,6 @@
     0 0 0 144px rgba(218, 188, 126, 0.014),
     0 0 140px rgba(35, 133, 153, 0.12);
   pointer-events: none;
-  animation: yt-auth-breathe 10s var(--yt-ease) infinite alternate;
-}
-
-@keyframes yt-auth-breathe {
-  from { opacity: 0.58; transform: scale(0.985); }
-  to { opacity: 0.92; transform: scale(1.025); }
 }
 
 .yt-auth-header,
@@ -612,5 +626,1276 @@
   .yt-auth-submit:not(:disabled):hover,
   .yt-auth-secondary-button:not(:disabled):hover {
     transform: none;
+  }
+}
+
+/* UI-2 authentication entrance */
+.yt-auth-root {
+  --yt-auth-panel-width: 500px;
+  padding-inline: clamp(28px, 4.2vw, 72px);
+  background:
+    radial-gradient(900px 620px at 8% 82%, rgba(27, 108, 125, 0.2), transparent 68%),
+    radial-gradient(720px 520px at 88% 20%, rgba(203, 169, 102, 0.105), transparent 70%),
+    radial-gradient(520px 420px at 53% 47%, rgba(27, 91, 106, 0.1), transparent 72%),
+    linear-gradient(142deg, #010911 0%, #03141e 46%, #052530 100%);
+}
+
+.yt-auth-root::before,
+.yt-auth-root::after {
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+}
+
+.yt-auth-root::before {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(238, 207, 145, 0.025), transparent 18%, transparent 82%, rgba(88, 166, 180, 0.025)),
+    linear-gradient(180deg, transparent 72%, rgba(1, 8, 13, 0.42));
+}
+
+.yt-auth-root::after {
+  width: 1px;
+  height: 36vh;
+  top: 32vh;
+  left: 50%;
+  background: linear-gradient(transparent, rgba(218, 194, 139, 0.11), transparent);
+  transform: rotate(24deg);
+}
+
+.yt-auth-grid {
+  opacity: 0.26;
+  background-image:
+    linear-gradient(rgba(85, 128, 139, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(85, 128, 139, 0.07) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(90deg, transparent 2%, #000 34%, #000 72%, transparent 98%);
+}
+
+.yt-auth-aurora {
+  width: min(66vw, 1020px);
+  height: min(66vw, 1020px);
+  right: -29vw;
+  bottom: -48vw;
+  border-color: rgba(228, 202, 146, 0.1);
+  box-shadow:
+    0 0 0 84px rgba(107, 171, 179, 0.014),
+    0 0 0 168px rgba(218, 188, 126, 0.012),
+    0 0 180px rgba(35, 133, 153, 0.1);
+  animation: yt-auth-horizon-drift 18s var(--yt-ease) infinite alternate;
+}
+
+@keyframes yt-auth-horizon-drift {
+  from { transform: translate3d(var(--yt-auth-parallax-x, 0px), var(--yt-auth-parallax-y, 0px), 0); }
+  to { transform: translate3d(calc(var(--yt-auth-parallax-x, 0px) - 8px), calc(var(--yt-auth-parallax-y, 0px) + 4px), 0); }
+}
+
+.yt-auth-header {
+  width: min(1360px, 100%);
+  min-height: 86px;
+  margin-inline: auto;
+  border-bottom-color: rgba(159, 191, 198, 0.085);
+}
+
+.yt-auth-brand {
+  gap: 14px;
+}
+
+.yt-auth-brand .yt-brand-mark {
+  width: 38px;
+  height: 38px;
+  color: var(--yt-gold-bright);
+}
+
+.yt-auth-wordmark {
+  font-size: 13px;
+  font-weight: 570;
+  letter-spacing: 0.34em;
+  text-shadow: 0 0 26px rgba(217, 187, 122, 0.16);
+}
+
+.yt-auth-header-status {
+  gap: 9px;
+  color: rgba(158, 177, 181, 0.7);
+  font-size: 9px;
+  font-weight: 560;
+  letter-spacing: 0.18em;
+}
+
+.yt-auth-header-status > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #80b987;
+  box-shadow: 0 0 0 4px rgba(119, 183, 122, 0.07), 0 0 12px rgba(119, 183, 122, 0.2);
+}
+
+.yt-auth-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(440px, var(--yt-auth-panel-width));
+  gap: clamp(62px, 7vw, 112px);
+  width: min(1280px, 100%);
+  min-height: calc(100dvh - 150px);
+  padding: clamp(46px, 6vh, 72px) 0 76px;
+}
+
+.yt-auth-identity {
+  position: relative;
+  max-width: 690px;
+}
+
+.yt-auth-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.yt-auth-kicker {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+}
+
+.yt-auth-kicker-rule {
+  width: 38px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(217, 187, 122, 0.72), transparent);
+}
+
+.yt-auth-kicker-detail {
+  color: rgba(134, 158, 164, 0.7);
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.yt-auth-identity h1 {
+  max-width: 680px;
+  margin: 22px 0 20px;
+  color: #eef1ec;
+  font-size: clamp(48px, 4.25vw, 67px);
+  font-weight: 400;
+  letter-spacing: -0.052em;
+  line-height: 0.99;
+}
+
+.yt-auth-identity h1 em {
+  color: var(--yt-text-warm);
+  font-style: normal;
+  font-weight: 410;
+  text-shadow: 0 0 38px rgba(217, 187, 122, 0.13);
+}
+
+.yt-auth-identity > p {
+  max-width: 590px;
+  color: rgba(166, 183, 186, 0.82);
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.yt-auth-orbit-stage {
+  position: relative;
+  height: 188px;
+  margin-top: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(159, 191, 198, 0.095);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 54% 50%, rgba(203, 169, 102, 0.09), transparent 16%),
+    linear-gradient(125deg, rgba(13, 40, 50, 0.4), rgba(4, 20, 28, 0.16));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.018);
+}
+
+.yt-auth-orbit-stage::before,
+.yt-auth-orbit-stage::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.yt-auth-orbit-stage::before {
+  inset: 0;
+  opacity: 0.36;
+  background-image:
+    linear-gradient(rgba(83, 127, 139, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(83, 127, 139, 0.09) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 54% 50%, #000, transparent 76%);
+}
+
+.yt-auth-orbit-stage::after {
+  inset: 18px;
+  border: 1px solid rgba(217, 187, 122, 0.055);
+  border-radius: 12px;
+}
+
+.yt-auth-orbit {
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  border: 1px solid rgba(163, 199, 203, 0.16);
+  border-right-color: rgba(227, 199, 140, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+}
+
+.yt-auth-orbit.is-outer {
+  width: 300px;
+  height: 126px;
+}
+
+.yt-auth-orbit.is-middle {
+  width: 218px;
+  height: 92px;
+  border-left-color: rgba(101, 174, 185, 0.34);
+  transform: translate(-50%, -50%) rotate(-17deg);
+}
+
+.yt-auth-orbit.is-inner {
+  width: 132px;
+  height: 58px;
+  border-color: rgba(217, 187, 122, 0.24);
+  transform: translate(-50%, -50%) rotate(22deg);
+}
+
+.yt-auth-orbit-axis {
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  opacity: 0.32;
+  background: linear-gradient(90deg, transparent, rgba(159, 191, 198, 0.18), transparent);
+  transform: translate(-50%, -50%);
+}
+
+.yt-auth-orbit-axis.is-horizontal {
+  width: 360px;
+  height: 1px;
+}
+
+.yt-auth-orbit-axis.is-vertical {
+  width: 1px;
+  height: 150px;
+  background: linear-gradient(transparent, rgba(159, 191, 198, 0.18), transparent);
+}
+
+.yt-auth-orbit-node {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(245, 221, 169, 0.72);
+  border-radius: 50%;
+  background: rgba(217, 187, 122, 0.38);
+  box-shadow: 0 0 12px rgba(217, 187, 122, 0.38);
+}
+
+.yt-auth-orbit-node.is-one { top: 29%; left: 33%; }
+.yt-auth-orbit-node.is-two { top: 68%; left: 72%; }
+.yt-auth-orbit-node.is-three { top: 37%; left: 79%; width: 3px; height: 3px; }
+
+.yt-auth-orbit-core {
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(241, 211, 154, 0.28);
+  border-radius: 50%;
+  background: rgba(5, 24, 32, 0.9);
+  box-shadow: 0 0 34px rgba(217, 187, 122, 0.1), inset 0 0 18px rgba(217, 187, 122, 0.06);
+  color: var(--yt-gold-bright);
+  transform: translate(-50%, -50%);
+}
+
+.yt-auth-orbit-core .yt-brand-mark {
+  width: 29px;
+  height: 29px;
+}
+
+.yt-auth-orbit-label {
+  position: absolute;
+  color: rgba(122, 149, 155, 0.48);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.18em;
+}
+
+.yt-auth-orbit-label.is-north { top: 20px; left: 22px; }
+.yt-auth-orbit-label.is-east { top: 50%; right: 22px; transform: translateY(-50%); }
+.yt-auth-orbit-label.is-south { bottom: 19px; left: 22px; }
+
+.yt-auth-trust-list {
+  gap: 9px;
+  margin-top: 11px;
+}
+
+.yt-auth-trust-list span {
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  row-gap: 1px;
+  min-height: 58px;
+  padding: 10px 11px;
+  border-color: rgba(159, 191, 198, 0.095);
+  background: rgba(5, 24, 32, 0.36);
+}
+
+.yt-auth-trust-list svg {
+  grid-row: 1 / 3;
+  width: 17px;
+  height: 17px;
+  color: rgba(220, 194, 139, 0.85);
+}
+
+.yt-auth-trust-list small,
+.yt-auth-trust-list strong {
+  display: block;
+  min-width: 0;
+}
+
+.yt-auth-trust-list small {
+  color: rgba(106, 132, 139, 0.7);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.yt-auth-trust-list strong {
+  overflow: hidden;
+  color: rgba(187, 201, 202, 0.8);
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-auth-panel {
+  position: relative;
+  min-height: 460px;
+  padding: 42px 44px 38px;
+  overflow: hidden;
+  border-color: rgba(224, 199, 145, 0.32);
+  border-radius: 22px;
+  background:
+    radial-gradient(420px 210px at 100% 0, rgba(217, 187, 122, 0.075), transparent 68%),
+    linear-gradient(148deg, rgba(20, 46, 57, 0.95), rgba(5, 24, 34, 0.965) 63%),
+    rgba(4, 20, 29, 0.98);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.012),
+    0 38px 100px rgba(0, 0, 0, 0.38),
+    0 0 60px rgba(211, 178, 112, 0.045);
+  backdrop-filter: blur(24px);
+}
+
+.yt-auth-panel::after {
+  position: absolute;
+  right: -60px;
+  bottom: -78px;
+  width: 230px;
+  height: 230px;
+  border: 1px solid rgba(101, 174, 185, 0.065);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(101, 174, 185, 0.018), 0 0 0 68px rgba(101, 174, 185, 0.012);
+  content: "";
+  pointer-events: none;
+}
+
+.yt-auth-panel-cap {
+  position: absolute;
+  top: 0;
+  left: 34px;
+  width: 98px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--yt-gold-bright), transparent);
+  box-shadow: 0 0 15px rgba(241, 211, 154, 0.32);
+}
+
+.yt-auth-panel-cap > span {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--yt-gold-bright);
+  box-shadow: 0 0 9px rgba(241, 211, 154, 0.7);
+  transform: translateX(-50%);
+}
+
+.yt-auth-panel-context {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 34px;
+  color: rgba(112, 139, 145, 0.7);
+  font-size: 7.5px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.yt-auth-panel-context > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(183, 199, 199, 0.72);
+}
+
+.yt-auth-panel-context svg {
+  width: 12px;
+  height: 12px;
+  color: var(--yt-gold);
+  stroke-width: 1.7;
+}
+
+.yt-auth-panel-heading,
+.yt-auth-form,
+.yt-auth-notice,
+.yt-auth-actions,
+.yt-auth-status-card,
+.yt-auth-secondary-button,
+.yt-auth-panel > .yt-auth-submit {
+  position: relative;
+  z-index: 1;
+}
+
+.yt-auth-panel-heading > span {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+}
+
+.yt-auth-panel-heading h2 {
+  margin: 12px 0 9px;
+  font-size: 29px;
+  font-weight: 470;
+  letter-spacing: -0.035em;
+}
+
+.yt-auth-panel-heading p {
+  max-width: 390px;
+  margin-bottom: 30px;
+  color: rgba(157, 176, 180, 0.78);
+  font-size: 11px;
+  line-height: 1.68;
+}
+
+.yt-auth-form {
+  gap: 18px;
+}
+
+.yt-auth-field {
+  gap: 8px;
+}
+
+.yt-auth-field label {
+  color: rgba(224, 231, 226, 0.82);
+  font-size: 10px;
+  font-weight: 560;
+  letter-spacing: 0.055em;
+}
+
+.yt-auth-input-wrap input {
+  height: 50px;
+  padding-inline: 15px;
+  border-color: rgba(159, 191, 198, 0.18);
+  border-radius: 13px;
+  background: rgba(1, 14, 21, 0.62);
+  font-size: 12px;
+  caret-color: var(--yt-gold-bright);
+  transition:
+    border-color var(--yt-fast),
+    box-shadow var(--yt-fast),
+    background var(--yt-fast),
+    transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-auth-input-wrap.has-reveal input {
+  padding-right: 52px;
+}
+
+.yt-auth-input-wrap input:hover:not(:focus) {
+  border-color: rgba(159, 191, 198, 0.28);
+  background: rgba(3, 18, 25, 0.72);
+}
+
+.yt-auth-input-wrap input:focus {
+  border-color: rgba(235, 207, 149, 0.68);
+  background: rgba(4, 23, 31, 0.92);
+  box-shadow: 0 0 0 3px rgba(217, 187, 122, 0.075), 0 10px 28px rgba(0, 0, 0, 0.14);
+}
+
+.yt-auth-input-wrap input:-webkit-autofill,
+.yt-auth-input-wrap input:-webkit-autofill:hover,
+.yt-auth-input-wrap input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--yt-text);
+  box-shadow: 0 0 0 1000px #061b24 inset;
+  caret-color: var(--yt-gold-bright);
+}
+
+.yt-auth-input-wrap.has-error input {
+  border-color: rgba(240, 100, 79, 0.66);
+  box-shadow: 0 0 0 3px rgba(240, 100, 79, 0.055);
+}
+
+.yt-auth-reveal {
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color var(--yt-fast), border-color var(--yt-fast), background var(--yt-fast), transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-auth-reveal:hover,
+.yt-auth-reveal[aria-pressed="true"] {
+  border-color: rgba(159, 191, 198, 0.12);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--yt-text-warm);
+}
+
+.yt-auth-reveal:active {
+  transform: scale(0.94);
+}
+
+.yt-auth-reveal > span {
+  display: grid;
+  place-items: center;
+}
+
+.yt-auth-reveal svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.65;
+}
+
+.yt-auth-field small {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.yt-auth-submit,
+.yt-auth-secondary-button {
+  min-height: 50px;
+  border-radius: 13px;
+  font-size: 11px;
+  letter-spacing: 0.045em;
+}
+
+.yt-auth-submit {
+  position: relative;
+  margin-top: 7px;
+  overflow: hidden;
+  border-color: rgba(250, 230, 182, 0.64);
+  background:
+    linear-gradient(110deg, rgba(255, 243, 209, 0.18), transparent 34%),
+    linear-gradient(135deg, #e7ca8c, #b88f50);
+  box-shadow: 0 15px 34px rgba(185, 137, 70, 0.17), inset 0 1px rgba(255, 255, 255, 0.32);
+}
+
+.yt-auth-submit::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.19), transparent);
+  content: "";
+  transform: translateX(-115%);
+  transition: transform var(--yt-panel-time) var(--yt-ease-out);
+}
+
+.yt-auth-submit:not(:disabled):hover {
+  box-shadow: 0 18px 40px rgba(185, 137, 70, 0.23), inset 0 1px rgba(255, 255, 255, 0.38);
+}
+
+.yt-auth-submit:not(:disabled):hover::before {
+  transform: translateX(115%);
+}
+
+.yt-auth-submit > span,
+.yt-auth-submit > svg {
+  position: relative;
+  z-index: 1;
+}
+
+.yt-auth-submit-arrow {
+  position: absolute !important;
+  right: 16px;
+  width: 15px;
+  height: 15px;
+  transition: transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-auth-submit:hover .yt-auth-submit-arrow {
+  transform: translateX(2px);
+}
+
+.yt-auth-submit-spinner {
+  width: 15px;
+  height: 15px;
+  animation: yt-auth-spin 1s linear infinite;
+}
+
+.yt-auth-secondary-button {
+  margin-top: 16px;
+}
+
+.yt-auth-notice {
+  margin-bottom: 18px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.yt-auth-actions {
+  min-height: 22px;
+  margin-top: 23px;
+  padding-top: 19px;
+  border-top: 1px solid rgba(159, 191, 198, 0.08);
+  font-size: 9.5px;
+}
+
+.yt-auth-actions a {
+  padding-block: 3px;
+  font-weight: 560;
+  text-underline-offset: 4px;
+}
+
+.yt-auth-actions a:hover {
+  text-decoration: underline;
+  text-decoration-color: rgba(241, 211, 154, 0.35);
+}
+
+.yt-auth-status-card {
+  grid-template-columns: 38px 1fr;
+  gap: 14px;
+  min-height: 84px;
+  padding: 17px;
+  border-radius: 14px;
+}
+
+.yt-auth-status-card > svg {
+  width: 26px;
+  height: 26px;
+}
+
+.yt-auth-status-card strong {
+  font-size: 11px;
+}
+
+.yt-auth-status-card span {
+  font-size: 9.5px;
+}
+
+.yt-auth-footer {
+  width: min(1360px, 100%);
+  min-height: 64px;
+  margin: -64px auto 0;
+  color: rgba(113, 132, 140, 0.58);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+
+@media (max-width: 1120px) {
+  .yt-auth-root {
+    --yt-auth-panel-width: 450px;
+    padding-inline: clamp(24px, 3.4vw, 40px);
+  }
+
+  .yt-auth-layout {
+    gap: 42px;
+  }
+
+  .yt-auth-identity h1 {
+    font-size: clamp(42px, 5vw, 54px);
+  }
+
+  .yt-auth-orbit-stage {
+    height: 164px;
+  }
+
+  .yt-auth-trust-list small {
+    display: none;
+  }
+
+  .yt-auth-trust-list span {
+    grid-template-rows: 1fr;
+  }
+
+  .yt-auth-trust-list svg,
+  .yt-auth-trust-list strong {
+    grid-row: 1;
+  }
+
+  .yt-auth-panel {
+    padding: 38px 36px 34px;
+  }
+}
+
+@media (max-width: 900px) {
+  .yt-auth-root {
+    padding-inline: clamp(22px, 7vw, 56px);
+  }
+
+  .yt-auth-header {
+    min-height: 78px;
+  }
+
+  .yt-auth-layout {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    align-content: start;
+    width: min(620px, 100%);
+    min-height: calc(100dvh - 78px);
+    padding: 48px 0 74px;
+  }
+
+  .yt-auth-identity {
+    max-width: 620px;
+  }
+
+  .yt-auth-identity h1 {
+    max-width: 570px;
+    margin-block: 16px 14px;
+    font-size: clamp(39px, 7.6vw, 52px);
+  }
+
+  .yt-auth-identity > p {
+    max-width: 570px;
+    font-size: 13px;
+  }
+
+  .yt-auth-orbit-stage {
+    display: none;
+  }
+
+  .yt-auth-trust-list {
+    margin-top: 22px;
+  }
+
+  .yt-auth-panel {
+    min-height: 0;
+  }
+
+  .yt-auth-footer {
+    position: relative;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .yt-auth-root {
+    padding-inline: 16px;
+  }
+
+  .yt-auth-header {
+    min-height: 68px;
+  }
+
+  .yt-auth-brand {
+    gap: 10px;
+  }
+
+  .yt-auth-brand .yt-brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .yt-auth-wordmark {
+    font-size: 10px;
+    letter-spacing: 0.27em;
+  }
+
+  .yt-auth-layout {
+    gap: 26px;
+    min-height: calc(100dvh - 68px);
+    padding: 32px 0 44px;
+  }
+
+  .yt-auth-kicker-detail,
+  .yt-auth-kicker-rule {
+    display: none;
+  }
+
+  .yt-auth-identity h1 {
+    margin-block: 14px 12px;
+    font-size: clamp(34px, 11vw, 43px);
+  }
+
+  .yt-auth-identity > p {
+    font-size: 12px;
+    line-height: 1.62;
+  }
+
+  .yt-auth-trust-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 18px;
+  }
+
+  .yt-auth-trust-list span {
+    display: flex;
+    min-height: 44px;
+    justify-content: center;
+    padding: 9px 7px;
+  }
+
+  .yt-auth-trust-list svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .yt-auth-trust-list strong {
+    font-size: 0;
+  }
+
+  .yt-auth-trust-list strong::after {
+    font-size: 8px;
+    white-space: nowrap;
+  }
+
+  .yt-auth-trust-list span:nth-child(1) strong::after { content: "Server-held"; }
+  .yt-auth-trust-list span:nth-child(2) strong::after { content: "Protected"; }
+  .yt-auth-trust-list span:nth-child(3) strong::after { content: "Resolved"; }
+
+  .yt-auth-panel {
+    padding: 32px 22px 26px;
+    border-radius: 18px;
+  }
+
+  .yt-auth-panel-context {
+    margin-bottom: 28px;
+  }
+
+  .yt-auth-panel-context > span:last-child {
+    display: none;
+  }
+
+  .yt-auth-panel-heading h2 {
+    font-size: 26px;
+  }
+
+  .yt-auth-panel-heading p {
+    margin-bottom: 25px;
+  }
+
+  .yt-auth-input-wrap input,
+  .yt-auth-submit,
+  .yt-auth-secondary-button {
+    min-height: 48px;
+  }
+
+  .yt-auth-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .yt-auth-footer {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .yt-auth-wordmark {
+    letter-spacing: 0.22em;
+  }
+
+  .yt-auth-identity h1 {
+    font-size: 33px;
+  }
+
+  .yt-auth-trust-list strong::after {
+    font-size: 7px;
+  }
+
+  .yt-auth-panel {
+    padding-inline: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-auth-orbit,
+  .yt-auth-submit-spinner {
+    animation: none !important;
+  }
+
+  .yt-auth-submit::before {
+    display: none;
+  }
+
+  .yt-auth-reveal:active,
+  .yt-auth-submit:hover .yt-auth-submit-arrow {
+    transform: none;
+  }
+}
+
+/* Development Review Access — rendered only from the server status feature. */
+.yt-review-access-entry {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+}
+
+.yt-review-access-trigger {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid rgba(159, 191, 198, 0.1);
+  border-radius: 12px;
+  background: rgba(4, 21, 29, 0.38);
+  color: var(--yt-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--yt-fast),
+    background var(--yt-fast),
+    color var(--yt-fast),
+    transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-review-access-trigger:hover,
+.yt-review-access-trigger[aria-expanded="true"] {
+  border-color: rgba(217, 187, 122, 0.22);
+  background: rgba(9, 31, 40, 0.68);
+  color: var(--yt-text-secondary);
+}
+
+.yt-review-access-trigger:hover {
+  transform: translateY(-1px);
+}
+
+.yt-review-access-trigger-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(217, 187, 122, 0.14);
+  border-radius: 9px;
+  background: rgba(217, 187, 122, 0.045);
+  color: rgba(217, 187, 122, 0.8);
+}
+
+.yt-review-access-trigger-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.6;
+}
+
+.yt-review-access-trigger > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.yt-review-access-trigger strong {
+  color: rgba(215, 225, 221, 0.82);
+  font-size: 9.5px;
+  font-weight: 570;
+  letter-spacing: 0.035em;
+}
+
+.yt-review-access-trigger small {
+  color: rgba(101, 128, 135, 0.75);
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.yt-review-access-trigger > svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
+  transition: transform var(--yt-fast) var(--yt-ease-out), color var(--yt-fast);
+}
+
+.yt-review-access-trigger[aria-expanded="true"] > svg {
+  color: var(--yt-gold);
+  transform: rotate(90deg);
+}
+
+.yt-review-access-panel {
+  overflow: hidden;
+}
+
+.yt-review-access-surface {
+  position: relative;
+  margin-top: 10px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 187, 122, 0.18);
+  border-radius: 14px;
+  background:
+    radial-gradient(220px 120px at 0 0, rgba(217, 187, 122, 0.055), transparent 72%),
+    linear-gradient(145deg, rgba(11, 35, 44, 0.88), rgba(3, 20, 28, 0.9));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025), 0 16px 38px rgba(0, 0, 0, 0.13);
+}
+
+.yt-review-access-surface::after {
+  position: absolute;
+  right: -42px;
+  bottom: -54px;
+  width: 120px;
+  height: 120px;
+  border: 1px solid rgba(101, 174, 185, 0.05);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.yt-review-access-heading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+}
+
+.yt-review-access-key {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(217, 187, 122, 0.19);
+  border-radius: 10px;
+  background: rgba(217, 187, 122, 0.06);
+  color: var(--yt-gold);
+}
+
+.yt-review-access-key svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.55;
+}
+
+.yt-review-access-heading > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+
+.yt-review-access-heading small {
+  color: rgba(124, 151, 157, 0.68);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.yt-review-access-heading strong {
+  color: rgba(232, 237, 231, 0.92);
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 520;
+  letter-spacing: -0.01em;
+}
+
+.yt-review-access-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--yt-text-muted);
+  cursor: pointer;
+  transition: color var(--yt-fast), border-color var(--yt-fast), background var(--yt-fast);
+}
+
+.yt-review-access-close:hover:not(:disabled) {
+  border-color: rgba(159, 191, 198, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--yt-text-secondary);
+}
+
+.yt-review-access-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.yt-review-access-copy {
+  position: relative;
+  z-index: 1;
+  margin: 13px 0 15px;
+  color: rgba(145, 166, 170, 0.76);
+  font-size: 9px;
+  line-height: 1.52;
+}
+
+.yt-review-access-form,
+.yt-review-access-form fieldset {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.yt-review-access-cells {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.yt-review-access-cell {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(159, 191, 198, 0.19);
+  border-radius: 11px;
+  background: rgba(1, 13, 20, 0.72);
+  color: var(--yt-text-warm);
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 540;
+  line-height: 1;
+  text-align: center;
+  caret-color: var(--yt-gold-bright);
+  outline: none;
+  transition:
+    border-color var(--yt-fast),
+    background var(--yt-fast),
+    box-shadow var(--yt-fast),
+    transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-review-access-cell:hover:not(:disabled) {
+  border-color: rgba(159, 191, 198, 0.3);
+}
+
+.yt-review-access-cell:focus {
+  border-color: rgba(240, 211, 153, 0.72);
+  background: rgba(7, 28, 36, 0.95);
+  box-shadow: 0 0 0 3px rgba(217, 187, 122, 0.075), 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.yt-review-access-cell[aria-invalid="true"] {
+  border-color: rgba(240, 100, 79, 0.48);
+}
+
+.yt-review-access-cell:disabled {
+  opacity: 0.56;
+}
+
+.yt-review-access-message {
+  min-height: 30px;
+  padding: 9px 2px 4px;
+  color: rgba(112, 139, 145, 0.72);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.yt-review-access-message.is-error {
+  color: #ef978a;
+}
+
+.yt-review-access-message.is-success {
+  color: #9ccc9e;
+}
+
+.yt-review-access-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(217, 187, 122, 0.25);
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(30, 62, 68, 0.9), rgba(12, 40, 49, 0.92));
+  color: rgba(229, 218, 186, 0.9);
+  font-size: 9px;
+  font-weight: 610;
+  letter-spacing: 0.055em;
+  cursor: pointer;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+  transition:
+    border-color var(--yt-fast),
+    background var(--yt-fast),
+    box-shadow var(--yt-fast),
+    transform var(--yt-fast) var(--yt-ease-out),
+    opacity var(--yt-fast);
+}
+
+.yt-review-access-submit:not(:disabled):hover {
+  border-color: rgba(236, 208, 151, 0.42);
+  background: linear-gradient(135deg, rgba(37, 72, 77, 0.94), rgba(15, 47, 56, 0.96));
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.15), inset 0 1px rgba(255, 255, 255, 0.055);
+  transform: translateY(-1px);
+}
+
+.yt-review-access-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.yt-review-access-submit svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.65;
+}
+
+.yt-review-access-spinner {
+  animation: yt-auth-spin 1s linear infinite;
+}
+
+@media (max-width: 620px) {
+  .yt-review-access-surface {
+    padding: 15px;
+  }
+
+  .yt-review-access-cells {
+    gap: 5px;
+  }
+
+  .yt-review-access-cell {
+    height: 43px;
+    border-radius: 9px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 390px) {
+  .yt-review-access-surface {
+    padding-inline: 13px;
+  }
+
+  .yt-review-access-cells {
+    gap: 4px;
+  }
+
+  .yt-review-access-cell {
+    height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-review-access-trigger:hover,
+  .yt-review-access-trigger[aria-expanded="true"] > svg,
+  .yt-review-access-cell:focus,
+  .yt-review-access-submit:not(:disabled):hover {
+    transform: none;
+  }
+
+  .yt-review-access-spinner {
+    animation: none !important;
   }
 }

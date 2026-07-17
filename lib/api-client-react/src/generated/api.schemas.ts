@@ -9,6 +9,156 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface AuthFeatures {
+  registrationEnabled: boolean;
+  passwordResetEnabled: boolean;
+  emailVerificationEnabled: boolean;
+  /** True only when the nonproduction, loopback-bound, explicitly enabled Review Access route is available. */
+  reviewAccessEnabled: boolean;
+}
+
+export interface AuthStatus {
+  available: boolean;
+  features: AuthFeatures;
+  /** @nullable */
+  message: string | null;
+}
+
+export type SessionState = typeof SessionState[keyof typeof SessionState];
+
+
+export const SessionState = {
+  guest: 'guest',
+  authenticated: 'authenticated',
+  expired: 'expired',
+} as const;
+
+/**
+ * Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.
+ */
+export type SessionType = typeof SessionType[keyof typeof SessionType];
+
+
+export const SessionType = {
+  guest: 'guest',
+  user: 'user',
+  development_review: 'development_review',
+} as const;
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  /** @nullable */
+  displayName: string | null;
+  emailVerified: boolean;
+}
+
+export interface SessionEnvelope {
+  state: SessionState;
+  sessionType: SessionType;
+  user: SessionUser | null;
+  /** @nullable */
+  expiresAt: string | null;
+  /**
+     * Synchronizer token for unsafe requests in this session; never a session credential.
+     * @minLength 32
+     */
+  csrfToken: string;
+}
+
+export interface SignInInput {
+  /** @maxLength 320 */
+  email: string;
+  /**
+     * @minLength 1
+     * @maxLength 1024
+     */
+  password: string;
+}
+
+export interface ReviewAccessInput {
+  /**
+     * Six-digit local review code. The configured value remains server-side and is never returned by the API.
+     * @minLength 6
+     * @maxLength 6
+     * @pattern ^[0-9]{6}$
+     */
+  code: string;
+}
+
+export interface RegisterInput {
+  /** @maxLength 320 */
+  email: string;
+  /**
+     * @minLength 12
+     * @maxLength 256
+     */
+  password: string;
+  /**
+     * Optional presentation name. Null, omission, or an empty/whitespace-only value is stored as no display name.
+     * @maxLength 100
+     * @nullable
+     */
+  displayName?: string | null;
+}
+
+export interface ForgotPasswordInput {
+  /** @maxLength 320 */
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  /**
+     * @minLength 32
+     * @maxLength 2048
+     */
+  token: string;
+  /**
+     * @minLength 12
+     * @maxLength 256
+     */
+  password: string;
+}
+
+export interface CompleteEmailVerificationInput {
+  /**
+     * @minLength 32
+     * @maxLength 2048
+     */
+  token: string;
+}
+
+export interface GenericActionResponse {
+  accepted: boolean;
+  message: string;
+}
+
+export interface DevelopmentTokenActionResponse {
+  accepted: boolean;
+  message: string;
+  /** Explicitly gated nonproduction-only token channel enabled by AUTH_EXPOSE_DEV_TOKENS; never present in production. A forgot-password value may be a nonpersisted decoy for an unknown or limited request. */
+  developmentToken?: string;
+}
+
+export type AuthErrorCode = typeof AuthErrorCode[keyof typeof AuthErrorCode];
+
+
+export const AuthErrorCode = {
+  invalid_request: 'invalid_request',
+  invalid_credentials: 'invalid_credentials',
+  unauthorized: 'unauthorized',
+  csrf_invalid: 'csrf_invalid',
+  session_expired: 'session_expired',
+  rate_limited: 'rate_limited',
+  unavailable: 'unavailable',
+  ownership_migration_required: 'ownership_migration_required',
+} as const;
+
+export interface AuthError {
+  code: AuthErrorCode;
+  message: string;
+}
+
 export type JournalEntrySide = typeof JournalEntrySide[keyof typeof JournalEntrySide];
 
 
@@ -517,6 +667,36 @@ export interface RiskConfigInput {
      */
   maxDrawdownAlert: number;
 }
+
+/**
+ * Invalid authentication request
+ */
+export type InvalidAuthRequestResponse = AuthError;
+
+/**
+ * Missing, expired, or revoked authenticated/session context
+ */
+export type AuthRequiredResponse = AuthError;
+
+/**
+ * Request origin or synchronizer CSRF verification failed
+ */
+export type RequestOriginRejectedResponse = AuthError;
+
+/**
+ * Authentication service or storage unavailable
+ */
+export type AuthUnavailableResponse = AuthError;
+
+/**
+ * Authentication service unavailable or user-data ownership migration required
+ */
+export type OwnershipOrAuthUnavailableResponse = AuthError;
+
+/**
+ * Synchronizer token returned in SessionEnvelope for the current server-side session.
+ */
+export type CsrfTokenParameter = string;
 
 export type GetMarketQuotesParams = {
 /**

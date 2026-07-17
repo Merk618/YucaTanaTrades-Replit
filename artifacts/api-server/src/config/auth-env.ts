@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { isIP } from "node:net";
 import { z } from "zod";
 
@@ -11,6 +11,11 @@ export interface AuthEnvironment {
     registration: boolean;
     passwordReset: boolean;
     emailVerification: boolean;
+  };
+  reviewAccess: {
+    enabled: boolean;
+    codeHmac: string | null;
+    sessionTtlMs: number;
   };
   sessionSecret: string;
   generatedDevelopmentSecret: boolean;
@@ -61,6 +66,9 @@ const rawEnvironmentSchema = z.object({
   AUTH_REGISTRATION_ENABLED: booleanFromEnvironment.optional(),
   AUTH_PASSWORD_RESET_ENABLED: booleanFromEnvironment.optional(),
   AUTH_EMAIL_VERIFICATION_ENABLED: booleanFromEnvironment.optional(),
+  MERIDIAN_REVIEW_ACCESS_ENABLED: booleanFromEnvironment.default("false"),
+  MERIDIAN_REVIEW_ACCESS_CODE: z.string().optional(),
+  MERIDIAN_REVIEW_SESSION_TTL_SECONDS: integerFromEnvironment.optional(),
   SESSION_SECRET: z.string().optional(),
   DATABASE_URL: z.string().optional(),
   AUTH_STORE: z.enum(["database", "memory"]).optional(),
@@ -135,6 +143,13 @@ function validateSecret(secret: string): void {
       "SESSION_SECRET must contain at least 32 UTF-8 bytes and 12 distinct characters.",
     );
   }
+}
+
+function reviewCodeHmac(secret: string, code: string): string {
+  const domainKey = createHmac("sha256", secret)
+    .update("ytt/development-review-access-code/v1")
+    .digest();
+  return createHmac("sha256", domainKey).update(code).digest("hex");
 }
 
 function parseOrigins(
@@ -232,6 +247,7 @@ export function loadAuthEnvironment(
     production,
   );
   const bindHost = parseBindHost(raw.AUTH_BIND_HOST, production);
+  const trustProxy = parseTrustProxy(raw.AUTH_TRUST_PROXY);
 
   if (production && storeMode !== "database") {
     throw new Error("AUTH_STORE=memory is forbidden in production.");
@@ -290,6 +306,45 @@ export function loadAuthEnvironment(
   }
   validateSecret(sessionSecret);
 
+  const reviewAccessEnabled =
+    !production && raw.MERIDIAN_REVIEW_ACCESS_ENABLED;
+  if (reviewAccessEnabled) {
+    if (!/^\d{6}$/.test(raw.MERIDIAN_REVIEW_ACCESS_CODE ?? "")) {
+      throw new Error(
+        "MERIDIAN_REVIEW_ACCESS_CODE must be exactly six digits when Review Access is enabled.",
+      );
+    }
+    if (storeMode !== "memory") {
+      throw new Error(
+        "Review Access requires AUTH_STORE=memory so no review principal is persisted.",
+      );
+    }
+    if (bindHost !== "127.0.0.1" && bindHost !== "::1") {
+      throw new Error(
+        "Review Access requires AUTH_BIND_HOST to be an exact loopback IP.",
+      );
+    }
+    if (
+      [...allowedOrigins].some(
+        (origin) => !isLoopbackHostname(new URL(origin).hostname),
+      )
+    ) {
+      throw new Error("Review Access requires loopback-only application origins.");
+    }
+    if (trustProxy !== false) {
+      throw new Error("Review Access does not permit trusted proxy configuration.");
+    }
+  }
+
+  const reviewSessionTtlMs =
+    boundedSeconds(
+      raw.MERIDIAN_REVIEW_SESSION_TTL_SECONDS,
+      30 * 60,
+      5 * 60,
+      60 * 60,
+      "MERIDIAN_REVIEW_SESSION_TTL_SECONDS",
+    ) * 1000;
+
   return {
     nodeEnv: raw.NODE_ENV,
     enabled: raw.AUTH_ENABLED ?? true,
@@ -301,6 +356,13 @@ export function loadAuthEnvironment(
       emailVerification:
         raw.AUTH_EMAIL_VERIFICATION_ENABLED ??
         (!production && raw.AUTH_EXPOSE_DEV_TOKENS),
+    },
+    reviewAccess: {
+      enabled: reviewAccessEnabled,
+      codeHmac: reviewAccessEnabled
+        ? reviewCodeHmac(sessionSecret, raw.MERIDIAN_REVIEW_ACCESS_CODE!)
+        : null,
+      sessionTtlMs: reviewSessionTtlMs,
     },
     sessionSecret,
     generatedDevelopmentSecret,
@@ -321,7 +383,7 @@ export function loadAuthEnvironment(
       path: "/",
     },
     allowedOrigins,
-    trustProxy: parseTrustProxy(raw.AUTH_TRUST_PROXY),
+    trustProxy,
     exposeDevelopmentTokens: raw.AUTH_EXPOSE_DEV_TOKENS,
     userDataMigrationReady: false,
     userDataStatus: "migration_required",

@@ -24,7 +24,8 @@ export const GetAuthStatusResponse = zod.object({
   "features": zod.object({
   "registrationEnabled": zod.boolean(),
   "passwordResetEnabled": zod.boolean(),
-  "emailVerificationEnabled": zod.boolean()
+  "emailVerificationEnabled": zod.boolean(),
+  "reviewAccessEnabled": zod.boolean().describe('True only when the nonproduction, loopback-bound, explicitly enabled Review Access route is available.')
 }),
   "message": zod.string().nullable()
 })
@@ -40,6 +41,7 @@ export const getCurrentSessionResponseCsrfTokenMin = 32;
 
 export const GetCurrentSessionResponse = zod.object({
   "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "sessionType": zod.enum(['guest', 'user', 'development_review']).describe('Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.'),
   "user": zod.union([zod.object({
   "id": zod.string().uuid(),
   "email": zod.string().email(),
@@ -80,6 +82,7 @@ export const signInResponseCsrfTokenMin = 32;
 
 export const SignInResponse = zod.object({
   "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "sessionType": zod.enum(['guest', 'user', 'development_review']).describe('Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.'),
   "user": zod.union([zod.object({
   "id": zod.string().uuid(),
   "email": zod.string().email(),
@@ -88,6 +91,48 @@ export const SignInResponse = zod.object({
 }),zod.null()]),
   "expiresAt": zod.coerce.date().nullable(),
   "csrfToken": zod.string().min(signInResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
+})
+
+
+/**
+ * Development-only Review Access for the local Meridian OS visual-review workflow. The route is registered only when the API is running outside production, an explicit server-side feature flag is enabled, and the API is bound to loopback. It preserves the current opaque-cookie, synchronizer CSRF, Origin/Referer, rotation, expiration, revocation, and authentication-rate-limit controls. The configured access code remains server-side and is never returned. Invalid codes receive the same generic credential response. Successful access creates only a short-lived, nonpersistent development_review principal; it does not create a database user or grant production privileges.
+ * @summary Enter a local nonproduction visual-review session
+ */
+export const createDevelopmentReviewSessionHeaderXCSRFTokenMin = 32;
+export const createDevelopmentReviewSessionHeaderXCSRFTokenMax = 256;
+
+
+
+export const CreateDevelopmentReviewSessionHeader = zod.object({
+  "X-CSRF-Token": zod.string().min(createDevelopmentReviewSessionHeaderXCSRFTokenMin).max(createDevelopmentReviewSessionHeaderXCSRFTokenMax).describe('Synchronizer token returned in SessionEnvelope for the current server-side session.')
+})
+
+export const createDevelopmentReviewSessionBodyCodeMin = 6;
+export const createDevelopmentReviewSessionBodyCodeMax = 6;
+
+
+export const createDevelopmentReviewSessionBodyCodeRegExp = new RegExp('^[0-9]{6}$');
+
+
+export const CreateDevelopmentReviewSessionBody = zod.object({
+  "code": zod.string().min(createDevelopmentReviewSessionBodyCodeMin).max(createDevelopmentReviewSessionBodyCodeMax).regex(createDevelopmentReviewSessionBodyCodeRegExp).describe('Six-digit local review code. The configured value remains server-side and is never returned by the API.')
+})
+
+export const createDevelopmentReviewSessionResponseCsrfTokenMin = 32;
+
+
+
+export const CreateDevelopmentReviewSessionResponse = zod.object({
+  "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "sessionType": zod.enum(['guest', 'user', 'development_review']).describe('Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.'),
+  "user": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "displayName": zod.string().nullable(),
+  "emailVerified": zod.boolean()
+}),zod.null()]),
+  "expiresAt": zod.coerce.date().nullable(),
+  "csrfToken": zod.string().min(createDevelopmentReviewSessionResponseCsrfTokenMin).describe('Synchronizer token for unsafe requests in this session; never a session credential.')
 })
 
 
@@ -137,6 +182,7 @@ export const signOutResponseCsrfTokenMin = 32;
 
 export const SignOutResponse = zod.object({
   "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "sessionType": zod.enum(['guest', 'user', 'development_review']).describe('Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.'),
   "user": zod.union([zod.object({
   "id": zod.string().uuid(),
   "email": zod.string().email(),
@@ -166,6 +212,7 @@ export const signOutAllDevicesResponseCsrfTokenMin = 32;
 
 export const SignOutAllDevicesResponse = zod.object({
   "state": zod.enum(['guest', 'authenticated', 'expired']),
+  "sessionType": zod.enum(['guest', 'user', 'development_review']).describe('Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.'),
   "user": zod.union([zod.object({
   "id": zod.string().uuid(),
   "email": zod.string().email(),

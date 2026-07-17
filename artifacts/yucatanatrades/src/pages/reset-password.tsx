@@ -7,6 +7,7 @@ import { useOneTimeToken } from "@/auth/use-one-time-token";
 import { AuthField, AuthSubmitButton } from "@/components/auth/auth-field";
 import { AuthActions, AuthFrame, AuthNotice } from "@/components/auth/auth-frame";
 import { AuthFeatureUnavailable } from "@/components/auth/auth-status-surface";
+import { resolveResetPasswordSurface } from "./reset-password-surface";
 
 interface ResetPasswordForm {
   password: string;
@@ -20,6 +21,11 @@ export default function ResetPasswordPage() {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [completed, setCompleted] = React.useState(false);
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<ResetPasswordForm>();
+  const surface = resolveResetPasswordSurface({
+    enabled,
+    completed,
+    hasToken: Boolean(token),
+  });
 
   const submit = handleSubmit(async (values) => {
     setServerError(null);
@@ -38,18 +44,18 @@ export default function ResetPasswordPage() {
       title="Set a new password"
       description="A successful reset consumes the one-time token and revokes prior authenticated sessions."
     >
-      {!enabled ? (
+      {surface === "unavailable" ? (
         <AuthFeatureUnavailable
           title="Password reset is unavailable"
           description="The recovery feature is not configured, so no password has been changed."
         />
-      ) : !token ? (
+      ) : surface === "completed" ? (
+        <AuthNotice tone="success">Your password was reset. Sign in with the new password.</AuthNotice>
+      ) : surface === "token-required" ? (
         <AuthFeatureUnavailable
           title="Reset link required"
           description="Open a valid one-time recovery link to continue."
         />
-      ) : completed ? (
-        <AuthNotice tone="success">Your password was reset. Sign in with the new password.</AuthNotice>
       ) : (
         <form className="yt-auth-form" onSubmit={submit} noValidate>
           {serverError && <AuthNotice tone="error">{serverError}</AuthNotice>}

@@ -1,8 +1,9 @@
 import { once } from "node:events";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../app";
+import { domainHmac } from "../auth/crypto";
 import { createAuthRuntime, type AuthRuntime } from "../auth/runtime";
 import type { AuthEnvironment } from "../config/auth-env";
 
@@ -10,6 +11,9 @@ const TRUSTED_ORIGIN = "https://app.yucatanatrades.test";
 const TEST_SECRET =
   "auth-http-contract-test/2026-07-13/meridian-session-foundation";
 const PASSWORD = "correct horse battery staple";
+const TEST_REVIEW_CODE = "731905";
+const INVALID_REVIEW_CODE = "084216";
+const REVIEW_CODE_DOMAIN = "ytt/development-review-access-code/v1";
 
 interface SessionUserWire {
   id: string;
@@ -20,6 +24,7 @@ interface SessionUserWire {
 
 interface SessionEnvelopeWire {
   state: "guest" | "authenticated" | "expired";
+  sessionType: "guest" | "user" | "development_review";
   user: SessionUserWire | null;
   expiresAt: string | null;
   csrfToken: string;
@@ -36,14 +41,23 @@ interface Harness {
   server: Server;
 }
 
-function createTestEnvironment(): AuthEnvironment {
+function createTestEnvironment(options: {
+  nodeEnv?: AuthEnvironment["nodeEnv"];
+  reviewAccess?: Partial<AuthEnvironment["reviewAccess"]>;
+} = {}): AuthEnvironment {
   return {
-    nodeEnv: "test",
+    nodeEnv: options.nodeEnv ?? "test",
     enabled: true,
     features: {
       registration: true,
       passwordReset: true,
       emailVerification: true,
+    },
+    reviewAccess: {
+      enabled: false,
+      codeHmac: null,
+      sessionTtlMs: 30 * 60_000,
+      ...options.reviewAccess,
     },
     sessionSecret: TEST_SECRET,
     generatedDevelopmentSecret: false,
@@ -80,8 +94,9 @@ function createTestEnvironment(): AuthEnvironment {
   };
 }
 
-async function startHarness(): Promise<Harness> {
-  const environment = createTestEnvironment();
+async function startHarness(
+  environment = createTestEnvironment(),
+): Promise<Harness> {
   const runtime = createAuthRuntime(environment);
   const server = createApp({ environment, runtime }).listen(0, "127.0.0.1");
   await once(server, "listening");
@@ -127,6 +142,7 @@ function expectSessionEnvelope(
   expect(Object.keys(body).sort()).toEqual([
     "csrfToken",
     "expiresAt",
+    "sessionType",
     "state",
     "user",
   ]);
@@ -146,6 +162,7 @@ async function getGuest(harness: Harness): Promise<{
   expect(response.status).toBe(200);
   expectSessionEnvelope(body, "guest");
   expect(body.user).toBeNull();
+  expect(body.sessionType).toBe("guest");
   return { body, cookie: cookiePair(response), response };
 }
 
@@ -181,6 +198,7 @@ async function register(
   expect(response.status).toBe(201);
   expectSessionEnvelope(body, "authenticated");
   expect(body.user).not.toBeNull();
+  expect(body.sessionType).toBe("user");
   return { body, cookie: cookiePair(response), guest, response };
 }
 
@@ -205,9 +223,303 @@ describe("HTTP authentication contract", () => {
         registrationEnabled: true,
         passwordResetEnabled: true,
         emailVerificationEnabled: true,
+        reviewAccessEnabled: false,
       },
       message: null,
     });
+  });
+
+  it("advertises and grants Review Access only when its development environment flag is active", async () => {
+    await closeServer(harness.server);
+    harness = await startHarness(
+      createTestEnvironment({
+        reviewAccess: {
+          enabled: true,
+          codeHmac: domainHmac(
+            TEST_SECRET,
+            REVIEW_CODE_DOMAIN,
+            TEST_REVIEW_CODE,
+          ),
+          sessionTtlMs: 10 * 60_000,
+        },
+      }),
+    );
+
+    const status = await fetch(`${harness.baseUrl}/api/auth/status`);
+    expect(status.status).toBe(200);
+    await expect(readJson(status)).resolves.toEqual({
+      available: true,
+      features: {
+        registrationEnabled: true,
+        passwordResetEnabled: true,
+        emailVerificationEnabled: true,
+        reviewAccessEnabled: true,
+      },
+      message: null,
+    });
+
+    const guest = await getGuest(harness);
+    const response = await fetch(`${harness.baseUrl}/api/auth/review-access`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: guest.cookie,
+        origin: TRUSTED_ORIGIN,
+        "x-csrf-token": guest.body.csrfToken,
+      },
+      body: JSON.stringify({ code: TEST_REVIEW_CODE }),
+    });
+    const body = await readJson<SessionEnvelopeWire>(response);
+    const reviewCookie = cookiePair(response);
+
+    expect(response.status).toBe(200);
+    expectSessionEnvelope(body, "authenticated");
+    expect(body.sessionType).toBe("development_review");
+    expect(body.user).toEqual({
+      id: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ),
+      email: "visual-review@local.yucatanatrades.test",
+      displayName: "Visual Review",
+      emailVerified: false,
+    });
+    expect(cookieToken(reviewCookie)).not.toBe(cookieToken(guest.cookie));
+    expect(body.csrfToken).not.toBe(guest.body.csrfToken);
+    expect(JSON.stringify(body)).not.toContain(TEST_REVIEW_CODE);
+    await expect(
+      harness.runtime.store.findUserById(body.user!.id),
+    ).resolves.toBeNull();
+
+    const current = await fetch(`${harness.baseUrl}/api/auth/session`, {
+      headers: { cookie: reviewCookie },
+    });
+    expect(current.status).toBe(200);
+    await expect(readJson<SessionEnvelopeWire>(current)).resolves.toEqual(body);
+
+    for (const path of [
+      "/api/bots/status",
+      "/api/market/health?refresh=true",
+    ]) {
+      const protectedRoute = await fetch(`${harness.baseUrl}${path}`, {
+        headers: { cookie: reviewCookie },
+      });
+      expect(protectedRoute.status).toBe(401);
+      await expect(readJson<ErrorWire>(protectedRoute)).resolves.toEqual({
+        code: "unauthorized",
+        message: "Authentication is required.",
+      });
+    }
+
+    const providerMutation = await fetch(
+      `${harness.baseUrl}/api/settings/credentials`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: reviewCookie,
+          origin: TRUSTED_ORIGIN,
+          "x-csrf-token": body.csrfToken,
+        },
+        body: JSON.stringify({ credentials: {} }),
+      },
+    );
+    expect(providerMutation.status).toBe(401);
+    await expect(readJson<ErrorWire>(providerMutation)).resolves.toEqual({
+      code: "unauthorized",
+      message: "Authentication is required.",
+    });
+
+    const signOutAll = await fetch(
+      `${harness.baseUrl}/api/auth/sign-out-all`,
+      {
+        method: "POST",
+        headers: {
+          cookie: reviewCookie,
+          origin: TRUSTED_ORIGIN,
+          "x-csrf-token": body.csrfToken,
+        },
+      },
+    );
+    expect(signOutAll.status).toBe(401);
+    await expect(readJson<ErrorWire>(signOutAll)).resolves.toEqual({
+      code: "unauthorized",
+      message: "Authentication is required.",
+    });
+
+    const signOut = await fetch(`${harness.baseUrl}/api/auth/sign-out`, {
+      method: "POST",
+      headers: {
+        cookie: reviewCookie,
+        origin: TRUSTED_ORIGIN,
+        "x-csrf-token": body.csrfToken,
+      },
+    });
+    const signedOutBody = await readJson<SessionEnvelopeWire>(signOut);
+    expect(signOut.status).toBe(200);
+    expectSessionEnvelope(signedOutBody, "guest");
+    expect(signedOutBody.sessionType).toBe("guest");
+    expect(signedOutBody.user).toBeNull();
+
+    const revoked = await fetch(`${harness.baseUrl}/api/auth/session`, {
+      headers: { cookie: reviewCookie },
+    });
+    const revokedBody = await readJson<SessionEnvelopeWire>(revoked);
+    expect(revoked.status).toBe(200);
+    expectSessionEnvelope(revokedBody, "expired");
+    expect(revokedBody.sessionType).toBe("guest");
+  });
+
+  it("keeps Review Access behind the existing Origin and CSRF protections", async () => {
+    await closeServer(harness.server);
+    harness = await startHarness(
+      createTestEnvironment({
+        reviewAccess: {
+          enabled: true,
+          codeHmac: domainHmac(
+            TEST_SECRET,
+            REVIEW_CODE_DOMAIN,
+            TEST_REVIEW_CODE,
+          ),
+        },
+      }),
+    );
+    const guest = await getGuest(harness);
+    const request = (headers: Record<string, string>) =>
+      fetch(`${harness.baseUrl}/api/auth/review-access`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify({ code: TEST_REVIEW_CODE }),
+      });
+
+    const untrusted = await request({
+      cookie: guest.cookie,
+      origin: "https://attacker.example",
+      "x-csrf-token": guest.body.csrfToken,
+    });
+    expect(untrusted.status).toBe(403);
+    await expect(readJson<ErrorWire>(untrusted)).resolves.toEqual({
+      code: "csrf_invalid",
+      message: "Request origin verification failed.",
+    });
+
+    const missingCsrf = await request({
+      cookie: guest.cookie,
+      origin: TRUSTED_ORIGIN,
+    });
+    expect(missingCsrf.status).toBe(403);
+    await expect(readJson<ErrorWire>(missingCsrf)).resolves.toEqual({
+      code: "csrf_invalid",
+      message: "Request verification failed.",
+    });
+  });
+
+  it("uses one generic rate-limited path for malformed and invalid Review Access bodies", async () => {
+    await closeServer(harness.server);
+    harness = await startHarness(
+      createTestEnvironment({
+        reviewAccess: {
+          enabled: true,
+          codeHmac: domainHmac(
+            TEST_SECRET,
+            REVIEW_CODE_DOMAIN,
+            TEST_REVIEW_CODE,
+          ),
+        },
+      }),
+    );
+    const guest = await getGuest(harness);
+    const auditSpy = vi.spyOn(harness.runtime.store, "appendAuditEvent");
+    const attempt = (rawBody: string | undefined) =>
+      fetch(`${harness.baseUrl}/api/auth/review-access`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: guest.cookie,
+          origin: TRUSTED_ORIGIN,
+          "x-csrf-token": guest.body.csrfToken,
+        },
+        ...(rawBody === undefined ? {} : { body: rawBody }),
+      });
+
+    const deniedBodies = [
+      JSON.stringify({ code: INVALID_REVIEW_CODE }),
+      undefined,
+      JSON.stringify({}),
+      JSON.stringify({ code: 731_905 }),
+      JSON.stringify({ code: "9".repeat(65) }),
+    ];
+    for (const rawBody of deniedBodies) {
+      const denied = await attempt(rawBody);
+      expect(denied.status).toBe(401);
+      await expect(readJson<ErrorWire>(denied)).resolves.toEqual({
+        code: "invalid_credentials",
+        message: "Review access could not be completed.",
+      });
+    }
+
+    const limited = await attempt(JSON.stringify({ code: INVALID_REVIEW_CODE }));
+    expect(limited.status).toBe(429);
+    await expect(readJson<ErrorWire>(limited)).resolves.toEqual({
+      code: "rate_limited",
+      message: "Too many requests. Please try again later.",
+    });
+
+    const reviewAudits = auditSpy.mock.calls
+      .map(([event]) => event)
+      .filter((event) => event.event === "review_access");
+    expect(reviewAudits).toHaveLength(6);
+    expect(reviewAudits.slice(0, 5).every((event) =>
+      event.outcome === "failure" && event.code === "REVIEW_ACCESS_DENIED"
+    )).toBe(true);
+    expect(reviewAudits.at(-1)).toMatchObject({
+      outcome: "blocked",
+      code: "RATE_LIMITED",
+    });
+    expect(JSON.stringify(reviewAudits)).not.toContain(INVALID_REVIEW_CODE);
+    expect(JSON.stringify(reviewAudits)).not.toContain("9".repeat(65));
+  });
+
+  it("returns 404 for Review Access when disabled and when the server is production", async () => {
+    const disabled = await fetch(
+      `${harness.baseUrl}/api/auth/review-access`,
+      { method: "POST" },
+    );
+    expect(disabled.status).toBe(404);
+
+    await closeServer(harness.server);
+    harness = await startHarness(
+      createTestEnvironment({
+        nodeEnv: "production",
+        reviewAccess: {
+          enabled: true,
+          codeHmac: domainHmac(
+            TEST_SECRET,
+            REVIEW_CODE_DOMAIN,
+            TEST_REVIEW_CODE,
+          ),
+        },
+      }),
+    );
+    const productionStatus = await fetch(
+      `${harness.baseUrl}/api/auth/status`,
+    );
+    expect(productionStatus.status).toBe(200);
+    await expect(readJson(productionStatus)).resolves.toEqual({
+      available: true,
+      features: {
+        registrationEnabled: true,
+        passwordResetEnabled: true,
+        emailVerificationEnabled: true,
+        reviewAccessEnabled: false,
+      },
+      message: null,
+    });
+
+    const production = await fetch(
+      `${harness.baseUrl}/api/auth/review-access`,
+      { method: "POST" },
+    );
+    expect(production.status).toBe(404);
   });
 
   it("issues an opaque Secure HttpOnly guest cookie and a distinct synchronizer token", async () => {

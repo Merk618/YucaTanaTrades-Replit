@@ -120,13 +120,22 @@ export function MarketChart({
     >
       <header className="yt-chart-header">
         <div className="yt-chart-identity">
-          <button className="yt-symbol-select" type="button" aria-label="Select symbol, preview fixed to S&P 500">
-            <span>
-              <strong id={routeMode ? "yt-route-chart-title" : "yt-dashboard-chart-title"}>{data.name}</strong>
-              <small>{data.symbol}</small>
-            </span>
-            <ChevronDown aria-hidden="true" />
-          </button>
+          {routeMode ? (
+            <div className="yt-symbol-select is-static" aria-label={`${data.name}, ${data.symbol}, selected in the chart workspace`}>
+              <span>
+                <strong id="yt-route-chart-title">{data.name}</strong>
+                <small>{data.symbol}</small>
+              </span>
+            </div>
+          ) : (
+            <button className="yt-symbol-select" type="button" aria-label="Select symbol, preview fixed to S&P 500">
+              <span>
+                <strong id="yt-dashboard-chart-title">{data.name}</strong>
+                <small>{data.symbol}</small>
+              </span>
+              <ChevronDown aria-hidden="true" />
+            </button>
+          )}
           <div className="yt-chart-quote">
             <strong>{data.displayValue}</strong>
             <span className={data.changePercent >= 0 ? "is-positive" : "is-negative"}>

@@ -14,6 +14,7 @@ const status: AuthStatus = {
     registrationEnabled: true,
     passwordResetEnabled: false,
     emailVerificationEnabled: false,
+    reviewAccessEnabled: false,
   },
 };
 
@@ -23,6 +24,7 @@ describe("auth runtime state", () => {
   it("accepts only server-provided identity for authenticated state", () => {
     const session: SessionEnvelope = {
       state: "authenticated",
+      sessionType: "user",
       csrfToken,
       expiresAt: "2026-07-14T12:00:00.000Z",
       user: {
@@ -42,6 +44,7 @@ describe("auth runtime state", () => {
     it(`keeps ${wireState} identity empty`, () => {
       const state = stateFromEnvelope(status, {
         state: wireState,
+        sessionType: "guest",
         csrfToken,
         expiresAt: null,
         user: null,
@@ -55,7 +58,7 @@ describe("auth runtime state", () => {
   it("fails closed when authentication status is unavailable", () => {
     const state = stateFromEnvelope(
       { ...status, available: false, message: "Maintenance" },
-      { state: "guest", csrfToken, expiresAt: null, user: null },
+      { state: "guest", sessionType: "guest", csrfToken, expiresAt: null, user: null },
     );
     assert.deepEqual(state, { kind: "unavailable", message: "Maintenance" });
     assert.equal(hasRefreshableSession(state), false);

@@ -54,11 +54,10 @@ export const staggerContainer: Variants = {
 };
 
 export const panelReveal: Variants = {
-  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: {
       duration: motionTokens.duration.panel,
       ease: motionTokens.ease.out,

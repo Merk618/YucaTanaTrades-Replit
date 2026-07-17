@@ -23,13 +23,14 @@ import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import VerifyEmailPage from "@/pages/verify-email";
+import { ChartsRoute } from "@/pages/charts-ui2";
+import { MarketsRoute } from "@/pages/markets-ui2";
 import {
-  ChartPreviewRoute,
-  MarketPreviewRoute,
-  PortfolioPreviewRoute,
-  ProviderUnavailableRoute,
-  ResearchPreviewRoute,
-} from "@/pages/preview-route";
+  AIHubRoute,
+  NewsRoute,
+  PortfolioRoute,
+  ResearchRoute,
+} from "@/pages/intelligence-routes-ui2";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,14 +46,14 @@ function WorkspaceRoutes() {
     <AppShell>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/markets"><MarketPreviewRoute /></Route>
-        <Route path="/markets/stocks"><MarketPreviewRoute /></Route>
-        <Route path="/markets/crypto"><MarketPreviewRoute /></Route>
-        <Route path="/charts"><ChartPreviewRoute /></Route>
-        <Route path="/portfolio"><PortfolioPreviewRoute /></Route>
-        <Route path="/research"><ResearchPreviewRoute /></Route>
-        <Route path="/news"><ProviderUnavailableRoute kind="news" /></Route>
-        <Route path="/ai-lab"><ProviderUnavailableRoute kind="ai" /></Route>
+        <Route path="/markets"><MarketsRoute /></Route>
+        <Route path="/markets/stocks"><MarketsRoute /></Route>
+        <Route path="/markets/crypto"><MarketsRoute /></Route>
+        <Route path="/charts"><ChartsRoute /></Route>
+        <Route path="/portfolio"><PortfolioRoute /></Route>
+        <Route path="/research"><ResearchRoute /></Route>
+        <Route path="/news"><NewsRoute /></Route>
+        <Route path="/ai-lab"><AIHubRoute /></Route>
         <Route path="/scanners" component={Scanners} />
         <Route path="/bots" component={Bots} />
         <Route path="/journal" component={Journal} />

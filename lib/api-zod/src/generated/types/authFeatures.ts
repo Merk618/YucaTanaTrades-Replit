@@ -10,4 +10,6 @@ export interface AuthFeatures {
   registrationEnabled: boolean;
   passwordResetEnabled: boolean;
   emailVerificationEnabled: boolean;
+  /** True only when the nonproduction, loopback-bound, explicitly enabled Review Access route is available. */
+  reviewAccessEnabled: boolean;
 }

@@ -7,6 +7,7 @@ import {
   authErrorSchema,
   authStatusSchema,
   genericActionResponseSchema,
+  reviewAccessSessionEnvelopeSchema,
   sessionEnvelopeSchema,
   type AuthErrorBody,
   type AuthErrorCode,
@@ -15,6 +16,7 @@ import {
   type ForgotPasswordInput,
   type GenericActionResponse,
   type RegisterInput,
+  type ReviewAccessInput,
   type ResetPasswordInput,
   type SessionEnvelope,
   type SignInInput,
@@ -61,6 +63,10 @@ export const authClient = {
 
   signIn(input: SignInInput): Promise<SessionEnvelope> {
     return request("/api/auth/sign-in", sessionEnvelopeSchema, jsonPost(input));
+  },
+
+  reviewAccess(input: ReviewAccessInput): Promise<SessionEnvelope> {
+    return request("/api/auth/review-access", reviewAccessSessionEnvelopeSchema, jsonPost(input));
   },
 
   register(input: RegisterInput): Promise<SessionEnvelope> {

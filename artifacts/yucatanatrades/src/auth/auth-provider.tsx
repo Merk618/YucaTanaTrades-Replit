@@ -18,6 +18,7 @@ import type {
   ForgotPasswordInput,
   GenericActionResponse,
   RegisterInput,
+  ReviewAccessInput,
   ResetPasswordInput,
   SessionEnvelope,
   SignInInput,
@@ -36,6 +37,7 @@ interface AuthContextValue {
   refresh: () => Promise<void>;
   validateSession: () => Promise<void>;
   signIn: (input: SignInInput) => Promise<void>;
+  reviewAccess: (input: ReviewAccessInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<void>;
@@ -218,6 +220,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     adoptEnvelope(status, envelope);
   }, [adoptEnvelope, runAuthMutation]);
 
+  const reviewAccess = React.useCallback(async (input: ReviewAccessInput) => {
+    const status = statusRef.current;
+    if (!status?.available || !status.features.reviewAccessEnabled) {
+      throw new Error("Review access is unavailable.");
+    }
+    const envelope = await runAuthMutation(() => authClient.reviewAccess(input));
+    adoptEnvelope(status, envelope);
+  }, [adoptEnvelope, runAuthMutation]);
+
   const register = React.useCallback(async (input: RegisterInput) => {
     const status = statusRef.current;
     if (!status?.available || !status.features.registrationEnabled) {
@@ -272,6 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refresh,
     validateSession,
     signIn,
+    reviewAccess,
     register,
     signOut,
     signOutAllDevices,
@@ -286,6 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     requestEmailVerification,
     requestPasswordReset,
+    reviewAccess,
     signIn,
     signOut,
     signOutAllDevices,

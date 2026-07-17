@@ -6,6 +6,7 @@ import { IntelligenceRail } from "@/components/ui1/intelligence-rail";
 import { SupportingAnalytics } from "@/components/ui1/supporting-analytics";
 import { dashboardDemo } from "@/data/ui1-demo";
 import { previewChartData } from "@/pages/preview-route";
+import { OverviewIntelligenceBand } from "@/components/ui2/overview-intelligence-band";
 
 export default function Home() {
   return (
@@ -62,6 +63,8 @@ export default function Home() {
           system={dashboardDemo.system}
         />
       </div>
+
+      <OverviewIntelligenceBand />
     </div>
   );
 }

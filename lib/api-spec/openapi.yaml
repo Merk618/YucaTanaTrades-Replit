@@ -138,6 +138,65 @@ paths:
         "503":
           $ref: "#/components/responses/AuthUnavailable"
 
+  /auth/review-access:
+    post:
+      operationId: createDevelopmentReviewSession
+      tags: [auth]
+      summary: Enter a local nonproduction visual-review session
+      description: >-
+        Development-only Review Access for the local Meridian OS visual-review workflow. The route is
+        registered only when the API is running outside production, an explicit server-side feature flag
+        is enabled, and the API is bound to loopback. It preserves the current opaque-cookie, synchronizer
+        CSRF, Origin/Referer, rotation, expiration, revocation, and authentication-rate-limit controls. The
+        configured access code remains server-side and is never returned. Invalid codes receive the same
+        generic credential response. Successful access creates only a short-lived, nonpersistent
+        development_review principal; it does not create a database user or grant production privileges.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewAccessInput"
+      responses:
+        "200":
+          description: Short-lived development review session created and the guest session identifier rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "401":
+          description: Generic access-code failure or missing/expired guest session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Request origin, Referer, or synchronizer CSRF verification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "404":
+          description: Review Access is unavailable because the route is not registered in this environment
+        "429":
+          description: Authentication rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "503":
+          $ref: "#/components/responses/AuthUnavailable"
+
   /auth/register:
     post:
       operationId: registerAccount
@@ -982,7 +1041,7 @@ components:
 
     AuthFeatures:
       type: object
-      required: [registrationEnabled, passwordResetEnabled, emailVerificationEnabled]
+      required: [registrationEnabled, passwordResetEnabled, emailVerificationEnabled, reviewAccessEnabled]
       properties:
         registrationEnabled:
           type: boolean
@@ -990,10 +1049,18 @@ components:
           type: boolean
         emailVerificationEnabled:
           type: boolean
+        reviewAccessEnabled:
+          type: boolean
+          description: True only when the nonproduction, loopback-bound, explicitly enabled Review Access route is available.
 
     SessionState:
       type: string
       enum: [guest, authenticated, expired]
+
+    SessionType:
+      type: string
+      enum: [guest, user, development_review]
+      description: Distinguishes normal guest and user sessions from the short-lived, nonpersistent local development-review principal.
 
     SessionUser:
       type: object
@@ -1012,10 +1079,12 @@ components:
 
     SessionEnvelope:
       type: object
-      required: [state, user, expiresAt, csrfToken]
+      required: [state, sessionType, user, expiresAt, csrfToken]
       properties:
         state:
           $ref: "#/components/schemas/SessionState"
+        sessionType:
+          $ref: "#/components/schemas/SessionType"
         user:
           oneOf:
             - $ref: "#/components/schemas/SessionUser"
@@ -1040,6 +1109,17 @@ components:
           type: string
           minLength: 1
           maxLength: 1024
+
+    ReviewAccessInput:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: "^[0-9]{6}$"
+          description: Six-digit local review code. The configured value remains server-side and is never returned by the API.
 
     RegisterInput:
       type: object

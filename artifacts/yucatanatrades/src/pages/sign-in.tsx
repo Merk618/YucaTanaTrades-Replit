@@ -10,6 +10,7 @@ import {
 } from "@/auth/return-to";
 import { AuthField, AuthSubmitButton } from "@/components/auth/auth-field";
 import { AuthActions, AuthFrame, AuthNotice } from "@/components/auth/auth-frame";
+import { ReviewAccessEntry } from "@/components/auth/review-access";
 
 interface SignInForm {
   email: string;
@@ -17,7 +18,7 @@ interface SignInForm {
 }
 
 export default function SignInPage() {
-  const { state, signIn } = useAuth();
+  const { state, signIn, reviewAccess } = useAuth();
   const search = useSearch();
   const returnTo = returnToFromSearch(search);
   const params = new URLSearchParams(search);
@@ -78,6 +79,11 @@ export default function SignInPage() {
           <Link href={authHrefWithReturnTo("/register", returnTo)}>Create account</Link>
         ) : <span>Registration closed</span>}
       </AuthActions>
+
+      <ReviewAccessEntry
+        enabled={import.meta.env.DEV && features?.reviewAccessEnabled === true}
+        onSubmit={reviewAccess}
+      />
     </AuthFrame>
   );
 }

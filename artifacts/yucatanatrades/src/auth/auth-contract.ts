@@ -13,6 +13,7 @@ export const authFeaturesSchema = z.object({
   registrationEnabled: z.boolean(),
   passwordResetEnabled: z.boolean(),
   emailVerificationEnabled: z.boolean(),
+  reviewAccessEnabled: z.boolean(),
 });
 
 export const authStatusSchema = z.object({
@@ -30,6 +31,7 @@ export const sessionUserSchema = z.object({
 
 export const sessionEnvelopeSchema = z.object({
   state: z.enum(["guest", "authenticated", "expired"]),
+  sessionType: z.enum(["guest", "user", "development_review"]),
   user: sessionUserSchema.nullable(),
   expiresAt: z.string().datetime().nullable(),
   csrfToken: z.string().min(32),
@@ -48,6 +50,13 @@ export const sessionEnvelopeSchema = z.object({
     });
   }
 });
+
+export const reviewAccessSessionEnvelopeSchema = sessionEnvelopeSchema.refine(
+  (value) =>
+    value.state === "authenticated" &&
+    value.sessionType === "development_review",
+  { message: "Review Access requires a development review session." },
+);
 
 export const genericActionResponseSchema = z.object({
   accepted: z.boolean(),
@@ -80,6 +89,10 @@ export type AuthErrorBody = z.infer<typeof authErrorSchema>;
 export interface SignInInput {
   email: string;
   password: string;
+}
+
+export interface ReviewAccessInput {
+  code: string;
 }
 
 export interface RegisterInput {

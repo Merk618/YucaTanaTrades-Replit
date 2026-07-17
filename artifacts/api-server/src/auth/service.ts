@@ -17,6 +17,8 @@ import type {
   AuthUserRecord,
   PublicAuthUser,
   RequestMetadata,
+  AuthSessionKind,
+  AuthSessionType,
 } from "./types";
 import { AuthEmailConflictError } from "./store-errors";
 
@@ -28,6 +30,11 @@ export interface AuthServiceConfig {
     registration: boolean;
     passwordReset: boolean;
     emailVerification: boolean;
+  };
+  reviewAccess: {
+    enabled: boolean;
+    codeHmac: string | null;
+    sessionTtlMs: number;
   };
   password: Argon2idOptions;
   session: {
@@ -48,6 +55,7 @@ export type AuthErrorCode =
   | "SESSION_EXPIRED"
   | "CSRF_INVALID"
   | "INVALID_CREDENTIALS"
+  | "REVIEW_ACCESS_DENIED"
   | "REGISTRATION_UNAVAILABLE"
   | "INVALID_OR_EXPIRED_RESET_TOKEN"
   | "INVALID_OR_EXPIRED_VERIFICATION_TOKEN"
@@ -69,6 +77,7 @@ export interface PresentedAuthSession {
   session: AuthSessionRecord;
   user: AuthUserRecord | null;
   csrfToken: string;
+  sessionType: AuthSessionType;
 }
 
 export interface AuthSessionEnvelope {
@@ -77,6 +86,7 @@ export interface AuthSessionEnvelope {
   cookieExpiresAt: Date;
   csrfToken: string;
   user: PublicAuthUser | null;
+  sessionType: AuthSessionType;
 }
 
 interface IssuedSession {
@@ -98,6 +108,11 @@ const RATE_RULES = {
   },
   signInIp: { scope: "sign-in-ip", limit: 10, windowMs: 15 * 60_000 },
   signInEmail: { scope: "sign-in-email", limit: 6, windowMs: 15 * 60_000 },
+  reviewAccessIp: {
+    scope: "review-access-ip",
+    limit: 5,
+    windowMs: 15 * 60_000,
+  },
   registrationIp: { scope: "registration-ip", limit: 5, windowMs: 60 * 60_000 },
   registrationEmail: {
     scope: "registration-email",
@@ -121,12 +136,30 @@ const RATE_RULES = {
   },
 } as const;
 
+const REVIEW_ACCESS_HMAC_DOMAIN = "ytt/development-review-access-code/v1";
+const REVIEW_EMAIL = "visual-review@local.yucatanatrades.test";
+
 function publicUser(user: AuthUserRecord): PublicAuthUser {
   return {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
     emailVerified: user.emailVerifiedAt !== null,
+  };
+}
+
+function developmentReviewUser(sessionId: string, now: Date): AuthUserRecord {
+  return {
+    id: sessionId,
+    email: REVIEW_EMAIL,
+    normalizedEmail: REVIEW_EMAIL,
+    displayName: "Visual Review",
+    passwordHash: "",
+    emailVerifiedAt: null,
+    disabledAt: null,
+    authVersion: 0,
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -215,6 +248,7 @@ export class AuthService {
           cookieExpiresAt: existing.session.absoluteExpiresAt,
           csrfToken: existing.csrfToken,
           user: existing.user ? publicUser(existing.user) : null,
+          sessionType: existing.sessionType,
         };
       }
     }
@@ -227,6 +261,7 @@ export class AuthService {
       cookieExpiresAt: guest.presented.session.absoluteExpiresAt,
       csrfToken: guest.presented.csrfToken,
       user: null,
+      sessionType: "guest",
     };
   }
 
@@ -257,6 +292,7 @@ export class AuthService {
     }
 
     let user: AuthUserRecord | null = null;
+    let sessionType: AuthSessionType = "guest";
     if (session.kind === "authenticated") {
       if (!session.userId || session.authVersion == null) {
         await this.store.revokeSession(session.id, now, "invalid_identity");
@@ -285,12 +321,28 @@ export class AuthService {
       await this.store.touchSession(session.id, now, idleExpiresAt);
       session.lastSeenAt = now;
       session.idleExpiresAt = idleExpiresAt;
+      sessionType = "user";
+    } else if (session.kind === "development_review") {
+      if (!this.config.reviewAccess.enabled) {
+        await this.store.revokeSession(session.id, now, "review_access_disabled");
+        return null;
+      }
+      user = developmentReviewUser(session.id, session.createdAt);
+      await this.store.touchSession(
+        session.id,
+        now,
+        session.absoluteExpiresAt,
+      );
+      session.lastSeenAt = now;
+      session.idleExpiresAt = session.absoluteExpiresAt;
+      sessionType = "development_review";
     }
 
     return {
       session,
       user,
       csrfToken: deriveSynchronizerToken(this.config.secret, session.id),
+      sessionType,
     };
   }
 
@@ -456,18 +508,101 @@ export class AuthService {
     return this.envelopeFromIssued(issued);
   }
 
+  async reviewAccess(
+    input: { code: string },
+    current: PresentedAuthSession,
+    metadata: RequestMetadata,
+  ): Promise<AuthSessionEnvelope> {
+    this.assertEnabled();
+    const allowed = await this.tryRate(
+      RATE_RULES.reviewAccessIp,
+      metadata.ipAddress,
+    );
+    if (!allowed) {
+      await this.audit(
+        "review_access",
+        "blocked",
+        "RATE_LIMITED",
+        null,
+        current.session.id,
+        metadata,
+      );
+      throw new AuthServiceError(
+        "RATE_LIMITED",
+        429,
+        "Too many requests. Please try again later.",
+      );
+    }
+
+    const configuredHmac = this.config.reviewAccess.codeHmac;
+    const submittedHmac = domainHmac(
+      this.config.secret,
+      REVIEW_ACCESS_HMAC_DOMAIN,
+      input.code,
+    );
+    const valid =
+      this.config.reviewAccess.enabled &&
+      current.session.kind === "guest" &&
+      configuredHmac !== null &&
+      safeHmacEqual(submittedHmac, configuredHmac);
+    if (!valid) {
+      await this.audit(
+        "review_access",
+        "failure",
+        "REVIEW_ACCESS_DENIED",
+        null,
+        current.session.id,
+        metadata,
+      );
+      throw new AuthServiceError(
+        "REVIEW_ACCESS_DENIED",
+        401,
+        "Review access could not be completed.",
+      );
+    }
+
+    await this.store.revokeSession(
+      current.session.id,
+      this.now(),
+      "rotated_after_review_access",
+    );
+    const issued = await this.issueSession(
+      null,
+      null,
+      current.session.id,
+      "development_review",
+    );
+    await this.audit(
+      "review_access",
+      "success",
+      "REVIEW_ACCESS_GRANTED",
+      null,
+      issued.presented.session.id,
+      metadata,
+    );
+    return this.envelopeFromIssued(issued);
+  }
+
   async signOut(
     current: PresentedAuthSession,
     metadata: RequestMetadata,
   ): Promise<AuthSessionEnvelope> {
-    const user = this.requireUser(current);
+    const isReview = current.session.kind === "development_review";
+    const user = isReview ? current.user : this.requireUser(current);
+    if (!user) {
+      throw new AuthServiceError(
+        "SESSION_REQUIRED",
+        401,
+        "Authentication is required.",
+      );
+    }
     const now = this.now();
     await this.store.revokeSession(current.session.id, now, "logout");
     await this.audit(
       "sign_out",
       "success",
       "SIGNED_OUT",
-      user.id,
+      isReview ? null : user.id,
       current.session.id,
       metadata,
     );
@@ -716,17 +851,23 @@ export class AuthService {
     userId: string | null,
     authVersion: number | null,
     rotatedFromSessionId: string | null,
+    kind?: AuthSessionKind,
   ): Promise<IssuedSession> {
     const now = this.now();
     const id = randomUUID();
     const rawToken = generateOpaqueToken();
     const csrfToken = deriveSynchronizerToken(this.config.secret, id);
-    const authenticated = userId !== null;
+    const sessionKind: AuthSessionKind =
+      kind ?? (userId !== null ? "authenticated" : "guest");
+    const authenticated = sessionKind === "authenticated";
+    const developmentReview = sessionKind === "development_review";
     const absoluteExpiresAt = new Date(
       now.getTime() +
-        (authenticated
-          ? this.config.session.absoluteTtlMs
-          : this.config.session.guestTtlMs),
+        (developmentReview
+          ? this.config.reviewAccess.sessionTtlMs
+          : authenticated
+            ? this.config.session.absoluteTtlMs
+            : this.config.session.guestTtlMs),
     );
     const idleExpiresAt = authenticated
       ? new Date(
@@ -739,7 +880,7 @@ export class AuthService {
     const session: AuthSessionRecord = {
       id,
       userId,
-      kind: authenticated ? "authenticated" : "guest",
+      kind: sessionKind,
       authVersion,
       tokenHmac: domainHmac(
         this.config.secret,
@@ -760,10 +901,23 @@ export class AuthService {
       revocationReason: null,
     };
     await this.store.createSession(session);
-    const user = userId ? await this.store.findUserById(userId) : null;
+    const user = developmentReview
+      ? developmentReviewUser(id, now)
+      : userId
+        ? await this.store.findUserById(userId)
+        : null;
     return {
       rawToken,
-      presented: { session, user, csrfToken },
+      presented: {
+        session,
+        user,
+        csrfToken,
+        sessionType: developmentReview
+          ? "development_review"
+          : authenticated
+            ? "user"
+            : "guest",
+      },
     };
   }
 
@@ -776,6 +930,7 @@ export class AuthService {
       cookieExpiresAt: issued.presented.session.absoluteExpiresAt,
       csrfToken: issued.presented.csrfToken,
       user: publicUser(user),
+      sessionType: issued.presented.sessionType,
     };
   }
 
@@ -789,6 +944,7 @@ export class AuthService {
       cookieExpiresAt: issued.presented.session.absoluteExpiresAt,
       csrfToken: issued.presented.csrfToken,
       user: null,
+      sessionType: "guest",
     };
   }
 

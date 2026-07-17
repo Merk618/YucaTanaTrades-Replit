@@ -62,6 +62,11 @@ export interface AuthMiddlewares {
     res: Response,
     next: NextFunction,
   ) => void;
+  requirePersistentUserSession: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => void;
   requireCsrf: (req: Request, res: Response, next: NextFunction) => void;
   requireTrustedOrigin: (
     req: Request,
@@ -141,6 +146,43 @@ export function createAuthMiddlewares(
 
     requireAuthenticatedSession(req, res, next) {
       if (req.authSession?.user) {
+        next();
+        return;
+      }
+      if (req.authFailure === "disabled") {
+        sendStructuredError(
+          res,
+          503,
+          "unavailable",
+          "Authentication is unavailable.",
+        );
+        return;
+      }
+      if (req.authFailure === "unavailable") {
+        sendStructuredError(
+          res,
+          503,
+          "unavailable",
+          "Authentication is unavailable.",
+        );
+        return;
+      }
+      const expired = req.authFailure === "expired";
+      sendStructuredError(
+        res,
+        401,
+        expired ? "session_expired" : "unauthorized",
+        expired
+          ? "The session has expired."
+          : "Authentication is required.",
+      );
+    },
+
+    requirePersistentUserSession(req, res, next) {
+      if (
+        req.authSession?.user &&
+        req.authSession.session.kind === "authenticated"
+      ) {
         next();
         return;
       }

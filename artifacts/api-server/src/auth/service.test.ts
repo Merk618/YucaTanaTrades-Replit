@@ -14,6 +14,9 @@ const TEST_SECRET =
   "auth-test-secret/2026-07-13/meridian-session-foundation";
 const PASSWORD = "correct horse battery staple";
 const REPLACEMENT_PASSWORD = "a newer correct horse battery staple";
+const TEST_REVIEW_CODE = "731905";
+const INVALID_REVIEW_CODE = "084216";
+const REVIEW_CODE_DOMAIN = "ytt/development-review-access-code/v1";
 const METADATA = {
   ipAddress: "203.0.113.20",
   requestId: "auth-service-test",
@@ -27,6 +30,11 @@ const BASE_CONFIG: AuthServiceConfig = {
     registration: true,
     passwordReset: true,
     emailVerification: true,
+  },
+  reviewAccess: {
+    enabled: false,
+    codeHmac: null,
+    sessionTtlMs: 30 * 60_000,
   },
   password: {
     memoryKiB: 32,
@@ -47,9 +55,10 @@ const BASE_CONFIG: AuthServiceConfig = {
 
 type ConfigOverrides = Omit<
   Partial<AuthServiceConfig>,
-  "features" | "password" | "session" | "tokenTtl"
+  "features" | "reviewAccess" | "password" | "session" | "tokenTtl"
 > & {
   features?: Partial<AuthServiceConfig["features"]>;
+  reviewAccess?: Partial<AuthServiceConfig["reviewAccess"]>;
   password?: Partial<AuthServiceConfig["password"]>;
   session?: Partial<AuthServiceConfig["session"]>;
   tokenTtl?: Partial<AuthServiceConfig["tokenTtl"]>;
@@ -70,6 +79,10 @@ function createHarness(overrides: ConfigOverrides = {}): Harness {
     ...BASE_CONFIG,
     ...overrides,
     features: { ...BASE_CONFIG.features, ...overrides.features },
+    reviewAccess: {
+      ...BASE_CONFIG.reviewAccess,
+      ...overrides.reviewAccess,
+    },
     password: { ...BASE_CONFIG.password, ...overrides.password },
     session: { ...BASE_CONFIG.session, ...overrides.session },
     tokenTtl: { ...BASE_CONFIG.tokenTtl, ...overrides.tokenTtl },
@@ -82,6 +95,20 @@ function createHarness(overrides: ConfigOverrides = {}): Harness {
     now: () => new Date(nowMs),
     advance(milliseconds: number) {
       nowMs += milliseconds;
+    },
+  };
+}
+
+function reviewAccessOverrides(sessionTtlMs = 10 * 60_000): ConfigOverrides {
+  return {
+    reviewAccess: {
+      enabled: true,
+      codeHmac: domainHmac(
+        TEST_SECRET,
+        REVIEW_CODE_DOMAIN,
+        TEST_REVIEW_CODE,
+      ),
+      sessionTtlMs,
     },
   };
 }
@@ -155,6 +182,7 @@ describe("AuthService session foundation", () => {
     const { envelope, presented } = await createGuest(harness);
 
     expect(envelope.state).toBe("guest");
+    expect(envelope.sessionType).toBe("guest");
     expect(envelope.user).toBeNull();
     expect(Buffer.from(envelope.cookieToken, "base64url")).toHaveLength(32);
     expect(presented.session.kind).toBe("guest");
@@ -195,6 +223,7 @@ describe("AuthService session foundation", () => {
 
     expect(registered.result.session).toMatchObject({
       state: "authenticated",
+      sessionType: "user",
       user: {
         email: "Trader@Example.COM",
         displayName: "Meridian Trader",
@@ -387,6 +416,208 @@ describe("AuthService session foundation", () => {
     await expect(
       harness.service.resolvePresentedSession(guestEnvelope.cookieToken),
     ).resolves.toBeNull();
+  });
+
+  it("grants a short-lived non-persistent review principal and rotates its guest session", async () => {
+    const harness = createHarness(reviewAccessOverrides());
+    let createUserCalls = 0;
+    harness.store.createUser = async () => {
+      createUserCalls += 1;
+      throw new Error("Review Access must never create a user.");
+    };
+    const guest = await createGuest(harness);
+
+    const review = await harness.service.reviewAccess(
+      { code: TEST_REVIEW_CODE },
+      guest.presented,
+      METADATA,
+    );
+
+    expect(review).toMatchObject({
+      state: "authenticated",
+      sessionType: "development_review",
+      user: {
+        displayName: "Visual Review",
+        email: "visual-review@local.yucatanatrades.test",
+        emailVerified: false,
+      },
+    });
+    expect(review.cookieToken).not.toBe(guest.envelope.cookieToken);
+    expect(review.csrfToken).not.toBe(guest.envelope.csrfToken);
+    expect(createUserCalls).toBe(0);
+
+    const presented = await resolve(harness.service, review.cookieToken);
+    expect(presented).toMatchObject({
+      sessionType: "development_review",
+      session: {
+        kind: "development_review",
+        userId: null,
+        authVersion: null,
+        rotatedFromSessionId: guest.presented.session.id,
+        absoluteExpiresAt: new Date(
+          harness.now().getTime() + 10 * 60_000,
+        ),
+      },
+      user: {
+        id: presented.session.id,
+        displayName: "Visual Review",
+      },
+    });
+    await expect(
+      harness.store.findUserById(presented.user!.id),
+    ).resolves.toBeNull();
+
+    const rotatedGuest = await harness.store.findSessionByTokenHmac(
+      domainHmac(
+        TEST_SECRET,
+        "ytt/session-token-at-rest/v1",
+        guest.envelope.cookieToken,
+      ),
+    );
+    expect(rotatedGuest).toMatchObject({
+      revokedAt: harness.now(),
+      revocationReason: "rotated_after_review_access",
+    });
+    expect(harness.store.auditEvents.at(-1)).toMatchObject({
+      event: "review_access",
+      outcome: "success",
+      code: "REVIEW_ACCESS_GRANTED",
+      userId: null,
+      sessionId: presented.session.id,
+    });
+    expect(JSON.stringify(harness.store.auditEvents)).not.toContain(
+      TEST_REVIEW_CODE,
+    );
+    expect(JSON.stringify(harness.store.auditEvents)).not.toContain(
+      review.cookieToken,
+    );
+  });
+
+  it("uses a generic denial for an invalid review code and audits no submitted code", async () => {
+    const harness = createHarness(reviewAccessOverrides());
+    const guest = await createGuest(harness);
+
+    const error = await captureAuthError(
+      harness.service.reviewAccess(
+        { code: INVALID_REVIEW_CODE },
+        guest.presented,
+        METADATA,
+      ),
+    );
+
+    expect(error).toMatchObject({
+      code: "REVIEW_ACCESS_DENIED",
+      status: 401,
+      message: "Review access could not be completed.",
+    });
+    expect(harness.store.auditEvents.at(-1)).toMatchObject({
+      event: "review_access",
+      outcome: "failure",
+      code: "REVIEW_ACCESS_DENIED",
+      userId: null,
+      sessionId: guest.presented.session.id,
+    });
+    expect(JSON.stringify(harness.store.auditEvents)).not.toContain(
+      INVALID_REVIEW_CODE,
+    );
+    await expect(
+      harness.service.resolvePresentedSession(guest.envelope.cookieToken),
+    ).resolves.toMatchObject({ session: { kind: "guest" } });
+  });
+
+  it("expires a review session at its absolute deadline and permits normal sign-out beforehand", async () => {
+    const signOutHarness = createHarness(reviewAccessOverrides(5 * 60_000));
+    const signOutGuest = await createGuest(signOutHarness);
+    const review = await signOutHarness.service.reviewAccess(
+      { code: TEST_REVIEW_CODE },
+      signOutGuest.presented,
+      METADATA,
+    );
+    const reviewPresented = await resolve(
+      signOutHarness.service,
+      review.cookieToken,
+    );
+
+    const signedOut = await signOutHarness.service.signOut(
+      reviewPresented,
+      METADATA,
+    );
+    expect(signedOut).toMatchObject({
+      state: "guest",
+      sessionType: "guest",
+      user: null,
+    });
+    expect(signedOut.cookieToken).not.toBe(review.cookieToken);
+    await expect(
+      signOutHarness.service.resolvePresentedSession(review.cookieToken),
+    ).resolves.toBeNull();
+    expect(signOutHarness.store.auditEvents.at(-1)).toMatchObject({
+      event: "sign_out",
+      outcome: "success",
+      code: "SIGNED_OUT",
+      userId: null,
+      sessionId: reviewPresented.session.id,
+    });
+
+    const expiryHarness = createHarness(reviewAccessOverrides(5 * 60_000));
+    const expiryGuest = await createGuest(expiryHarness);
+    const expiring = await expiryHarness.service.reviewAccess(
+      { code: TEST_REVIEW_CODE },
+      expiryGuest.presented,
+      METADATA,
+    );
+    expiryHarness.advance(5 * 60_000);
+    await expect(
+      expiryHarness.service.resolvePresentedSession(expiring.cookieToken),
+    ).resolves.toBeNull();
+    const stored = await expiryHarness.store.findSessionByTokenHmac(
+      domainHmac(
+        TEST_SECRET,
+        "ytt/session-token-at-rest/v1",
+        expiring.cookieToken,
+      ),
+    );
+    expect(stored).toMatchObject({
+      kind: "development_review",
+      revokedAt: expiryHarness.now(),
+      revocationReason: "expired",
+    });
+  });
+
+  it("rate-limits review-code attempts with the existing IP limiter", async () => {
+    const harness = createHarness(reviewAccessOverrides());
+    const guest = await createGuest(harness);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const denied = await captureAuthError(
+        harness.service.reviewAccess(
+          { code: INVALID_REVIEW_CODE },
+          guest.presented,
+          METADATA,
+        ),
+      );
+      expect(denied.code).toBe("REVIEW_ACCESS_DENIED");
+    }
+
+    const limited = await captureAuthError(
+      harness.service.reviewAccess(
+        { code: INVALID_REVIEW_CODE },
+        guest.presented,
+        METADATA,
+      ),
+    );
+    expect(limited).toMatchObject({
+      code: "RATE_LIMITED",
+      status: 429,
+      message: "Too many requests. Please try again later.",
+    });
+    expect(harness.store.auditEvents.at(-1)).toMatchObject({
+      event: "review_access",
+      outcome: "blocked",
+      code: "RATE_LIMITED",
+      userId: null,
+      sessionId: guest.presented.session.id,
+    });
   });
 
   it("revokes one session on sign-out and invalidates all sessions through authVersion on sign-out-all", async () => {

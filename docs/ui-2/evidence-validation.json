@@ -1,0 +1,479 @@
+{
+  "format": "UI-2 local runtime visual evidence",
+  "repositoryEvidence": {
+    "curatedScreenshots": [
+      "sign-in-1536x1024.jpg",
+      "final-review-access-live-1440x1000.jpg",
+      "registration-768x1024.jpg",
+      "reset-password-success-1280x900.jpg",
+      "authentication-unavailable-1280x900.jpg",
+      "dashboard-review-session-1536x1024.jpg",
+      "markets-1440x1000.jpg",
+      "charts-1280x900.jpg",
+      "portfolio-1024x900.jpg",
+      "research-1440x1000.jpg",
+      "news-1280x900.jpg",
+      "ai-hub-1280x900.jpg",
+      "command-palette-1024x720.jpg",
+      "tablet-dashboard-768x1024.jpg",
+      "mobile-dashboard-390x844.jpg"
+    ],
+    "motionRecordingsCommitted": false,
+    "motionRecordingPolicy": "Validated animated WebP recordings and raw frame sequences remain local review artifacts and are intentionally excluded from the long-term repository history.",
+    "removedSensitiveEvidence": [
+      "successful-authentication-transition"
+    ],
+    "securityRemovalReason": "The pre-submit frames displayed the entered local Review Access digits, so the raw sequence and assembled recording were deleted before handoff."
+  },
+  "screenshots": [
+    {
+      "source": "ai-hub-1280x900.png",
+      "output": "ai-hub-1280x900.jpg",
+      "size": 63082,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "authentication-unavailable-1280x900.png",
+      "output": "authentication-unavailable-1280x900.jpg",
+      "size": 55630,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "charts-1280x900.png",
+      "output": "charts-1280x900.jpg",
+      "size": 71248,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "command-palette-1024x900.png",
+      "output": "command-palette-1024x900.jpg",
+      "size": 35474,
+      "dimensions": [
+        1024,
+        720
+      ]
+    },
+    {
+      "source": "dashboard-review-session-1536x1024-check.png",
+      "output": "dashboard-review-session-1536x1024-check.jpg",
+      "size": 124795,
+      "dimensions": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "source": "dashboard-review-session-1536x1024.png",
+      "output": "dashboard-review-session-1536x1024.jpg",
+      "size": 124795,
+      "dimensions": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "source": "email-verification-1280x900.png",
+      "output": "email-verification-1280x900.jpg",
+      "size": 55710,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "email-verification-complete-1280x900.png",
+      "output": "email-verification-complete-1280x900.jpg",
+      "size": 52674,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "expired-session-1280x900.png",
+      "output": "expired-session-1280x900.jpg",
+      "size": 66470,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "final-review-access-1440x1000.png",
+      "output": "final-review-access-1440x1000.jpg",
+      "size": 71357,
+      "dimensions": [
+        1440,
+        1000
+      ]
+    },
+    {
+      "source": "forgot-password-1280x900.png",
+      "output": "forgot-password-1280x900.jpg",
+      "size": 54683,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "forgot-password-accepted-1280x900.png",
+      "output": "forgot-password-accepted-1280x900.jpg",
+      "size": 54435,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "markets-1440x1000.png",
+      "output": "markets-1440x1000.jpg",
+      "size": 83032,
+      "dimensions": [
+        1440,
+        1000
+      ]
+    },
+    {
+      "source": "mobile-ai-hub-390x844.png",
+      "output": "mobile-ai-hub-390x844.jpg",
+      "size": 36322,
+      "dimensions": [
+        390,
+        844
+      ]
+    },
+    {
+      "source": "mobile-dashboard-390x844.png",
+      "output": "mobile-dashboard-390x844.jpg",
+      "size": 45015,
+      "dimensions": [
+        390,
+        844
+      ]
+    },
+    {
+      "source": "news-1280x900.png",
+      "output": "news-1280x900.jpg",
+      "size": 62709,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "portfolio-1024x900.png",
+      "output": "portfolio-1024x900.jpg",
+      "size": 55263,
+      "dimensions": [
+        1024,
+        900
+      ]
+    },
+    {
+      "source": "reduced-motion-sign-in-1280x900.png",
+      "output": "reduced-motion-sign-in-1280x900.jpg",
+      "size": 66470,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "registration-768x1024.png",
+      "output": "registration-768x1024.jpg",
+      "size": 48249,
+      "dimensions": [
+        768,
+        1024
+      ]
+    },
+    {
+      "source": "research-1440x1000.png",
+      "output": "research-1440x1000.jpg",
+      "size": 84070,
+      "dimensions": [
+        1440,
+        1000
+      ]
+    },
+    {
+      "source": "reset-password-success-1280x900.png",
+      "output": "reset-password-success-1280x900.jpg",
+      "size": 53175,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "review-access-1280x900.png",
+      "output": "review-access-1280x900.jpg",
+      "size": 43060,
+      "dimensions": [
+        1024,
+        720
+      ]
+    },
+    {
+      "source": "review-access-invalid-1280x900.png",
+      "output": "review-access-invalid-1280x900.jpg",
+      "size": 62220,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "review-access-rate-limited-1280x900.png",
+      "output": "review-access-rate-limited-1280x900.jpg",
+      "size": 62330,
+      "dimensions": [
+        1280,
+        900
+      ]
+    },
+    {
+      "source": "sign-in-1536x1024.png",
+      "output": "sign-in-1536x1024.jpg",
+      "size": 68318,
+      "dimensions": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "source": "tablet-dashboard-768x1024.png",
+      "output": "tablet-dashboard-768x1024.jpg",
+      "size": 65675,
+      "dimensions": [
+        768,
+        1024
+      ]
+    },
+    {
+      "source": "final-review-access-live-1440x1000.jpg",
+      "output": "final-review-access-live-1440x1000.jpg",
+      "size": 58321,
+      "dimensions": [
+        1440,
+        1000
+      ]
+    }
+  ],
+  "recordings": [
+    {
+      "name": "ai-hub-interaction",
+      "output": "ai-hub-interaction.webp",
+      "source_frames": 20,
+      "unique_source_frames": 8,
+      "decoded_frames": 8,
+      "unique_decoded_frames": 8,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1600,
+      "max_source_delta": 8.2818,
+      "max_decoded_delta": 8.2903,
+      "size": 57616,
+      "valid": true
+    },
+    {
+      "name": "authentication-entrance",
+      "output": "authentication-entrance.webp",
+      "source_frames": 16,
+      "unique_source_frames": 3,
+      "decoded_frames": 3,
+      "unique_decoded_frames": 3,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1280,
+      "max_source_delta": 14.4213,
+      "max_decoded_delta": 14.1924,
+      "size": 38446,
+      "valid": true
+    },
+    {
+      "name": "chart-interaction",
+      "output": "chart-interaction.webp",
+      "source_frames": 20,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        711
+      ],
+      "duration_ms": 1600,
+      "max_source_delta": 1.889,
+      "max_decoded_delta": 1.8909,
+      "size": 30438,
+      "valid": true
+    },
+    {
+      "name": "command-palette",
+      "output": "command-palette.webp",
+      "source_frames": 18,
+      "unique_source_frames": 3,
+      "decoded_frames": 5,
+      "unique_decoded_frames": 5,
+      "dimensions": [
+        1024,
+        711
+      ],
+      "duration_ms": 1440,
+      "max_source_delta": 13.3787,
+      "max_decoded_delta": 13.5548,
+      "size": 46124,
+      "valid": true
+    },
+    {
+      "name": "dashboard-entrance",
+      "output": "dashboard-entrance.webp",
+      "source_frames": 18,
+      "unique_source_frames": 3,
+      "decoded_frames": 3,
+      "unique_decoded_frames": 3,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1440,
+      "max_source_delta": 17.4983,
+      "max_decoded_delta": 17.5524,
+      "size": 39592,
+      "valid": true
+    },
+    {
+      "name": "portfolio-interaction",
+      "output": "portfolio-interaction.webp",
+      "source_frames": 20,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1600,
+      "max_source_delta": 11.1901,
+      "max_decoded_delta": 11.0673,
+      "size": 27934,
+      "valid": true
+    },
+    {
+      "name": "reduced-motion",
+      "output": "reduced-motion.webp",
+      "source_frames": 13,
+      "unique_source_frames": 3,
+      "decoded_frames": 4,
+      "unique_decoded_frames": 4,
+      "dimensions": [
+        1024,
+        711
+      ],
+      "duration_ms": 1235,
+      "max_source_delta": 10.5945,
+      "max_decoded_delta": 10.5204,
+      "size": 31056,
+      "valid": true
+    },
+    {
+      "name": "registration-sign-in-transition",
+      "output": "registration-sign-in-transition.webp",
+      "source_frames": 18,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1440,
+      "max_source_delta": 11.8237,
+      "max_decoded_delta": 11.6025,
+      "size": 34940,
+      "valid": true
+    },
+    {
+      "name": "research-interaction",
+      "output": "research-interaction.webp",
+      "source_frames": 20,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        720
+      ],
+      "duration_ms": 1600,
+      "max_source_delta": 9.3129,
+      "max_decoded_delta": 9.2168,
+      "size": 26272,
+      "valid": true
+    },
+    {
+      "name": "review-sign-out",
+      "output": "review-sign-out.webp",
+      "source_frames": 20,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        711
+      ],
+      "duration_ms": 1600,
+      "max_source_delta": 13.9044,
+      "max_decoded_delta": 13.8475,
+      "size": 31668,
+      "valid": true
+    },
+    {
+      "name": "route-transition",
+      "output": "route-transition.webp",
+      "source_frames": 22,
+      "unique_source_frames": 2,
+      "decoded_frames": 2,
+      "unique_decoded_frames": 2,
+      "dimensions": [
+        1024,
+        711
+      ],
+      "duration_ms": 1760,
+      "max_source_delta": 8.0805,
+      "max_decoded_delta": 7.9315,
+      "size": 34752,
+      "valid": true
+    },
+    {
+      "name": "tablet-behavior",
+      "output": "tablet-behavior.webp",
+      "source_frames": 18,
+      "unique_source_frames": 3,
+      "decoded_frames": 3,
+      "unique_decoded_frames": 3,
+      "dimensions": [
+        675,
+        900
+      ],
+      "duration_ms": 1710,
+      "max_source_delta": 0.5861,
+      "max_decoded_delta": 0.5889,
+      "size": 22774,
+      "valid": true
+    }
+  ]
+}

@@ -1,4 +1,8 @@
-export type AuthSessionKind = "guest" | "authenticated";
+export type AuthSessionKind =
+  | "guest"
+  | "authenticated"
+  | "development_review";
+export type AuthSessionType = "guest" | "user" | "development_review";
 export type AuthAuditOutcome = "success" | "failure" | "blocked";
 
 export interface AuthUserRecord {

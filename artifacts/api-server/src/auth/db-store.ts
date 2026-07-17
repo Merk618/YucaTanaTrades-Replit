@@ -141,9 +141,12 @@ export class DbAuthStore implements AuthStore {
   }
 
   async createSession(session: AuthSessionRecord): Promise<AuthSessionRecord> {
+    if (session.kind === "development_review") {
+      throw new Error("DEVELOPMENT_REVIEW_SESSION_PERSISTENCE_FORBIDDEN");
+    }
     const [row] = await db
       .insert(authSessionsTable)
-      .values(session)
+      .values({ ...session, kind: session.kind })
       .returning();
     if (!row) throw new Error("AUTH_SESSION_CREATE_FAILED");
     return mapSession(row);

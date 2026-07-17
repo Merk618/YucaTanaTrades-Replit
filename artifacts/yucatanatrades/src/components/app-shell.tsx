@@ -54,10 +54,13 @@ const railRoutes = [
 ] as const;
 
 const commandItems = [
-  { label: "Open market overview", detail: "Analytical route", href: "/markets", icon: LineChart },
+  { label: "Open overview", detail: "Demo decision workspace", href: "/", icon: Home },
+  { label: "Open market overview", detail: "Historical structure · Demo", href: "/markets", icon: LineChart },
   { label: "Open chart workspace", detail: "Historical · Demo", href: "/charts", icon: ChartCandlestick },
   { label: "Review portfolio", detail: "Demo snapshot · provider-neutral", href: "/portfolio", icon: BriefcaseBusiness },
-  { label: "Open AI Intelligence", detail: "AI provider unavailable", href: "/ai-lab", icon: Sparkles },
+  { label: "Open research", detail: "Demo organization · providers unavailable", href: "/research", icon: BookOpen },
+  { label: "Open news intelligence", detail: "News provider unavailable", href: "/news", icon: Newspaper },
+  { label: "Open Meridian AI", detail: "AI-generated Demo · provider unavailable", href: "/ai-lab", icon: Sparkles },
 ] as const;
 
 function isRouteActive(location: string, href: string) {
@@ -113,6 +116,7 @@ function CommandPalette({
   const [query, setQuery] = React.useState("");
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const dialogRef = React.useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
 
   React.useEffect(() => {
@@ -127,6 +131,20 @@ function CommandPalette({
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      ));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -171,6 +189,7 @@ function CommandPalette({
           }}
         >
           <motion.section
+            ref={dialogRef}
             className="yt-command-palette"
             role="dialog"
             aria-modal="true"
@@ -182,7 +201,7 @@ function CommandPalette({
           >
             <form className="yt-command-input-row" onSubmit={submitSelection}>
               <Search aria-hidden="true" />
-              <label className="sr-only" htmlFor="yt-command-input" id="yt-command-title">Global search</label>
+              <label className="sr-only" htmlFor="yt-command-input" id="yt-command-title">Workspace route navigator</label>
               <input
                 id="yt-command-input"
                 ref={inputRef}
@@ -194,18 +213,18 @@ function CommandPalette({
                 onKeyDown={handleSearchKeyDown}
                 aria-controls="yt-command-results"
                 aria-activedescendant={filteredItems.length ? `yt-command-result-${selectedIndex}` : undefined}
-                placeholder="Search markets, tickers, strategies, or ask AI..."
+                placeholder="Find a workspace route…"
                 autoComplete="off"
               />
-              <button type="button" className="yt-icon-button" onClick={onClose} aria-label="Close search">
+              <button type="button" className="yt-icon-button" onClick={onClose} aria-label="Close route navigator">
                 <X aria-hidden="true" />
               </button>
             </form>
             <div className="yt-command-meta">
-              <span>UI preview commands</span>
-              <span>AI answers unavailable</span>
+              <span>Static route commands</span>
+              <span>Provider-neutral review</span>
             </div>
-            <div id="yt-command-results" className="yt-command-results" role="listbox" aria-label="Search results">
+            <div id="yt-command-results" className="yt-command-results" role="listbox" aria-label="Workspace routes">
               {filteredItems.length ? filteredItems.map((item, index) => (
                 <button
                   id={`yt-command-result-${index}`}
@@ -223,7 +242,7 @@ function CommandPalette({
                 </button>
               )) : (
                 <div className="yt-command-empty">
-                  No matching preview route. Market and AI lookup is unavailable in UI-1.
+                  No matching workspace route.
                 </div>
               )}
             </div>
@@ -241,7 +260,11 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
 
   if (state.kind !== "authenticated") return null;
 
-  const primaryLabel = state.user.displayName?.trim() || state.user.email;
+  const reviewSession = state.session.sessionType === "development_review";
+  const primaryLabel = reviewSession
+    ? "Visual Review"
+    : state.user.displayName?.trim() || state.user.email;
+  const secondaryLabel = reviewSession ? "Local development session" : "Meridian OS";
 
   const runSignOut = async (allDevices: boolean) => {
     setPending(allDevices ? "all" : "current");
@@ -268,9 +291,9 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
             <span className="yt-rail-tooltip" role="tooltip">Account session</span>
           </button>
         ) : (
-          <button className="yt-account-control" type="button" aria-label={`Account session for ${state.user.email}`}>
+          <button className="yt-account-control" type="button" aria-label={`Account session for ${primaryLabel}`}>
             <CircleUserRound aria-hidden="true" />
-            <span><strong title={primaryLabel}>{primaryLabel}</strong><small>Meridian OS</small></span>
+            <span><strong title={primaryLabel}>{primaryLabel}</strong><small>{secondaryLabel}</small></span>
             <ChevronDown aria-hidden="true" />
           </button>
         )}
@@ -278,15 +301,17 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
       <DropdownMenuContent align={compact ? "start" : "end"} side={compact ? "right" : "bottom"} className="yt-account-menu">
         <DropdownMenuLabel className="yt-account-menu-label">
           <strong>{primaryLabel}</strong>
-          <span>{state.user.email}</span>
+          <span>{reviewSession ? secondaryLabel : state.user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={pending !== null} onSelect={() => void runSignOut(false)}>
           <LogOut aria-hidden="true" /> {pending === "current" ? "Signing out…" : "Sign out"}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={pending !== null} onSelect={() => void runSignOut(true)}>
-          <ShieldOff aria-hidden="true" /> {pending === "all" ? "Revoking sessions…" : "Sign out all devices"}
-        </DropdownMenuItem>
+        {!reviewSession ? (
+          <DropdownMenuItem disabled={pending !== null} onSelect={() => void runSignOut(true)}>
+            <ShieldOff aria-hidden="true" /> {pending === "all" ? "Revoking sessions…" : "Sign out all devices"}
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -295,13 +320,21 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [commandOpen, setCommandOpen] = React.useState(false);
+  const searchTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const routeContentRef = React.useRef<HTMLDivElement>(null);
+  const pendingRouteFocusRef = React.useRef<string | null>(null);
   const reducedMotion = useReducedMotion();
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        setCommandOpen((current) => !current);
+        setCommandOpen((current) => {
+          if (current) {
+            window.requestAnimationFrame(() => searchTriggerRef.current?.focus());
+          }
+          return !current;
+        });
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -319,8 +352,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const goTo = (href: string) => {
     setCommandOpen(false);
+    pendingRouteFocusRef.current = href;
+    if (href === location) {
+      window.requestAnimationFrame(() => {
+        pendingRouteFocusRef.current = null;
+        routeContentRef.current?.focus({ preventScroll: true });
+      });
+      return;
+    }
     navigate(href);
   };
+
+  const closeCommand = React.useCallback(() => {
+    setCommandOpen(false);
+    window.requestAnimationFrame(() => searchTriggerRef.current?.focus());
+  }, []);
 
   return (
     <div className="yt-app">
@@ -386,13 +432,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
           <button
+            ref={searchTriggerRef}
             className="yt-search-trigger"
             type="button"
             onClick={() => setCommandOpen(true)}
-            aria-label="Open global search"
+            aria-label="Open workspace route navigator"
           >
             <Search aria-hidden="true" />
-            <span>Search markets, tickers, strategies, or ask AI...</span>
+            <span>Jump to a workspace…</span>
             <kbd><Command aria-hidden="true" />K</kbd>
           </button>
           <div className="yt-top-utilities">
@@ -409,16 +456,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </motion.header>
 
         <main className="yt-route-frame">
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
+              ref={routeContentRef}
               key={location}
               className="yt-route-content"
+              tabIndex={-1}
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -7 }}
               transition={reducedMotion
                 ? { duration: 0.06 }
                 : { duration: motionTokens.duration.route, ease: motionTokens.ease.out }}
+              onAnimationComplete={() => {
+                if (pendingRouteFocusRef.current !== location) return;
+                pendingRouteFocusRef.current = null;
+                routeContentRef.current?.focus({ preventScroll: true });
+              }}
             >
               {children}
             </motion.div>
@@ -428,7 +482,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <CommandPalette
         open={commandOpen}
-        onClose={() => setCommandOpen(false)}
+        onClose={closeCommand}
         onNavigate={goTo}
       />
     </div>

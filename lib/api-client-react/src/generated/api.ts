@@ -20,24 +20,40 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AuthError,
+  AuthRequiredResponse,
+  AuthStatus,
+  AuthUnavailableResponse,
   BotsStatus,
   BulkCreatePositionsInput,
   BulkCreatePositionsResult,
+  CompleteEmailVerificationInput,
+  DevelopmentTokenActionResponse,
+  ForgotPasswordInput,
+  GenericActionResponse,
   GetMarketQuotesParams,
   GetSourceHealthParams,
   HealthStatus,
+  InvalidAuthRequestResponse,
   JournalEntry,
   JournalEntryInput,
   JournalEntryUpdate,
   JournalSummary,
   MarketSession,
+  OwnershipOrAuthUnavailableResponse,
   PortfolioPosition,
   PortfolioPositionInput,
   PortfolioPositionUpdate,
   PortfolioSummary,
   QuoteList,
+  RegisterInput,
+  RequestOriginRejectedResponse,
+  ResetPasswordInput,
+  ReviewAccessInput,
   RiskConfig,
   RiskConfigInput,
+  SessionEnvelope,
+  SignInInput,
   SourceHealth,
   WatchlistItem,
   WatchlistItemInput
@@ -132,6 +148,799 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+export const getGetAuthStatusUrl = () => {
+
+
+
+
+  return `/api/auth/status`
+}
+
+/**
+ * @summary Get authentication service availability and feature flags
+ */
+export const getAuthStatus = async ( options?: RequestInit): Promise<AuthStatus> => {
+
+  return customFetch<AuthStatus>(getGetAuthStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthStatusQueryKey = () => {
+    return [
+    `/api/auth/status`
+    ] as const;
+    }
+
+
+export const getGetAuthStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAuthStatus>>, TError = ErrorType<AuthError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuthStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthStatus>>> = ({ signal }) => getAuthStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuthStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthStatus>>>
+export type GetAuthStatusQueryError = ErrorType<AuthError>
+
+
+/**
+ * @summary Get authentication service availability and feature flags
+ */
+
+export function useGetAuthStatus<TData = Awaited<ReturnType<typeof getAuthStatus>>, TError = ErrorType<AuthError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuthStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCurrentSessionUrl = () => {
+
+
+
+
+  return `/api/auth/session`
+}
+
+/**
+ * Returns a valid current session without charging the guest-issuance limit. A missing, invalid, expired, or revoked cookie triggers replacement guest issuance, limited by an HMAC client-network key to 30 attempts per 15 minutes.
+ * @summary Get the current guest or authenticated server-side session
+ */
+export const getCurrentSession = async ( options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getGetCurrentSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentSessionQueryKey = () => {
+    return [
+    `/api/auth/session`
+    ] as const;
+    }
+
+
+export const getGetCurrentSessionQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentSession>>, TError = ErrorType<AuthError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentSession>>> = ({ signal }) => getCurrentSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentSession>>>
+export type GetCurrentSessionQueryError = ErrorType<AuthError>
+
+
+/**
+ * @summary Get the current guest or authenticated server-side session
+ */
+
+export function useGetCurrentSession<TData = Awaited<ReturnType<typeof getCurrentSession>>, TError = ErrorType<AuthError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSignInUrl = () => {
+
+
+
+
+  return `/api/auth/sign-in`
+}
+
+/**
+ * @summary Sign in and rotate the current guest session
+ */
+export const signIn = async (signInInput: SignInInput, options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getSignInUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      signInInput,)
+  }
+);}
+
+
+
+
+export const getSignInMutationOptions = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signIn>>, TError,{data: BodyType<SignInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signIn>>, TError,{data: BodyType<SignInInput>}, TContext> => {
+
+const mutationKey = ['signIn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signIn>>, {data: BodyType<SignInInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  signIn(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignInMutationResult = NonNullable<Awaited<ReturnType<typeof signIn>>>
+    export type SignInMutationBody = BodyType<SignInInput>
+    export type SignInMutationError = ErrorType<AuthError | AuthUnavailableResponse>
+
+    /**
+ * @summary Sign in and rotate the current guest session
+ */
+export const useSignIn = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signIn>>, TError,{data: BodyType<SignInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signIn>>,
+        TError,
+        {data: BodyType<SignInInput>},
+        TContext
+      > => {
+      return useMutation(getSignInMutationOptions(options));
+    }
+
+export const getCreateDevelopmentReviewSessionUrl = () => {
+
+
+
+
+  return `/api/auth/review-access`
+}
+
+/**
+ * Development-only Review Access for the local Meridian OS visual-review workflow. The route is registered only when the API is running outside production, an explicit server-side feature flag is enabled, and the API is bound to loopback. It preserves the current opaque-cookie, synchronizer CSRF, Origin/Referer, rotation, expiration, revocation, and authentication-rate-limit controls. The configured access code remains server-side and is never returned. Invalid codes receive the same generic credential response. Successful access creates only a short-lived, nonpersistent development_review principal; it does not create a database user or grant production privileges.
+ * @summary Enter a local nonproduction visual-review session
+ */
+export const createDevelopmentReviewSession = async (reviewAccessInput: ReviewAccessInput, options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getCreateDevelopmentReviewSessionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reviewAccessInput,)
+  }
+);}
+
+
+
+
+export const getCreateDevelopmentReviewSessionMutationOptions = <TError = ErrorType<AuthError | void | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDevelopmentReviewSession>>, TError,{data: BodyType<ReviewAccessInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDevelopmentReviewSession>>, TError,{data: BodyType<ReviewAccessInput>}, TContext> => {
+
+const mutationKey = ['createDevelopmentReviewSession'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDevelopmentReviewSession>>, {data: BodyType<ReviewAccessInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDevelopmentReviewSession(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDevelopmentReviewSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createDevelopmentReviewSession>>>
+    export type CreateDevelopmentReviewSessionMutationBody = BodyType<ReviewAccessInput>
+    export type CreateDevelopmentReviewSessionMutationError = ErrorType<AuthError | void | AuthUnavailableResponse>
+
+    /**
+ * @summary Enter a local nonproduction visual-review session
+ */
+export const useCreateDevelopmentReviewSession = <TError = ErrorType<AuthError | void | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDevelopmentReviewSession>>, TError,{data: BodyType<ReviewAccessInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDevelopmentReviewSession>>,
+        TError,
+        {data: BodyType<ReviewAccessInput>},
+        TContext
+      > => {
+      return useMutation(getCreateDevelopmentReviewSessionMutationOptions(options));
+    }
+
+export const getRegisterAccountUrl = () => {
+
+
+
+
+  return `/api/auth/register`
+}
+
+/**
+ * @summary Register an account and rotate into an authenticated session
+ */
+export const registerAccount = async (registerInput: RegisterInput, options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getRegisterAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      registerInput,)
+  }
+);}
+
+
+
+
+export const getRegisterAccountMutationOptions = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerAccount>>, TError,{data: BodyType<RegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerAccount>>, TError,{data: BodyType<RegisterInput>}, TContext> => {
+
+const mutationKey = ['registerAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerAccount>>, {data: BodyType<RegisterInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterAccountMutationResult = NonNullable<Awaited<ReturnType<typeof registerAccount>>>
+    export type RegisterAccountMutationBody = BodyType<RegisterInput>
+    export type RegisterAccountMutationError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>
+
+    /**
+ * @summary Register an account and rotate into an authenticated session
+ */
+export const useRegisterAccount = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerAccount>>, TError,{data: BodyType<RegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerAccount>>,
+        TError,
+        {data: BodyType<RegisterInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterAccountMutationOptions(options));
+    }
+
+export const getSignOutUrl = () => {
+
+
+
+
+  return `/api/auth/sign-out`
+}
+
+/**
+ * @summary Revoke the current session and rotate to a guest session
+ */
+export const signOut = async ( options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getSignOutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSignOutMutationOptions = <TError = ErrorType<AuthRequiredResponse | AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOut>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signOut>>, TError,void, TContext> => {
+
+const mutationKey = ['signOut'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signOut>>, void> = () => {
+
+
+          return  signOut(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignOutMutationResult = NonNullable<Awaited<ReturnType<typeof signOut>>>
+
+    export type SignOutMutationError = ErrorType<AuthRequiredResponse | AuthError | AuthUnavailableResponse>
+
+    /**
+ * @summary Revoke the current session and rotate to a guest session
+ */
+export const useSignOut = <TError = ErrorType<AuthRequiredResponse | AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOut>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signOut>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSignOutMutationOptions(options));
+    }
+
+export const getSignOutAllDevicesUrl = () => {
+
+
+
+
+  return `/api/auth/sign-out-all`
+}
+
+/**
+ * @summary Revoke every active session for the current user
+ */
+export const signOutAllDevices = async ( options?: RequestInit): Promise<SessionEnvelope> => {
+
+  return customFetch<SessionEnvelope>(getSignOutAllDevicesUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSignOutAllDevicesMutationOptions = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutAllDevices>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signOutAllDevices>>, TError,void, TContext> => {
+
+const mutationKey = ['signOutAllDevices'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signOutAllDevices>>, void> = () => {
+
+
+          return  signOutAllDevices(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignOutAllDevicesMutationResult = NonNullable<Awaited<ReturnType<typeof signOutAllDevices>>>
+
+    export type SignOutAllDevicesMutationError = ErrorType<AuthError | AuthUnavailableResponse>
+
+    /**
+ * @summary Revoke every active session for the current user
+ */
+export const useSignOutAllDevices = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutAllDevices>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signOutAllDevices>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSignOutAllDevicesMutationOptions(options));
+    }
+
+export const getRequestPasswordResetUrl = () => {
+
+
+
+
+  return `/api/auth/password/forgot`
+}
+
+/**
+ * Always returns a generic accepted response regardless of whether the normalized email belongs to an account or its issuance limit is exceeded. Limited requests record a blocked audit outcome and do not persist a reset token.
+ * @summary Request a password-reset message
+ */
+export const requestPasswordReset = async (forgotPasswordInput: ForgotPasswordInput, options?: RequestInit): Promise<DevelopmentTokenActionResponse> => {
+
+  return customFetch<DevelopmentTokenActionResponse>(getRequestPasswordResetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      forgotPasswordInput,)
+  }
+);}
+
+
+
+
+export const getRequestPasswordResetMutationOptions = <TError = ErrorType<InvalidAuthRequestResponse | AuthRequiredResponse | AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: BodyType<ForgotPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: BodyType<ForgotPasswordInput>}, TContext> => {
+
+const mutationKey = ['requestPasswordReset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPasswordReset>>, {data: BodyType<ForgotPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestPasswordReset(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPasswordResetMutationResult = NonNullable<Awaited<ReturnType<typeof requestPasswordReset>>>
+    export type RequestPasswordResetMutationBody = BodyType<ForgotPasswordInput>
+    export type RequestPasswordResetMutationError = ErrorType<InvalidAuthRequestResponse | AuthRequiredResponse | AuthError | AuthUnavailableResponse>
+
+    /**
+ * @summary Request a password-reset message
+ */
+export const useRequestPasswordReset = <TError = ErrorType<InvalidAuthRequestResponse | AuthRequiredResponse | AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPasswordReset>>, TError,{data: BodyType<ForgotPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestPasswordReset>>,
+        TError,
+        {data: BodyType<ForgotPasswordInput>},
+        TContext
+      > => {
+      return useMutation(getRequestPasswordResetMutationOptions(options));
+    }
+
+export const getCompletePasswordResetUrl = () => {
+
+
+
+
+  return `/api/auth/password/reset`
+}
+
+/**
+ * @summary Complete a password reset with a single-use token
+ */
+export const completePasswordReset = async (resetPasswordInput: ResetPasswordInput, options?: RequestInit): Promise<GenericActionResponse> => {
+
+  return customFetch<GenericActionResponse>(getCompletePasswordResetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      resetPasswordInput,)
+  }
+);}
+
+
+
+
+export const getCompletePasswordResetMutationOptions = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePasswordReset>>, TError,{data: BodyType<ResetPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completePasswordReset>>, TError,{data: BodyType<ResetPasswordInput>}, TContext> => {
+
+const mutationKey = ['completePasswordReset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completePasswordReset>>, {data: BodyType<ResetPasswordInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  completePasswordReset(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompletePasswordResetMutationResult = NonNullable<Awaited<ReturnType<typeof completePasswordReset>>>
+    export type CompletePasswordResetMutationBody = BodyType<ResetPasswordInput>
+    export type CompletePasswordResetMutationError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>
+
+    /**
+ * @summary Complete a password reset with a single-use token
+ */
+export const useCompletePasswordReset = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePasswordReset>>, TError,{data: BodyType<ResetPasswordInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completePasswordReset>>,
+        TError,
+        {data: BodyType<ResetPasswordInput>},
+        TContext
+      > => {
+      return useMutation(getCompletePasswordResetMutationOptions(options));
+    }
+
+export const getRequestEmailVerificationUrl = () => {
+
+
+
+
+  return `/api/auth/email-verification/request`
+}
+
+/**
+ * @summary Request a new email-verification message
+ */
+export const requestEmailVerification = async ( options?: RequestInit): Promise<DevelopmentTokenActionResponse> => {
+
+  return customFetch<DevelopmentTokenActionResponse>(getRequestEmailVerificationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRequestEmailVerificationMutationOptions = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext> => {
+
+const mutationKey = ['requestEmailVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestEmailVerification>>, void> = () => {
+
+
+          return  requestEmailVerification(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof requestEmailVerification>>>
+
+    export type RequestEmailVerificationMutationError = ErrorType<AuthError | AuthUnavailableResponse>
+
+    /**
+ * @summary Request a new email-verification message
+ */
+export const useRequestEmailVerification = <TError = ErrorType<AuthError | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEmailVerification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestEmailVerification>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestEmailVerificationMutationOptions(options));
+    }
+
+export const getCompleteEmailVerificationUrl = () => {
+
+
+
+
+  return `/api/auth/email-verification/complete`
+}
+
+/**
+ * @summary Complete email verification with a single-use token
+ */
+export const completeEmailVerification = async (completeEmailVerificationInput: CompleteEmailVerificationInput, options?: RequestInit): Promise<GenericActionResponse> => {
+
+  return customFetch<GenericActionResponse>(getCompleteEmailVerificationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      completeEmailVerificationInput,)
+  }
+);}
+
+
+
+
+export const getCompleteEmailVerificationMutationOptions = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeEmailVerification>>, TError,{data: BodyType<CompleteEmailVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeEmailVerification>>, TError,{data: BodyType<CompleteEmailVerificationInput>}, TContext> => {
+
+const mutationKey = ['completeEmailVerification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeEmailVerification>>, {data: BodyType<CompleteEmailVerificationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeEmailVerification(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof completeEmailVerification>>>
+    export type CompleteEmailVerificationMutationBody = BodyType<CompleteEmailVerificationInput>
+    export type CompleteEmailVerificationMutationError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>
+
+    /**
+ * @summary Complete email verification with a single-use token
+ */
+export const useCompleteEmailVerification = <TError = ErrorType<AuthError | AuthRequiredResponse | AuthUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeEmailVerification>>, TError,{data: BodyType<CompleteEmailVerificationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeEmailVerification>>,
+        TError,
+        {data: BodyType<CompleteEmailVerificationInput>},
+        TContext
+      > => {
+      return useMutation(getCompleteEmailVerificationMutationOptions(options));
+    }
+
 export const getListJournalEntriesUrl = () => {
 
 
@@ -165,7 +974,7 @@ export const getListJournalEntriesQueryKey = () => {
     }
 
 
-export const getListJournalEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listJournalEntries>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listJournalEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListJournalEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listJournalEntries>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listJournalEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -184,14 +993,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListJournalEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listJournalEntries>>>
-export type ListJournalEntriesQueryError = ErrorType<unknown>
+export type ListJournalEntriesQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary List all trade journal entries
  */
 
-export function useListJournalEntries<TData = Awaited<ReturnType<typeof listJournalEntries>>, TError = ErrorType<unknown>>(
+export function useListJournalEntries<TData = Awaited<ReturnType<typeof listJournalEntries>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listJournalEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -235,7 +1044,7 @@ export const createJournalEntry = async (journalEntryInput: JournalEntryInput, o
 
 
 
-export const getCreateJournalEntryMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateJournalEntryMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createJournalEntry>>, TError,{data: BodyType<JournalEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createJournalEntry>>, TError,{data: BodyType<JournalEntryInput>}, TContext> => {
 
@@ -264,12 +1073,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateJournalEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createJournalEntry>>>
     export type CreateJournalEntryMutationBody = BodyType<JournalEntryInput>
-    export type CreateJournalEntryMutationError = ErrorType<unknown>
+    export type CreateJournalEntryMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Create a new journal entry
  */
-export const useCreateJournalEntry = <TError = ErrorType<unknown>,
+export const useCreateJournalEntry = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createJournalEntry>>, TError,{data: BodyType<JournalEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createJournalEntry>>,
@@ -313,7 +1122,7 @@ export const getGetJournalEntryQueryKey = (id: number,) => {
     }
 
 
-export const getGetJournalEntryQueryOptions = <TData = Awaited<ReturnType<typeof getJournalEntry>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetJournalEntryQueryOptions = <TData = Awaited<ReturnType<typeof getJournalEntry>>, TError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -332,14 +1141,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetJournalEntryQueryResult = NonNullable<Awaited<ReturnType<typeof getJournalEntry>>>
-export type GetJournalEntryQueryError = ErrorType<void>
+export type GetJournalEntryQueryError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get a journal entry by ID
  */
 
-export function useGetJournalEntry<TData = Awaited<ReturnType<typeof getJournalEntry>>, TError = ErrorType<void>>(
+export function useGetJournalEntry<TData = Awaited<ReturnType<typeof getJournalEntry>>, TError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalEntry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -384,7 +1193,7 @@ export const updateJournalEntry = async (id: number,
 
 
 
-export const getUpdateJournalEntryMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateJournalEntryMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateJournalEntry>>, TError,{id: number;data: BodyType<JournalEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateJournalEntry>>, TError,{id: number;data: BodyType<JournalEntryUpdate>}, TContext> => {
 
@@ -413,12 +1222,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateJournalEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateJournalEntry>>>
     export type UpdateJournalEntryMutationBody = BodyType<JournalEntryUpdate>
-    export type UpdateJournalEntryMutationError = ErrorType<unknown>
+    export type UpdateJournalEntryMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Update a journal entry
  */
-export const useUpdateJournalEntry = <TError = ErrorType<unknown>,
+export const useUpdateJournalEntry = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateJournalEntry>>, TError,{id: number;data: BodyType<JournalEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateJournalEntry>>,
@@ -454,7 +1263,7 @@ export const deleteJournalEntry = async (id: number, options?: RequestInit): Pro
 
 
 
-export const getDeleteJournalEntryMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteJournalEntryMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteJournalEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteJournalEntry>>, TError,{id: number}, TContext> => {
 
@@ -483,12 +1292,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteJournalEntryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteJournalEntry>>>
 
-    export type DeleteJournalEntryMutationError = ErrorType<unknown>
+    export type DeleteJournalEntryMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Delete a journal entry
  */
-export const useDeleteJournalEntry = <TError = ErrorType<unknown>,
+export const useDeleteJournalEntry = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteJournalEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteJournalEntry>>,
@@ -532,7 +1341,7 @@ export const getGetJournalSummaryQueryKey = () => {
     }
 
 
-export const getGetJournalSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getJournalSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetJournalSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getJournalSummary>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -551,14 +1360,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetJournalSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getJournalSummary>>>
-export type GetJournalSummaryQueryError = ErrorType<unknown>
+export type GetJournalSummaryQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get win/loss summary stats
  */
 
-export function useGetJournalSummary<TData = Awaited<ReturnType<typeof getJournalSummary>>, TError = ErrorType<unknown>>(
+export function useGetJournalSummary<TData = Awaited<ReturnType<typeof getJournalSummary>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJournalSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -609,7 +1418,7 @@ export const getListWatchlistItemsQueryKey = () => {
     }
 
 
-export const getListWatchlistItemsQueryOptions = <TData = Awaited<ReturnType<typeof listWatchlistItems>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWatchlistItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListWatchlistItemsQueryOptions = <TData = Awaited<ReturnType<typeof listWatchlistItems>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWatchlistItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -628,14 +1437,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListWatchlistItemsQueryResult = NonNullable<Awaited<ReturnType<typeof listWatchlistItems>>>
-export type ListWatchlistItemsQueryError = ErrorType<unknown>
+export type ListWatchlistItemsQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get all watchlist items
  */
 
-export function useListWatchlistItems<TData = Awaited<ReturnType<typeof listWatchlistItems>>, TError = ErrorType<unknown>>(
+export function useListWatchlistItems<TData = Awaited<ReturnType<typeof listWatchlistItems>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWatchlistItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -679,7 +1488,7 @@ export const addWatchlistItem = async (watchlistItemInput: WatchlistItemInput, o
 
 
 
-export const getAddWatchlistItemMutationOptions = <TError = ErrorType<unknown>,
+export const getAddWatchlistItemMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWatchlistItem>>, TError,{data: BodyType<WatchlistItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof addWatchlistItem>>, TError,{data: BodyType<WatchlistItemInput>}, TContext> => {
 
@@ -708,12 +1517,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type AddWatchlistItemMutationResult = NonNullable<Awaited<ReturnType<typeof addWatchlistItem>>>
     export type AddWatchlistItemMutationBody = BodyType<WatchlistItemInput>
-    export type AddWatchlistItemMutationError = ErrorType<unknown>
+    export type AddWatchlistItemMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Add ticker to watchlist
  */
-export const useAddWatchlistItem = <TError = ErrorType<unknown>,
+export const useAddWatchlistItem = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWatchlistItem>>, TError,{data: BodyType<WatchlistItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof addWatchlistItem>>,
@@ -749,7 +1558,7 @@ export const removeWatchlistItem = async (id: number, options?: RequestInit): Pr
 
 
 
-export const getRemoveWatchlistItemMutationOptions = <TError = ErrorType<unknown>,
+export const getRemoveWatchlistItemMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeWatchlistItem>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof removeWatchlistItem>>, TError,{id: number}, TContext> => {
 
@@ -778,12 +1587,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RemoveWatchlistItemMutationResult = NonNullable<Awaited<ReturnType<typeof removeWatchlistItem>>>
 
-    export type RemoveWatchlistItemMutationError = ErrorType<unknown>
+    export type RemoveWatchlistItemMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Remove item from watchlist
  */
-export const useRemoveWatchlistItem = <TError = ErrorType<unknown>,
+export const useRemoveWatchlistItem = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeWatchlistItem>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof removeWatchlistItem>>,
@@ -827,7 +1636,7 @@ export const getGetBotsStatusQueryKey = () => {
     }
 
 
-export const getGetBotsStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBotsStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBotsStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetBotsStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBotsStatus>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBotsStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -846,14 +1655,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetBotsStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getBotsStatus>>>
-export type GetBotsStatusQueryError = ErrorType<unknown>
+export type GetBotsStatusQueryError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>
 
 
 /**
  * @summary Get status of all bots
  */
 
-export function useGetBotsStatus<TData = Awaited<ReturnType<typeof getBotsStatus>>, TError = ErrorType<unknown>>(
+export function useGetBotsStatus<TData = Awaited<ReturnType<typeof getBotsStatus>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBotsStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -904,7 +1713,7 @@ export const getGetPortfolioSummaryQueryKey = () => {
     }
 
 
-export const getGetPortfolioSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPortfolioSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortfolioSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPortfolioSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPortfolioSummary>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortfolioSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -923,14 +1732,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetPortfolioSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getPortfolioSummary>>>
-export type GetPortfolioSummaryQueryError = ErrorType<unknown>
+export type GetPortfolioSummaryQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get portfolio overview summary
  */
 
-export function useGetPortfolioSummary<TData = Awaited<ReturnType<typeof getPortfolioSummary>>, TError = ErrorType<unknown>>(
+export function useGetPortfolioSummary<TData = Awaited<ReturnType<typeof getPortfolioSummary>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortfolioSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -974,7 +1783,7 @@ export const bulkCreatePositions = async (bulkCreatePositionsInput: BulkCreatePo
 
 
 
-export const getBulkCreatePositionsMutationOptions = <TError = ErrorType<unknown>,
+export const getBulkCreatePositionsMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext> => {
 
@@ -1003,12 +1812,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BulkCreatePositionsMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCreatePositions>>>
     export type BulkCreatePositionsMutationBody = BodyType<BulkCreatePositionsInput>
-    export type BulkCreatePositionsMutationError = ErrorType<unknown>
+    export type BulkCreatePositionsMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Bulk-create portfolio positions (CSV import)
  */
-export const useBulkCreatePositions = <TError = ErrorType<unknown>,
+export const useBulkCreatePositions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreatePositions>>, TError,{data: BodyType<BulkCreatePositionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof bulkCreatePositions>>,
@@ -1052,7 +1861,7 @@ export const getListPositionsQueryKey = () => {
     }
 
 
-export const getListPositionsQueryOptions = <TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListPositionsQueryOptions = <TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1071,14 +1880,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListPositionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPositions>>>
-export type ListPositionsQueryError = ErrorType<unknown>
+export type ListPositionsQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary List all portfolio positions
  */
 
-export function useListPositions<TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<unknown>>(
+export function useListPositions<TData = Awaited<ReturnType<typeof listPositions>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1122,7 +1931,7 @@ export const createPosition = async (portfolioPositionInput: PortfolioPositionIn
 
 
 
-export const getCreatePositionMutationOptions = <TError = ErrorType<unknown>,
+export const getCreatePositionMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext> => {
 
@@ -1151,12 +1960,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreatePositionMutationResult = NonNullable<Awaited<ReturnType<typeof createPosition>>>
     export type CreatePositionMutationBody = BodyType<PortfolioPositionInput>
-    export type CreatePositionMutationError = ErrorType<unknown>
+    export type CreatePositionMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Create a new portfolio position
  */
-export const useCreatePosition = <TError = ErrorType<unknown>,
+export const useCreatePosition = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPosition>>, TError,{data: BodyType<PortfolioPositionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createPosition>>,
@@ -1200,7 +2009,7 @@ export const getGetPositionQueryKey = (id: number,) => {
     }
 
 
-export const getGetPositionQueryOptions = <TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPositionQueryOptions = <TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1219,14 +2028,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetPositionQueryResult = NonNullable<Awaited<ReturnType<typeof getPosition>>>
-export type GetPositionQueryError = ErrorType<void>
+export type GetPositionQueryError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get a position by ID
  */
 
-export function useGetPosition<TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<void>>(
+export function useGetPosition<TData = Awaited<ReturnType<typeof getPosition>>, TError = ErrorType<AuthRequiredResponse | void | OwnershipOrAuthUnavailableResponse>>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPosition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1271,7 +2080,7 @@ export const updatePosition = async (id: number,
 
 
 
-export const getUpdatePositionMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdatePositionMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext> => {
 
@@ -1300,12 +2109,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdatePositionMutationResult = NonNullable<Awaited<ReturnType<typeof updatePosition>>>
     export type UpdatePositionMutationBody = BodyType<PortfolioPositionUpdate>
-    export type UpdatePositionMutationError = ErrorType<unknown>
+    export type UpdatePositionMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Update a portfolio position
  */
-export const useUpdatePosition = <TError = ErrorType<unknown>,
+export const useUpdatePosition = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePosition>>, TError,{id: number;data: BodyType<PortfolioPositionUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updatePosition>>,
@@ -1341,7 +2150,7 @@ export const deletePosition = async (id: number, options?: RequestInit): Promise
 
 
 
-export const getDeletePositionMutationOptions = <TError = ErrorType<unknown>,
+export const getDeletePositionMutationOptions = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext> => {
 
@@ -1370,12 +2179,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeletePositionMutationResult = NonNullable<Awaited<ReturnType<typeof deletePosition>>>
 
-    export type DeletePositionMutationError = ErrorType<unknown>
+    export type DeletePositionMutationError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Delete a portfolio position
  */
-export const useDeletePosition = <TError = ErrorType<unknown>,
+export const useDeletePosition = <TError = ErrorType<AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePosition>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deletePosition>>,
@@ -1419,7 +2228,7 @@ export const getGetRiskConfigQueryKey = () => {
     }
 
 
-export const getGetRiskConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetRiskConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1438,14 +2247,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetRiskConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getRiskConfig>>>
-export type GetRiskConfigQueryError = ErrorType<unknown>
+export type GetRiskConfigQueryError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>
 
 
 /**
  * @summary Get the active risk threshold configuration
  */
 
-export function useGetRiskConfig<TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<unknown>>(
+export function useGetRiskConfig<TData = Awaited<ReturnType<typeof getRiskConfig>>, TError = ErrorType<AuthRequiredResponse | OwnershipOrAuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1489,7 +2298,7 @@ export const updateRiskConfig = async (riskConfigInput: RiskConfigInput, options
 
 
 
-export const getUpdateRiskConfigMutationOptions = <TError = ErrorType<void>,
+export const getUpdateRiskConfigMutationOptions = <TError = ErrorType<void | AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext> => {
 
@@ -1518,12 +2327,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateRiskConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updateRiskConfig>>>
     export type UpdateRiskConfigMutationBody = BodyType<RiskConfigInput>
-    export type UpdateRiskConfigMutationError = ErrorType<void>
+    export type UpdateRiskConfigMutationError = ErrorType<void | AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>
 
     /**
  * @summary Update risk threshold configuration
  */
-export const useUpdateRiskConfig = <TError = ErrorType<void>,
+export const useUpdateRiskConfig = <TError = ErrorType<void | AuthRequiredResponse | RequestOriginRejectedResponse | OwnershipOrAuthUnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskConfig>>, TError,{data: BodyType<RiskConfigInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateRiskConfig>>,
@@ -1574,7 +2383,7 @@ export const getGetMarketQuotesQueryKey = (params?: GetMarketQuotesParams,) => {
     }
 
 
-export const getGetMarketQuotesQueryOptions = <TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<unknown>>(params: GetMarketQuotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMarketQuotesQueryOptions = <TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(params: GetMarketQuotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1593,14 +2402,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMarketQuotesQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketQuotes>>>
-export type GetMarketQuotesQueryError = ErrorType<unknown>
+export type GetMarketQuotesQueryError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>
 
 
 /**
  * @summary Batch quotes with source + freshness metadata
  */
 
-export function useGetMarketQuotes<TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<unknown>>(
+export function useGetMarketQuotes<TData = Awaited<ReturnType<typeof getMarketQuotes>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(
  params: GetMarketQuotesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketQuotes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1658,7 +2467,7 @@ export const getGetSourceHealthQueryKey = (params?: GetSourceHealthParams,) => {
     }
 
 
-export const getGetSourceHealthQueryOptions = <TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>(params?: GetSourceHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSourceHealthQueryOptions = <TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(params?: GetSourceHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1677,14 +2486,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetSourceHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getSourceHealth>>>
-export type GetSourceHealthQueryError = ErrorType<unknown>
+export type GetSourceHealthQueryError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>
 
 
 /**
  * @summary Real provider/source health status
  */
 
-export function useGetSourceHealth<TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<unknown>>(
+export function useGetSourceHealth<TData = Awaited<ReturnType<typeof getSourceHealth>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(
  params?: GetSourceHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1735,7 +2544,7 @@ export const getGetMarketSessionQueryKey = () => {
     }
 
 
-export const getGetMarketSessionQueryOptions = <TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMarketSessionQueryOptions = <TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1754,14 +2563,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMarketSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketSession>>>
-export type GetMarketSessionQueryError = ErrorType<unknown>
+export type GetMarketSessionQueryError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>
 
 
 /**
  * @summary Real US equity market session + crypto status
  */
 
-export function useGetMarketSession<TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<unknown>>(
+export function useGetMarketSession<TData = Awaited<ReturnType<typeof getMarketSession>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1812,7 +2621,7 @@ export const getTestQuoteFetchQueryKey = () => {
     }
 
 
-export const getTestQuoteFetchQueryOptions = <TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getTestQuoteFetchQueryOptions = <TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1831,14 +2640,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type TestQuoteFetchQueryResult = NonNullable<Awaited<ReturnType<typeof testQuoteFetch>>>
-export type TestQuoteFetchQueryError = ErrorType<unknown>
+export type TestQuoteFetchQueryError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>
 
 
 /**
  * @summary Test-fetch reference quotes (SPY / BTC) to verify live sources
  */
 
-export function useTestQuoteFetch<TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<unknown>>(
+export function useTestQuoteFetch<TData = Awaited<ReturnType<typeof testQuoteFetch>>, TError = ErrorType<AuthRequiredResponse | AuthUnavailableResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof testQuoteFetch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

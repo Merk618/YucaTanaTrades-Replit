@@ -29,6 +29,18 @@ const signInBody = z.object({
   password: z.string().min(1).max(1024),
 });
 
+const reviewAccessBody = z.object({
+  code: z.string().min(1).max(64),
+});
+
+function boundedReviewAccessCode(body: unknown): string {
+  const parsed = reviewAccessBody.safeParse(body);
+  // Malformed access-code submissions still enter the same constant-time,
+  // rate-limited service path. The sentinel can never equal the configured
+  // six-digit code and prevents unbounded attacker-controlled HMAC input.
+  return parsed.success ? parsed.data.code : "";
+}
+
 const forgotBody = z.object({ email: z.string().min(1).max(320) });
 const resetBody = z.object({
   token: z.string().min(32).max(2048),
@@ -53,6 +65,7 @@ function responseSession(session: AuthSessionEnvelope) {
     csrfToken: session.csrfToken,
     user: session.user,
     expiresAt: session.cookieExpiresAt.toISOString(),
+    sessionType: session.sessionType,
   };
 }
 
@@ -76,7 +89,8 @@ function setSessionCookie(
 function handleRouteError(req: Request, res: Response, error: unknown): void {
   if (error instanceof AuthServiceError) {
     const code =
-      error.code === "INVALID_CREDENTIALS"
+      error.code === "INVALID_CREDENTIALS" ||
+      error.code === "REVIEW_ACCESS_DENIED"
         ? "invalid_credentials"
         : error.code === "CSRF_INVALID"
           ? "csrf_invalid"
@@ -106,6 +120,15 @@ function handleRouteError(req: Request, res: Response, error: unknown): void {
     "Authentication handler failed",
   );
   sendStructuredError(res, 503, "unavailable", "Authentication is unavailable.");
+}
+
+function isLoopbackRequest(req: Request): boolean {
+  const address = req.socket.remoteAddress?.toLowerCase();
+  return (
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    address === "::ffff:127.0.0.1"
+  );
 }
 
 type AsyncHandler = (req: Request, res: Response) => Promise<void>;
@@ -146,6 +169,10 @@ export function createAuthRouter(runtime: AuthRuntime): Router {
           available && service.featureFlags.passwordReset,
         emailVerificationEnabled:
           available && service.featureFlags.emailVerification,
+        reviewAccessEnabled:
+          available &&
+          runtime.environment.nodeEnv !== "production" &&
+          runtime.environment.reviewAccess.enabled,
       },
       message: available
         ? null
@@ -171,6 +198,34 @@ export function createAuthRouter(runtime: AuthRuntime): Router {
       res.json(responseSession(session));
     }),
   );
+
+  if (
+    runtime.environment.nodeEnv !== "production" &&
+    runtime.environment.reviewAccess.enabled
+  ) {
+    router.post(
+      "/auth/review-access",
+      ...unsafeSession,
+      asyncHandler(async (req, res) => {
+        if (!isLoopbackRequest(req)) {
+          sendStructuredError(
+            res,
+            404,
+            "not_found",
+            "The requested resource was not found.",
+          );
+          return;
+        }
+        const session = await service.reviewAccess(
+          { code: boundedReviewAccessCode(req.body) },
+          currentSession(req),
+          requestMetadata(req),
+        );
+        setSessionCookie(res, runtime, session);
+        res.json(responseSession(session));
+      }),
+    );
+  }
 
   router.post(
     "/auth/sign-in",
@@ -302,6 +357,15 @@ export function createAuthRouter(runtime: AuthRuntime): Router {
       res.json({ accepted: true, message: "Email verification was completed." });
     }),
   );
+
+  router.all("/auth/review-access", (_req, res) => {
+    sendStructuredError(
+      res,
+      404,
+      "not_found",
+      "The requested resource was not found.",
+    );
+  });
 
   return router;
 }

@@ -1,6 +1,6 @@
 import type { AuthErrorCode } from "./auth-contract";
 
-export type AuthFlow = "sign-in" | "register" | "forgot" | "reset" | "verify" | "sign-out";
+export type AuthFlow = "sign-in" | "review-access" | "register" | "forgot" | "reset" | "verify" | "sign-out";
 
 export function safeAuthErrorMessageForCode(
   code: AuthErrorCode | null,
@@ -19,6 +19,8 @@ export function safeAuthErrorMessageForCode(
   switch (flow) {
     case "sign-in":
       return "Unable to sign in with those credentials.";
+    case "review-access":
+      return "That review code could not be accepted.";
     case "register":
       return "Unable to create the account with the submitted details.";
     case "forgot":

@@ -19,7 +19,10 @@ export function createApiRouter(runtime: AuthRuntime): IRouter {
 
   router.use(auth.requireTrustedOrigin);
   router.use(auth.loadPresentedSession);
-  router.use(auth.requireAuthenticatedSession);
+  // Development-review principals open the local static shell but never gain
+  // access to protected application/provider APIs. Those require a persisted,
+  // server-derived user session.
+  router.use(auth.requirePersistentUserSession);
   router.use(auth.requireCsrf);
 
   // These legacy handlers currently operate on global rows or process-wide

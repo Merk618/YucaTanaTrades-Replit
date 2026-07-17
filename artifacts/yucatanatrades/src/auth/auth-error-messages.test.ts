@@ -23,5 +23,13 @@ describe("safe auth error copy", () => {
       safeAuthErrorMessageForCode("csrf_invalid", "register"),
       "Your secure form context changed. Please try again.",
     );
+    assert.equal(
+      safeAuthErrorMessageForCode("invalid_credentials", "review-access"),
+      "That review code could not be accepted.",
+    );
+    assert.equal(
+      safeAuthErrorMessageForCode("rate_limited", "review-access"),
+      "Too many attempts. Please wait before trying again.",
+    );
   });
 });

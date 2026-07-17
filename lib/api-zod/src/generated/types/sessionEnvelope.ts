@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SessionState } from './sessionState';
+import type { SessionType } from './sessionType';
 import type { SessionUser } from './sessionUser';
 
 export interface SessionEnvelope {
   state: SessionState;
+  sessionType: SessionType;
   user: SessionUser | null;
   /** @nullable */
   expiresAt: Date | null;

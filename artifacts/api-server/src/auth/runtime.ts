@@ -27,6 +27,7 @@ export function createAuthRuntime(environment: AuthEnvironment): AuthRuntime {
     secret: environment.sessionSecret,
     exposeDevelopmentTokens: environment.exposeDevelopmentTokens,
     features: environment.features,
+    reviewAccess: environment.reviewAccess,
     password: environment.password,
     session: environment.session,
     tokenTtl: environment.tokenTtl,

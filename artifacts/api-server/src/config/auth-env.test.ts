@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { domainHmac } from "../auth/crypto";
 import { loadAuthEnvironment } from "./auth-env";
 
 const STRONG_SECRET =
   "auth-environment-test/2026-07-13/meridian-session-foundation";
+const TEST_REVIEW_CODE = "731905";
+const REVIEW_CODE_DOMAIN = "ytt/development-review-access-code/v1";
 
 describe("authentication environment validation", () => {
   it("boots development memory mode without a database and keeps delivery features off by default", () => {
@@ -210,5 +213,133 @@ describe("authentication environment validation", () => {
         APP_ORIGIN: "https://shared-preview.example",
       }),
     ).toThrow(/loopback-only application origins/);
+  });
+
+  it("enables Review Access only with a six-digit server-side code on a loopback memory stack", () => {
+    const codeWithoutFlag = loadAuthEnvironment({
+      NODE_ENV: "development",
+      AUTH_STORE: "memory",
+      SESSION_SECRET: STRONG_SECRET,
+      AUTH_BIND_HOST: "127.0.0.1",
+      APP_ORIGIN: "http://127.0.0.1:4173",
+      MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+    });
+    expect(codeWithoutFlag.reviewAccess).toMatchObject({
+      enabled: false,
+      codeHmac: null,
+    });
+
+    const environment = loadAuthEnvironment({
+      NODE_ENV: "development",
+      AUTH_STORE: "memory",
+      SESSION_SECRET: STRONG_SECRET,
+      AUTH_BIND_HOST: "127.0.0.1",
+      APP_ORIGIN: "http://127.0.0.1:4173",
+      MERIDIAN_REVIEW_ACCESS_ENABLED: "true",
+      MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+      MERIDIAN_REVIEW_SESSION_TTL_SECONDS: "600",
+    });
+
+    expect(environment.reviewAccess).toEqual({
+      enabled: true,
+      codeHmac: domainHmac(
+        STRONG_SECRET,
+        REVIEW_CODE_DOMAIN,
+        TEST_REVIEW_CODE,
+      ),
+      sessionTtlMs: 10 * 60_000,
+    });
+    expect(JSON.stringify(environment)).not.toContain(TEST_REVIEW_CODE);
+    expect("MERIDIAN_REVIEW_ACCESS_CODE" in environment).toBe(false);
+  });
+
+  it("rejects incomplete or unsafe non-production Review Access configurations", () => {
+    const localBase = {
+      NODE_ENV: "development",
+      AUTH_STORE: "memory",
+      SESSION_SECRET: STRONG_SECRET,
+      AUTH_BIND_HOST: "127.0.0.1",
+      APP_ORIGIN: "http://127.0.0.1:4173",
+      MERIDIAN_REVIEW_ACCESS_ENABLED: "true",
+    } as const;
+
+    for (const code of [undefined, "", "12345", "1234567", "abcdef"]) {
+      expect(() =>
+        loadAuthEnvironment({
+          ...localBase,
+          MERIDIAN_REVIEW_ACCESS_CODE: code,
+        }),
+      ).toThrow(/exactly six digits/);
+    }
+
+    expect(() =>
+      loadAuthEnvironment({
+        ...localBase,
+        AUTH_STORE: "database",
+        DATABASE_URL: "postgresql://db.example/yucatanatrades",
+        MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+      }),
+    ).toThrow(/AUTH_STORE=memory/);
+    expect(() =>
+      loadAuthEnvironment({
+        ...localBase,
+        AUTH_BIND_HOST: "0.0.0.0",
+        MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+      }),
+    ).toThrow(/exact loopback IP/);
+    expect(() =>
+      loadAuthEnvironment({
+        ...localBase,
+        AUTH_TRUST_PROXY: "loopback",
+        MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+      }),
+    ).toThrow(/does not permit trusted proxy/);
+    expect(() =>
+      loadAuthEnvironment({
+        ...localBase,
+        APP_ORIGIN: "https://preview.yucatanatrades.test",
+        AUTH_COOKIE_SECURE: "true",
+        MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+      }),
+    ).toThrow(/loopback-only application origins/);
+  });
+
+  it("bounds Review Access lifetime and ignores its flag and code in production", () => {
+    const localBase = {
+      NODE_ENV: "test",
+      AUTH_STORE: "memory",
+      SESSION_SECRET: STRONG_SECRET,
+      AUTH_BIND_HOST: "::1",
+      APP_ORIGIN: "http://[::1]:4173",
+      MERIDIAN_REVIEW_ACCESS_ENABLED: "true",
+      MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+    } as const;
+
+    for (const ttl of ["299", "3601"]) {
+      expect(() =>
+        loadAuthEnvironment({
+          ...localBase,
+          MERIDIAN_REVIEW_SESSION_TTL_SECONDS: ttl,
+        }),
+      ).toThrow(/between 300 and 3600/);
+    }
+
+    const production = loadAuthEnvironment({
+      NODE_ENV: "production",
+      AUTH_ENABLED: "true",
+      AUTH_STORE: "database",
+      DATABASE_URL: "postgresql://db.example/yucatanatrades",
+      SESSION_SECRET: STRONG_SECRET,
+      APP_ORIGIN: "https://app.yucatanatrades.example",
+      MERIDIAN_REVIEW_ACCESS_ENABLED: "true",
+      MERIDIAN_REVIEW_ACCESS_CODE: TEST_REVIEW_CODE,
+    });
+
+    expect(production.reviewAccess).toEqual({
+      enabled: false,
+      codeHmac: null,
+      sessionTtlMs: 30 * 60_000,
+    });
+    expect(JSON.stringify(production)).not.toContain(TEST_REVIEW_CODE);
   });
 });

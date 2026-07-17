@@ -4,5 +4,8 @@ import "./index.css";
 import "./ui1.css";
 import "./ui1-dashboard.css";
 import "./ui1-panels.css";
+import "./ui2-shell-overview.css";
+import "./ui2-markets-charts.css";
+import "./ui2-intelligence-routes.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
