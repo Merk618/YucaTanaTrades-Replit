@@ -81,7 +81,7 @@ export default function VerifyEmailPage() {
       )}
 
       <AuthActions>
-        {authenticated ? <Link href="/">Return to Meridian OS</Link> : <Link href="/sign-in">Sign in</Link>}
+        {authenticated ? <Link href="/overview">Return to Meridian OS</Link> : <Link href="/sign-in">Sign in</Link>}
       </AuthActions>
     </AuthFrame>
   );

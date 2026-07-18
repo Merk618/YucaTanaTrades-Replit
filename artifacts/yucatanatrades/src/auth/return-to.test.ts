@@ -10,6 +10,7 @@ import {
 
 describe("auth return destinations", () => {
   it("preserves approved private routes and their local query", () => {
+    assert.equal(sanitizeReturnTo("/overview"), "/overview");
     assert.equal(sanitizeReturnTo("/markets/stocks?symbol=NVDA#chart"),
       "/markets/stocks?symbol=NVDA#chart",
     );
@@ -27,7 +28,7 @@ describe("auth return destinations", () => {
     "javascript:alert(1)",
   ]) {
     it(`rejects an unsafe return destination: ${value}`, () => {
-      assert.equal(sanitizeReturnTo(value), "/");
+      assert.equal(sanitizeReturnTo(value), "/overview");
     });
   }
 
@@ -36,7 +37,7 @@ describe("auth return destinations", () => {
       "/sign-in?returnTo=%2Fportfolio&reason=expired",
     );
     assert.equal(authHrefWithReturnTo("/register", "//attacker.example/"),
-      "/register?returnTo=%2F",
+      "/register?returnTo=%2Foverview",
     );
   });
 

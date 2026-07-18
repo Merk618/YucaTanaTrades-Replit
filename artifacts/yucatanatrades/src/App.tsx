@@ -1,7 +1,7 @@
 import { MotionConfig } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Route, Router as WouterRouter, Switch } from "wouter";
-import { AuthProvider } from "@/auth/auth-provider";
+import { Redirect, Route, Router as WouterRouter, Switch } from "wouter";
+import { AuthProvider, useAuth } from "@/auth/auth-provider";
 import {
   AnonymousOnlyRoute,
   AuthServiceRoute,
@@ -11,6 +11,7 @@ import { AppShell } from "@/components/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/home";
+import PublicLandingPage from "@/pages/public-landing";
 import Scanners from "@/pages/scanners";
 import Bots from "@/pages/bots";
 import Journal from "@/pages/journal";
@@ -45,7 +46,7 @@ function WorkspaceRoutes() {
   return (
     <AppShell>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/overview" component={Home} />
         <Route path="/markets"><MarketsRoute /></Route>
         <Route path="/markets/stocks"><MarketsRoute /></Route>
         <Route path="/markets/crypto"><MarketsRoute /></Route>
@@ -66,9 +67,22 @@ function WorkspaceRoutes() {
   );
 }
 
+function PublicHomeRoute() {
+  const { state } = useAuth();
+
+  if (state.kind === "authenticated") {
+    return <Redirect to="/overview" replace />;
+  }
+
+  return <PublicLandingPage />;
+}
+
 function Router() {
   return (
     <Switch>
+      <Route path="/">
+        <PublicHomeRoute />
+      </Route>
       <Route path="/sign-in">
         <AnonymousOnlyRoute><SignInPage /></AnonymousOnlyRoute>
       </Route>

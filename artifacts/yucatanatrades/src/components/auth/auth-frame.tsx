@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { KeyRound, LockKeyhole, ServerCog, ShieldCheck } from "lucide-react";
+import { ArrowLeft, KeyRound, LockKeyhole, ServerCog, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { BrandMark } from "@/components/app-shell";
 import { motionTokens } from "@/lib/motion";
@@ -72,11 +72,14 @@ export function AuthFrame({
       <div className="yt-auth-aurora" aria-hidden="true" />
 
       <header className="yt-auth-header">
-        <Link href="/sign-in" className="yt-auth-brand" aria-label="YucaTanaTrades secure access">
+        <Link href="/" className="yt-auth-brand" aria-label="YucaTanaTrades public site">
           <BrandMark />
           <span className="yt-auth-wordmark">YUCATANATRADES</span>
         </Link>
-        <span className="yt-auth-header-status"><span aria-hidden="true" /> Private access</span>
+        <div className="yt-auth-header-actions">
+          <Link href="/" className="yt-auth-public-link"><ArrowLeft aria-hidden="true" /> Public site</Link>
+          <span className="yt-auth-header-status"><span aria-hidden="true" /> Secure access</span>
+        </div>
       </header>
 
       <section className="yt-auth-layout">
@@ -93,8 +96,8 @@ export function AuthFrame({
           </div>
           <h1>See the market.<br /><em>Keep your edge.</em></h1>
           <p>
-            Meridian OS is the focused operating environment behind YucaTanaTrades—
-            where research, risk context, and your private workspace come together.
+            The public YucaTanaTrades experience becomes Meridian OS after authentication—
+            a focused environment for research, risk context, and source-aware decisions.
           </p>
 
           <motion.div

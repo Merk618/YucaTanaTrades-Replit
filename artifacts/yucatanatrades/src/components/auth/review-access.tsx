@@ -57,8 +57,8 @@ export function ReviewAccessEntry({
       >
         <span className="yt-review-access-trigger-icon"><ScanLine aria-hidden="true" /></span>
         <span>
-          <strong>Review Access</strong>
-          <small>Local development</small>
+          <strong>Owner Review Access</strong>
+          <small>Local development only</small>
         </span>
         <ArrowRight aria-hidden="true" />
       </button>
@@ -165,7 +165,7 @@ export function ReviewAccessCodeForm({
         <button
           type="button"
           className="yt-review-access-close"
-          aria-label="Close Review Access"
+          aria-label="Close Owner Review Access"
           disabled={pending}
           onClick={onCancel}
         >
@@ -179,11 +179,11 @@ export function ReviewAccessCodeForm({
 
       <form className="yt-review-access-form" onSubmit={(event) => void submit(event)} noValidate>
         <fieldset disabled={pending}>
-          <legend className="sr-only">Six-digit Review Access code</legend>
+          <legend className="sr-only">Six-digit Owner Review Access code</legend>
           <div
             className="yt-review-access-cells"
             role="group"
-            aria-label="Review Access code"
+            aria-label="Owner Review Access code"
             aria-describedby={messageId}
           >
             {cells.map((digit, index) => (

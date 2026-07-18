@@ -1,4 +1,4 @@
-import { FormEvent, type ReactNode, useMemo, useState } from "react";
+import { FormEvent, type CSSProperties, type ReactNode, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
@@ -7,6 +7,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   BarChart3,
+  Bookmark,
   BookOpen,
   Bot,
   BrainCircuit,
@@ -434,6 +435,8 @@ const researchProfiles = {
   NVDA: {
     company: "NVIDIA Corporation",
     thesis: "Use the fixed worksheet to test whether durable platform demand can offset valuation and concentration risk.",
+    bullCase: "Hypothesis to test: platform demand remains durable enough for operating execution to matter more than near-term cycle noise.",
+    bearCase: "Disconfirming scenario to test: valuation sensitivity and customer concentration outweigh the durability assumed by the worksheet.",
     confidence: 72,
     tags: ["Semiconductors", "AI infrastructure", "Large cap"],
     risks: ["Multiple compression", "Customer concentration", "Supply constraints", "Cyclical demand"],
@@ -441,6 +444,8 @@ const researchProfiles = {
   AAPL: {
     company: "Apple Inc.",
     thesis: "Use the fixed worksheet to examine ecosystem durability against hardware-cycle and geographic concentration risk.",
+    bullCase: "Hypothesis to test: ecosystem retention and services mix make the business more durable than a single hardware cycle implies.",
+    bearCase: "Disconfirming scenario to test: hardware-cycle pressure, regulation, or geographic concentration weakens the durability premise.",
     confidence: 66,
     tags: ["Consumer technology", "Services", "Large cap"],
     risks: ["Hardware cycle", "Regulatory exposure", "Geographic mix", "Margin pressure"],
@@ -448,6 +453,8 @@ const researchProfiles = {
   MSFT: {
     company: "Microsoft Corporation",
     thesis: "Use the fixed worksheet to test cloud and software durability against capacity investment and valuation sensitivity.",
+    bullCase: "Hypothesis to test: recurring software demand and cloud adoption support durable execution through an investment cycle.",
+    bearCase: "Disconfirming scenario to test: capacity spending and competitive pressure reduce the operating leverage assumed by the worksheet.",
     confidence: 70,
     tags: ["Software", "Cloud", "Large cap"],
     risks: ["Capacity spend", "Cloud competition", "Regulatory exposure", "Valuation sensitivity"],
@@ -489,6 +496,9 @@ export function ResearchRoute() {
   const [saved, setSaved] = useState(true);
   const [selectedReport, setSelectedReport] = useState(0);
   const [expandedRisk, setExpandedRisk] = useState<string | null>(null);
+  const [provenanceOpen, setProvenanceOpen] = useState(false);
+  const [noteDrafts, setNoteDrafts] = useState<Record<ResearchSymbol, string>>({ NVDA: "", AAPL: "", MSFT: "" });
+  const [savedNotes, setSavedNotes] = useState<Record<ResearchSymbol, string>>({ NVDA: "", AAPL: "", MSFT: "" });
   const reducedMotion = Boolean(useReducedMotion());
   const profile = researchProfiles[symbol];
   const report = savedResearch[selectedReport];
@@ -525,7 +535,7 @@ export function ResearchRoute() {
         <div className="yt-ui2-research-watchlist" aria-label="Demo research watchlist">
           <span>Watchlist intelligence</span>
           {(Object.keys(researchProfiles) as ResearchSymbol[]).map((item) => (
-            <button key={item} type="button" className={symbol === item ? "is-active" : undefined} aria-pressed={symbol === item} onClick={() => { setSymbol(item); setQuery(item); setExpandedRisk(null); }}>
+            <button key={item} type="button" className={symbol === item ? "is-active" : undefined} aria-pressed={symbol === item} onClick={() => { setSymbol(item); setQuery(item); setExpandedRisk(null); setProvenanceOpen(false); }}>
               <b>{item}</b><small>{item === "NVDA" ? "Priority" : "Saved"}</small>
             </button>
           ))}
@@ -538,6 +548,12 @@ export function ResearchRoute() {
             <div><span>{symbol}</span><div><h3>{profile.company}</h3><p>{profile.tags.join(" · ")}</p></div></div>
             <button type="button" aria-pressed={saved} onClick={() => setSaved((value) => !value)}><Pin aria-hidden="true" />{saved ? "Saved" : "Save"}</button>
           </div>
+          <dl className="yt-ui2-company-snapshot" aria-label={`${symbol} deterministic company snapshot`}>
+            <div><dt>Coverage object</dt><dd>{symbol} · {profile.company}</dd></div>
+            <div><dt>Worksheet lens</dt><dd>{profile.tags[0]} · Demo</dd></div>
+            <div><dt>Connected records</dt><dd>0 provider records</dd></div>
+            <div><dt>Freshness</dt><dd>Fixed UI fixture</dd></div>
+          </dl>
           <div className="yt-ui2-thesis">
             <span>Working thesis · fixed UI copy</span>
             <blockquote>{profile.thesis}</blockquote>
@@ -571,6 +587,34 @@ export function ResearchRoute() {
             <p>{report.summary}</p>
           </div>
           <div className="yt-ui2-provenance-strip"><Database aria-hidden="true" /><span><b>Provenance:</b> UI-2 deterministic fixture</span><TruthPill tone="demo">No provider request</TruthPill></div>
+        </Panel>
+      </div>
+
+      <div className="yt-ui2-research-cases" aria-label={`${symbol} deterministic thesis cases`}>
+        <motion.article variants={panelReveal} className="is-bull">
+          <div><TrendingUp aria-hidden="true" /><span>Bull case · hypothesis</span><TruthPill tone="demo">Demo</TruthPill></div>
+          <p>{profile.bullCase}</p>
+          <small>Question framework only · no forecast, rating, or provider evidence</small>
+        </motion.article>
+        <motion.article variants={panelReveal} className="is-bear">
+          <div><ArrowDownRight aria-hidden="true" /><span>Bear case · disconfirming test</span><TruthPill tone="demo">Demo</TruthPill></div>
+          <p>{profile.bearCase}</p>
+          <small>Scenario framework only · no forecast, target, or analyst conclusion</small>
+        </motion.article>
+      </div>
+
+      <div className="yt-ui2-research-context-grid">
+        <Panel title="Valuation context" icon={CircleDollarSign} meta={<TruthPill tone="unavailable">Provider unavailable</TruthPill>}>
+          <div className="yt-ui2-context-placeholder">
+            <CircleDollarSign aria-hidden="true" />
+            <div><strong>No valuation dataset is connected.</strong><p>Multiples, estimates, price targets, and peer comparisons remain intentionally absent.</p></div>
+          </div>
+        </Panel>
+        <Panel title="Technical context" icon={TrendingUp} meta={<TruthPill tone="unavailable">Not attached</TruthPill>}>
+          <div className="yt-ui2-context-placeholder">
+            <TrendingUp aria-hidden="true" />
+            <div><strong>No technical evidence is attached to this thesis.</strong><p>Historical chart demonstrations elsewhere in Meridian OS are not imported as research evidence.</p></div>
+          </div>
         </Panel>
       </div>
 
@@ -635,28 +679,137 @@ export function ResearchRoute() {
       </div>
 
       <div className="yt-ui2-provider-boundary">
+        <motion.article variants={panelReveal}><FileText aria-hidden="true" /><div><TruthPill tone="unavailable">Filings unavailable</TruthPill><h2>No filing provider is connected.</h2><p>No filing text, issuer event, or regulatory document is represented in this worksheet.</p></div></motion.article>
         <motion.article variants={panelReveal}><UserRound aria-hidden="true" /><div><TruthPill tone="unavailable">Analyst content unavailable</TruthPill><h2>Licensed research is not connected.</h2><p>No ratings, targets, estimates, or analyst commentary are shown.</p></div></motion.article>
         <motion.article variants={panelReveal}><Sparkles aria-hidden="true" /><div><TruthPill tone="unavailable">AI synthesis unavailable</TruthPill><h2>No model has evaluated this thesis.</h2><p>The worksheet preserves space for cited synthesis after provider approval.</p></div></motion.article>
+      </div>
+
+      <div className="yt-ui2-research-records">
+        <Panel title="Saved notes" icon={MessageSquare} meta={<TruthPill tone="demo">Open worksheet only</TruthPill>} className="yt-ui2-notes-panel">
+          <label htmlFor={`yt-ui2-research-note-${symbol}`}>Note for {symbol}</label>
+          <textarea
+            id={`yt-ui2-research-note-${symbol}`}
+            maxLength={360}
+            onChange={(event) => setNoteDrafts((current) => ({ ...current, [symbol]: event.target.value }))}
+            placeholder="Record a source question, disconfirming observation, or review task…"
+            value={noteDrafts[symbol]}
+          />
+          <div>
+            <span aria-live="polite">{savedNotes[symbol] && savedNotes[symbol] === noteDrafts[symbol] ? "Saved in this open worksheet" : "Not persisted · no database write"}</span>
+            <button type="button" disabled={!noteDrafts[symbol].trim() || noteDrafts[symbol] === savedNotes[symbol]} onClick={() => setSavedNotes((current) => ({ ...current, [symbol]: noteDrafts[symbol].trim() }))}>Save worksheet note</button>
+          </div>
+        </Panel>
+
+        <Panel title="Thesis & confidence history" icon={Clock3} meta={<TruthPill tone="demo">Deterministic history</TruthPill>} className="yt-ui2-history-panel">
+          <div className="yt-ui2-history-columns">
+            <section><span>Thesis changes</span><ol><li><b>Baseline</b><p>Fixed working thesis created for the UI review fixture.</p></li><li><b>Current</b><p>No source-driven revision recorded; providers remain unavailable.</p></li></ol></section>
+            <section><span>Confidence history</span><ol><li><b>Baseline · {profile.confidence}/100</b><i style={{ "--yt-history-width": `${profile.confidence}%` } as CSSProperties} /></li><li><b>Current · {profile.confidence}/100</b><i style={{ "--yt-history-width": `${profile.confidence}%` } as CSSProperties} /><p>Unchanged deterministic UI score.</p></li></ol></section>
+          </div>
+        </Panel>
+
+        <Panel
+          title="Source & provenance"
+          icon={Database}
+          meta={<TruthPill tone="demo">Fixture manifest</TruthPill>}
+          className="yt-ui2-provenance-drawer"
+          action={<button type="button" aria-controls="yt-ui2-provenance-details" aria-expanded={provenanceOpen} onClick={() => setProvenanceOpen((value) => !value)}>{provenanceOpen ? "Close manifest" : "Inspect manifest"}<ChevronRight aria-hidden="true" /></button>}
+        >
+          <div className="yt-ui2-provenance-summary"><Database aria-hidden="true" /><span><strong>{symbol} research-demo-v1</strong><small>Committed deterministic fixture · no external request</small></span></div>
+          <AnimatePresence initial={false}>
+            {provenanceOpen ? (
+              <motion.dl
+                animate={{ height: "auto", opacity: 1 }}
+                className="yt-ui2-provenance-details"
+                exit={{ height: 0, opacity: 0 }}
+                id="yt-ui2-provenance-details"
+                initial={reducedMotion ? false : { height: 0, opacity: 0 }}
+                transition={reducedMotion ? { duration: 0 } : { duration: motionTokens.duration.fast, ease: motionTokens.ease.out }}
+              >
+                <div><dt>Origin</dt><dd>Local committed UI fixture</dd></div><div><dt>Provider</dt><dd>None</dd></div><div><dt>Freshness</dt><dd>Static · Demo</dd></div><div><dt>External citations</dt><dd>0 attached</dd></div>
+              </motion.dl>
+            ) : null}
+          </AnimatePresence>
+        </Panel>
       </div>
     </RouteMotion>
   );
 }
 
-type NewsReviewState = "Unavailable" | "Empty" | "Loading";
+type NewsReviewState = "Demo Preview" | "Unavailable" | "Empty" | "Loading";
+
+const demoNewsFixtures = [
+  {
+    id: "earnings-reconciliation",
+    title: "Earnings source reconciliation example",
+    summary: "A fixed workflow item showing where issuer source, event time, and market-session context will be reconciled.",
+    category: "Earnings",
+    impact: "High",
+    sentiment: "Neutral",
+    symbols: "NVDA · Demo",
+    source: "Demo fixture · not a publisher",
+    freshness: "Static · no market timestamp",
+  },
+  {
+    id: "macro-freshness",
+    title: "Macro freshness-policy example",
+    summary: "A deterministic preview of the checks required before a policy or economic item can enter the intelligence feed.",
+    category: "Macro",
+    impact: "High",
+    sentiment: "Neutral",
+    symbols: "Market-wide · Demo",
+    source: "Demo fixture · not a publisher",
+    freshness: "Static · no publish timestamp",
+  },
+  {
+    id: "company-classification",
+    title: "Company impact-classification example",
+    summary: "A fixed card demonstrating watchlist relevance and category structure without asserting that an issuer event occurred.",
+    category: "Company",
+    impact: "Medium",
+    sentiment: "Neutral",
+    symbols: "AAPL · MSFT · Demo",
+    source: "Demo fixture · not a publisher",
+    freshness: "Static · no observed timestamp",
+  },
+] as const;
+
+const savedNewsFilters = [
+  { id: "high-impact", label: "High-impact review", detail: "Demo Preview · High · All sentiment", state: "Demo Preview", impact: "High", sentiment: "All sentiment" },
+  { id: "neutral-context", label: "Neutral context", detail: "Demo Preview · All impact · Neutral", state: "Demo Preview", impact: "All impact", sentiment: "Neutral" },
+  { id: "provider-boundary", label: "Provider boundary", detail: "Unavailable state · no source", state: "Unavailable", impact: "All impact", sentiment: "All sentiment" },
+] as const;
 
 export function NewsRoute() {
-  const [state, setState] = useState<NewsReviewState>("Unavailable");
+  const [state, setState] = useState<NewsReviewState>("Demo Preview");
   const [impact, setImpact] = useState("All impact");
   const [sentiment, setSentiment] = useState("All sentiment");
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const reducedMotion = Boolean(useReducedMotion());
+  const filteredFixtures = demoNewsFixtures.filter((item) =>
+    (impact === "All impact" || item.impact === impact)
+    && (sentiment === "All sentiment" || item.sentiment === sentiment),
+  );
+
+  function applySavedNewsFilter(filter: (typeof savedNewsFilters)[number]) {
+    setSelectedFilter(filter.id);
+    setState(filter.state as NewsReviewState);
+    setImpact(filter.impact);
+    setSentiment(filter.sentiment);
+  }
+
+  function toggleBookmark(id: string) {
+    setBookmarks((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
 
   return (
     <RouteMotion className="yt-ui2-news-route">
       <RouteHeader
         eyebrow="Meridian OS · News intelligence"
         title="News"
-        description="A provenance-first news workspace that stays intentionally empty until a licensed source is configured."
+        description="Review source policy, saved filters, and deterministic workflow fixtures without presenting provider content as live news."
         icon={Newspaper}
-        truth={<TruthPill tone="unavailable">News provider unavailable</TruthPill>}
+        truth={<><TruthPill tone="unavailable">News provider unavailable</TruthPill><TruthPill tone="demo">Demo Preview available</TruthPill></>}
       />
 
       <motion.section variants={panelReveal} className="yt-ui2-news-unavailable">
@@ -670,23 +823,45 @@ export function NewsRoute() {
         <aside><span>Provider state</span><strong>Unavailable</strong><small>0 live headlines · 0 requests</small></aside>
       </motion.section>
 
-      <Panel title="Intelligence feed" icon={Activity} meta={<TruthPill tone="unavailable">No source connected</TruthPill>} className="yt-ui2-news-feed" action={<SegmentedControl label="News state preview" options={["Unavailable", "Empty", "Loading"]} value={state} onChange={(value) => setState(value as NewsReviewState)} compact />}>
+      <div className="yt-ui2-news-setup">
+        <Panel title="Provider connection" icon={CloudOff} meta={<TruthPill tone="unavailable">Not configured</TruthPill>}>
+          <div className="yt-ui2-provider-connection">
+            <dl><div><dt>Licensed news adapter</dt><dd>Unavailable</dd></div><div><dt>Preview requests</dt><dd>0 external requests</dd></div><div><dt>Credentials</dt><dd>Not collected in this UI</dd></div></dl>
+            <button type="button" disabled><CloudOff aria-hidden="true" />Connection phase deferred</button>
+          </div>
+        </Panel>
+        <Panel title="Saved filters" icon={Filter} meta={<TruthPill tone="demo">Local session</TruthPill>}>
+          <div className="yt-ui2-saved-filters">
+            {savedNewsFilters.map((filter) => <button type="button" key={filter.id} aria-pressed={selectedFilter === filter.id} className={selectedFilter === filter.id ? "is-active" : undefined} onClick={() => applySavedNewsFilter(filter)}><Filter aria-hidden="true" /><span><strong>{filter.label}</strong><small>{filter.detail}</small></span><ChevronRight aria-hidden="true" /></button>)}
+          </div>
+        </Panel>
+      </div>
+
+      <Panel title="Intelligence feed" icon={Activity} meta={state === "Demo Preview" ? <TruthPill tone="demo">Fixed · non-live fixtures</TruthPill> : <TruthPill tone={state === "Unavailable" ? "unavailable" : "neutral"}>{state}</TruthPill>} className="yt-ui2-news-feed" action={<SegmentedControl label="News state preview" options={["Demo Preview", "Unavailable", "Empty", "Loading"]} value={state} onChange={(value) => { setState(value as NewsReviewState); setSelectedFilter(null); }} compact />}>
         <div className="yt-ui2-news-toolbar">
           <div><Filter aria-hidden="true" /><span>Filter architecture</span></div>
-          <SegmentedControl label="Impact filter" options={["All impact", "High", "Medium", "Low"]} value={impact} onChange={setImpact} compact />
-          <SegmentedControl label="Sentiment filter" options={["All sentiment", "Positive", "Neutral", "Negative"]} value={sentiment} onChange={setSentiment} compact />
+          <SegmentedControl label="Impact filter" options={["All impact", "High", "Medium", "Low"]} value={impact} onChange={(value) => { setImpact(value); setSelectedFilter(null); }} compact />
+          <SegmentedControl label="Sentiment filter" options={["All sentiment", "Positive", "Neutral", "Negative"]} value={sentiment} onChange={(value) => { setSentiment(value); setSelectedFilter(null); }} compact />
         </div>
         <AnimatePresence mode="wait" initial={false}>
           {state === "Loading" ? (
-            <motion.div className="yt-ui2-news-loading" key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status" aria-label="News loading state preview">
+            <motion.div className="yt-ui2-news-loading" key="loading" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={reducedMotion ? { duration: 0 } : { duration: motionTokens.duration.fast }} role="status" aria-label="News loading state preview">
               {[0, 1, 2].map((item) => <div key={item}><i /><span><b /><b /><b /></span></div>)}
               <p><LoaderCircle aria-hidden="true" /> Loading-state preview only · no request in progress</p>
             </motion.div>
+          ) : state === "Demo Preview" && filteredFixtures.length ? (
+            <motion.div className="yt-ui2-news-demo-feed" key={`demo-${impact}-${sentiment}`} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -3 }} transition={reducedMotion ? { duration: 0 } : { duration: motionTokens.duration.fast, ease: motionTokens.ease.out }} role="region" aria-label="Deterministic non-live news preview" aria-live="polite">
+              <div className="yt-ui2-news-demo-disclosure"><TruthPill tone="demo">Demo Preview</TruthPill><span>Fixed workflow fixtures · not headlines · no provider request</span><strong>{filteredFixtures.length} shown</strong></div>
+              {filteredFixtures.map((item) => {
+                const bookmarked = bookmarks.includes(item.id);
+                return <article key={item.id}><div className="yt-ui2-news-demo-icon"><Newspaper aria-hidden="true" /></div><div className="yt-ui2-news-demo-copy"><div><TruthPill tone="demo">{item.category} · Demo</TruthPill><span>{item.impact} framework · {item.sentiment}</span></div><h3>{item.title}</h3><p>{item.summary}</p><footer><span>{item.source}</span><span>{item.freshness}</span><span>{item.symbols}</span></footer></div><button type="button" aria-label={`${bookmarked ? "Remove" : "Add"} ${item.title} ${bookmarked ? "from" : "to"} bookmarks`} aria-pressed={bookmarked} className={bookmarked ? "is-active" : undefined} onClick={() => toggleBookmark(item.id)}><Bookmark aria-hidden="true" /></button></article>;
+              })}
+            </motion.div>
           ) : (
-            <motion.div className="yt-ui2-news-empty" key={state} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div className="yt-ui2-news-empty" key={`${state}-${impact}-${sentiment}`} initial={reducedMotion ? false : { opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={reducedMotion ? { duration: 0 } : { duration: motionTokens.duration.fast }} role="status">
               {state === "Unavailable" ? <CloudOff aria-hidden="true" /> : <Newspaper aria-hidden="true" />}
-              <div><strong>{state === "Unavailable" ? "Feed unavailable" : "No items match this review state"}</strong><p>{state === "Unavailable" ? "Connect an approved provider before source-bearing items can appear." : `No deterministic items for ${impact.toLowerCase()} and ${sentiment.toLowerCase()}.`}</p></div>
-              <TruthPill tone={state === "Unavailable" ? "unavailable" : "neutral"}>{state}</TruthPill>
+              <div><strong>{state === "Unavailable" ? "Feed unavailable" : state === "Demo Preview" ? "No fixed fixtures match these filters" : "No items match this review state"}</strong><p>{state === "Unavailable" ? "Connect an approved provider before source-bearing items can appear." : state === "Demo Preview" ? `The deterministic preview has no ${impact.toLowerCase()} and ${sentiment.toLowerCase()} fixture.` : `No deterministic items for ${impact.toLowerCase()} and ${sentiment.toLowerCase()}.`}</p></div>
+              <TruthPill tone={state === "Unavailable" ? "unavailable" : state === "Demo Preview" ? "demo" : "neutral"}>{state}</TruthPill>
             </motion.div>
           )}
         </AnimatePresence>
@@ -719,6 +894,25 @@ export function NewsRoute() {
         ].map(([Icon, title, body, meta]) => (
           <motion.article key={String(title)} variants={panelReveal}><span><Icon aria-hidden="true" /></span><div><h3>{String(title)}</h3><p>{String(body)}</p></div><small>{String(meta)}</small><b>0</b></motion.article>
         ))}
+      </div>
+
+      <div className="yt-ui2-news-operations">
+        <Panel title="Freshness & source policy" icon={Clock3} meta={<TruthPill tone="neutral">Contract foundation</TruthPill>}>
+          <div className="yt-ui2-news-policy">
+            <div><span>01</span><strong>Canonical source required</strong><p>Publisher identity and canonical URL must accompany any future source-bearing item.</p></div>
+            <div><span>02</span><strong>Two timestamps required</strong><p>Published time and observed time remain separate; missing freshness fails closed.</p></div>
+            <div><span>03</span><strong>Provider state always visible</strong><p>Live, delayed, historical, demo, and unavailable states may not be inferred from styling.</p></div>
+            <div><span>04</span><strong>No silent enrichment</strong><p>Sentiment or impact classifications require provenance and an explicit confidence basis.</p></div>
+          </div>
+        </Panel>
+        <Panel title="Bookmarked intelligence" icon={Bookmark} meta={<TruthPill tone="demo">Open workspace only</TruthPill>}>
+          <div className="yt-ui2-bookmarks" aria-live="polite">
+            {bookmarks.length ? bookmarks.map((id) => {
+              const item = demoNewsFixtures.find((fixture) => fixture.id === id);
+              return item ? <div key={id}><Bookmark aria-hidden="true" /><span><strong>{item.title}</strong><small>Demo Preview · cleared when this route closes</small></span><button type="button" onClick={() => toggleBookmark(id)} aria-label={`Remove ${item.title} from bookmarks`}>Remove</button></div> : null;
+            }) : <div className="is-empty"><Bookmark aria-hidden="true" /><span><strong>No session bookmarks</strong><small>Bookmark a fixed Demo Preview card to test this local organization state.</small></span></div>}
+          </div>
+        </Panel>
       </div>
     </RouteMotion>
   );

@@ -7,5 +7,6 @@ import "./ui1-panels.css";
 import "./ui2-shell-overview.css";
 import "./ui2-markets-charts.css";
 import "./ui2-intelligence-routes.css";
+import "./ui21-shell.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

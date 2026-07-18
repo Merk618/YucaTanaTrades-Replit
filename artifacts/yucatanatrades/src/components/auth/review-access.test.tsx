@@ -19,8 +19,8 @@ describe("Review Access presentation", () => {
     const markup = renderToStaticMarkup(
       <ReviewAccessEntry enabled onSubmit={submit} />,
     );
-    expect(markup).toContain("Review Access");
-    expect(markup).toContain("Local development");
+    expect(markup).toContain("Owner Review Access");
+    expect(markup).toContain("Local development only");
     expect(markup).not.toContain("Review access code digit");
   });
 

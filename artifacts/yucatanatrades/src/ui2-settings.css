@@ -1,0 +1,1490 @@
+.yt-settings {
+  --settings-line: rgba(151, 187, 194, 0.14);
+  --settings-line-strong: rgba(213, 187, 128, 0.28);
+  --settings-panel: rgba(7, 29, 39, 0.82);
+  --settings-panel-raised: rgba(12, 39, 50, 0.88);
+  --settings-copy: rgba(214, 224, 223, 0.92);
+  --settings-muted: rgba(151, 169, 174, 0.72);
+  --settings-dim: rgba(132, 152, 158, 0.54);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  padding: 17px 4px 76px;
+  color: var(--yt-text);
+}
+
+.yt-settings *,
+.yt-settings *::before,
+.yt-settings *::after {
+  box-sizing: border-box;
+}
+
+.yt-settings-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 93px;
+  padding: 9px 5px 18px;
+  border-bottom: 1px solid var(--settings-line);
+}
+
+.yt-settings-hero::after {
+  content: "";
+  position: absolute;
+  right: 7%;
+  bottom: -1px;
+  width: min(300px, 28vw);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(224, 196, 132, 0.72),
+    transparent
+  );
+  box-shadow: 0 0 18px rgba(217, 187, 122, 0.2);
+}
+
+.yt-settings-eyebrow,
+.yt-settings-panel__title > div > span {
+  display: block;
+  color: var(--yt-gold);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.yt-settings-hero h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 5px 0 2px;
+  color: var(--yt-text);
+  font-family: var(--app-font-display, "Space Grotesk", sans-serif);
+  font-size: clamp(26px, 2vw, 34px);
+  font-weight: 520;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.yt-settings-hero h1 svg {
+  width: 23px;
+  height: 23px;
+  color: var(--yt-gold-bright);
+  stroke-width: 1.55;
+}
+
+.yt-settings-hero p {
+  max-width: 680px;
+  margin: 8px 0 0;
+  color: var(--settings-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.yt-settings-hero__states {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.yt-settings-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 3px 7px;
+  border: 1px solid rgba(133, 165, 173, 0.18);
+  border-radius: 999px;
+  background: rgba(116, 151, 160, 0.07);
+  color: rgba(170, 188, 191, 0.78);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 8px;
+  font-weight: 560;
+  letter-spacing: 0.045em;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.yt-settings-pill.is-gold {
+  border-color: rgba(217, 187, 122, 0.3);
+  background: rgba(217, 187, 122, 0.1);
+  color: var(--yt-gold-bright);
+}
+
+.yt-settings-pill.is-positive {
+  border-color: rgba(119, 183, 122, 0.28);
+  background: rgba(119, 183, 122, 0.09);
+  color: #8dcc91;
+}
+
+.yt-settings-pill.is-negative {
+  border-color: rgba(240, 100, 79, 0.28);
+  background: rgba(240, 100, 79, 0.08);
+  color: #f07b68;
+}
+
+.yt-settings-pill.is-cyan {
+  border-color: rgba(101, 174, 185, 0.3);
+  background: rgba(101, 174, 185, 0.09);
+  color: #7fc0c9;
+}
+
+.yt-settings-account-grid,
+.yt-settings-two-column,
+.yt-settings-three-column {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.yt-settings-account-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.yt-settings-account-grid > .yt-settings-profile {
+  grid-column: span 6;
+  grid-row: span 2;
+}
+
+.yt-settings-account-grid > .yt-settings-panel:nth-child(2),
+.yt-settings-account-grid > .yt-settings-panel:nth-child(3) {
+  grid-column: span 3;
+}
+
+.yt-settings-account-grid > .yt-settings-panel:nth-child(4) {
+  grid-column: span 6;
+}
+
+.yt-settings-two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.yt-settings-three-column {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.yt-settings-panel {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--settings-line);
+  border-radius: 13px;
+  background:
+    linear-gradient(155deg, rgba(17, 46, 57, 0.72), rgba(5, 25, 35, 0.88)),
+    var(--settings-panel);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.025),
+    0 13px 35px rgba(0, 0, 0, 0.11);
+}
+
+.yt-settings-panel::after {
+  content: "";
+  position: absolute;
+  right: -82px;
+  bottom: -102px;
+  width: 190px;
+  height: 190px;
+  border: 1px solid rgba(101, 174, 185, 0.035);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.yt-settings-panel__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--settings-line);
+  background: rgba(5, 24, 33, 0.24);
+}
+
+.yt-settings-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.yt-settings-panel__icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid rgba(217, 187, 122, 0.22);
+  border-radius: 9px;
+  background: rgba(217, 187, 122, 0.065);
+  color: var(--yt-gold);
+}
+
+.yt-settings-panel__icon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.65;
+}
+
+.yt-settings-panel__title h2 {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--settings-copy);
+  font-family: var(--app-font-display, "Space Grotesk", sans-serif);
+  font-size: 12px;
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-panel__title > div > span {
+  color: var(--settings-dim);
+  font-size: 7px;
+  letter-spacing: 0.13em;
+}
+
+.yt-settings-panel__state {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.yt-settings-panel__body {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  padding: 13px;
+}
+
+.yt-settings-profile {
+  border-color: rgba(217, 187, 122, 0.2);
+  background:
+    radial-gradient(
+      380px 220px at 0 0,
+      rgba(217, 187, 122, 0.075),
+      transparent 72%
+    ),
+    linear-gradient(155deg, rgba(17, 46, 57, 0.78), rgba(5, 25, 35, 0.9));
+}
+
+.yt-settings-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--settings-line);
+}
+
+.yt-settings-avatar {
+  position: relative;
+  display: grid;
+  width: 51px;
+  height: 51px;
+  flex: 0 0 51px;
+  place-items: center;
+  border: 1px solid rgba(217, 187, 122, 0.4);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      rgba(247, 231, 180, 0.22),
+      transparent 34%
+    ),
+    linear-gradient(145deg, rgba(217, 187, 122, 0.2), rgba(17, 54, 65, 0.75));
+  box-shadow: 0 0 26px rgba(217, 187, 122, 0.09);
+  color: var(--yt-gold-bright);
+  font-family: var(--app-font-display, "Space Grotesk", sans-serif);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.yt-settings-identity__copy {
+  min-width: 0;
+}
+
+.yt-settings-identity__copy > strong {
+  display: block;
+  overflow: hidden;
+  color: var(--yt-text);
+  font-family: var(--app-font-display, "Space Grotesk", sans-serif);
+  font-size: 17px;
+  font-weight: 520;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-identity__copy > span {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--settings-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-identity__copy > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.yt-settings-session-facts,
+.yt-settings-compact-facts {
+  display: grid;
+  margin: 0;
+}
+
+.yt-settings-session-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--settings-line);
+  border-radius: 10px;
+  background: var(--settings-line);
+}
+
+.yt-settings-session-facts > div {
+  min-width: 0;
+  padding: 9px 10px;
+  background: rgba(4, 23, 32, 0.72);
+}
+
+.yt-settings-session-facts dt,
+.yt-settings-compact-facts dt {
+  color: var(--settings-dim);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.yt-settings-session-facts dd,
+.yt-settings-compact-facts dd {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--settings-copy);
+  font-size: 9px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-actions,
+.yt-settings-provider-toolbar > div:last-child,
+.yt-settings-risk-editor > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.yt-settings-actions {
+  margin-top: 11px;
+}
+
+.yt-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 31px;
+  padding: 6px 10px;
+  border: 1px solid rgba(142, 171, 177, 0.2);
+  border-radius: 8px;
+  background: rgba(98, 133, 141, 0.055);
+  color: rgba(190, 204, 205, 0.83);
+  font-size: 9px;
+  font-weight: 540;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--yt-fast) ease,
+    border-color var(--yt-fast) ease,
+    background var(--yt-fast) ease,
+    transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-settings-button svg {
+  width: 12px;
+  height: 12px;
+  margin-right: 5px;
+  stroke-width: 1.8;
+}
+
+.yt-settings-button:hover:not(:disabled) {
+  border-color: rgba(217, 187, 122, 0.34);
+  background: rgba(217, 187, 122, 0.085);
+  color: var(--yt-gold-bright);
+  transform: translateY(-1px);
+}
+
+.yt-settings-button.is-primary {
+  border-color: rgba(217, 187, 122, 0.32);
+  background: rgba(217, 187, 122, 0.1);
+  color: var(--yt-gold-bright);
+}
+
+.yt-settings-button.is-danger {
+  border-color: rgba(240, 100, 79, 0.19);
+  color: rgba(240, 123, 104, 0.8);
+}
+
+.yt-settings-button:disabled,
+.yt-settings-disabled-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.yt-settings-note,
+.yt-settings-lead {
+  margin: 0;
+  color: var(--settings-muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.yt-settings-note {
+  margin-top: 9px;
+  color: var(--settings-dim);
+}
+
+.yt-settings-compact-facts {
+  gap: 0;
+  margin-top: 10px;
+}
+
+.yt-settings-compact-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 0;
+  border-top: 1px solid var(--settings-line);
+}
+
+.yt-settings-compact-facts dd {
+  color: var(--yt-text);
+  text-align: right;
+}
+
+.yt-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 13px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 0;
+  border-top: 1px solid var(--settings-line);
+}
+
+.yt-settings-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.yt-settings-row:last-child {
+  padding-bottom: 0;
+}
+
+.yt-settings-row > div:first-child {
+  min-width: 0;
+}
+
+.yt-settings-row strong {
+  display: block;
+  color: var(--settings-copy);
+  font-size: 9px;
+  font-weight: 560;
+  line-height: 1.35;
+}
+
+.yt-settings-row > div:first-child > span {
+  display: block;
+  margin-top: 2px;
+  color: var(--settings-dim);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.yt-settings-row__action {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--yt-gold);
+}
+
+.yt-settings-row__action > svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
+}
+
+.yt-settings-security-list .yt-settings-row {
+  min-height: 39px;
+}
+
+.yt-settings-device {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  margin-bottom: 5px;
+  border: 1px solid rgba(119, 183, 122, 0.2);
+  border-radius: 9px;
+  background: rgba(119, 183, 122, 0.05);
+}
+
+.yt-settings-device > span:first-child {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(119, 183, 122, 0.08);
+  color: #8dcc91;
+}
+
+.yt-settings-device svg {
+  width: 14px;
+  height: 14px;
+}
+
+.yt-settings-device strong,
+.yt-settings-device small {
+  display: block;
+}
+
+.yt-settings-device strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+}
+
+.yt-settings-device small {
+  margin-top: 2px;
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-message {
+  margin: 9px 0 0;
+  padding: 7px 9px;
+  border: 1px solid var(--settings-line);
+  border-radius: 7px;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.yt-settings-message.is-error,
+.yt-settings-diagnostic.is-error {
+  border-color: rgba(240, 100, 79, 0.24);
+  background: rgba(240, 100, 79, 0.06);
+  color: #ef806e;
+}
+
+.yt-settings-message.is-success {
+  border-color: rgba(119, 183, 122, 0.24);
+  background: rgba(119, 183, 122, 0.06);
+  color: #8dcc91;
+}
+
+.yt-settings-provider-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--settings-line);
+}
+
+.yt-settings-provider-toolbar > div:first-child strong,
+.yt-settings-provider-toolbar > div:first-child span {
+  display: block;
+}
+
+.yt-settings-provider-toolbar > div:first-child strong {
+  color: var(--settings-copy);
+  font-size: 10px;
+  font-weight: 560;
+}
+
+.yt-settings-provider-toolbar > div:first-child span {
+  margin-top: 3px;
+  color: var(--settings-dim);
+  font-size: 8px;
+}
+
+.yt-settings-source-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--settings-line);
+}
+
+.yt-settings-source-summary article {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  background: rgba(4, 23, 32, 0.48);
+}
+
+.yt-settings-source-summary article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.yt-settings-source-summary article > div > span:first-child {
+  overflow: hidden;
+  color: var(--settings-muted);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-source-summary strong,
+.yt-settings-source-summary small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-source-summary strong {
+  margin-top: 7px;
+  color: var(--settings-copy);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.yt-settings-source-summary small {
+  margin-top: 3px;
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-provider-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 -13px;
+  background: var(--settings-line);
+}
+
+.yt-settings-provider-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px 13px;
+  background: rgba(5, 27, 37, 0.96);
+  transition: background var(--yt-fast) ease;
+}
+
+.yt-settings-provider-list article:hover {
+  background: rgba(12, 42, 52, 0.96);
+}
+
+.yt-settings-provider-list__icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  background: rgba(108, 147, 156, 0.06);
+  color: var(--settings-muted);
+}
+
+.yt-settings-provider-list__icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.yt-settings-provider-list__icon.is-positive {
+  color: #8dcc91;
+}
+.yt-settings-provider-list__icon.is-negative {
+  color: #ef806e;
+}
+.yt-settings-provider-list__icon.is-gold {
+  color: var(--yt-gold-bright);
+}
+.yt-settings-provider-list__icon.is-cyan {
+  color: #7fc0c9;
+}
+
+.yt-settings-provider-list__copy {
+  min-width: 0;
+}
+
+.yt-settings-provider-list__copy > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.yt-settings-provider-list__copy > div > strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+  font-weight: 560;
+}
+
+.yt-settings-provider-list__copy p {
+  margin: 4px 0 0;
+  color: var(--settings-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.yt-settings-provider-list__copy small {
+  display: block;
+  margin-top: 4px;
+  color: var(--settings-dim);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 7px;
+  line-height: 1.3;
+}
+
+.yt-settings-provider-list__source {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--settings-dim);
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 7px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yt-settings-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  padding: 18px;
+  color: var(--settings-dim);
+  text-align: center;
+}
+
+.yt-settings-empty svg {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 8px;
+  color: var(--yt-gold);
+  stroke-width: 1.4;
+}
+
+.yt-settings-empty strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+  font-weight: 550;
+}
+
+.yt-settings-empty span {
+  margin-top: 3px;
+  font-size: 8px;
+}
+
+.yt-settings-diagnostic,
+.yt-settings-diagnostics {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--settings-line);
+  border-radius: 9px;
+  background: rgba(4, 23, 32, 0.6);
+  font-size: 8px;
+}
+
+.yt-settings-diagnostics > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.yt-settings-diagnostics > header > strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+}
+
+.yt-settings-diagnostics > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.yt-settings-diagnostics > div > span {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 7px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--settings-line);
+  border-radius: 7px;
+  background: rgba(11, 38, 48, 0.62);
+}
+
+.yt-settings-diagnostics > div strong,
+.yt-settings-diagnostics > div b {
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 8px;
+}
+
+.yt-settings-diagnostics > div strong {
+  color: var(--yt-gold);
+}
+.yt-settings-diagnostics > div b {
+  color: var(--settings-copy);
+  font-weight: 500;
+  text-align: right;
+}
+.yt-settings-diagnostics > div small {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: var(--settings-dim);
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yt-settings-diagnostics > p {
+  margin: 8px 0 0;
+  color: var(--settings-muted);
+}
+
+.yt-settings-truth-policy {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(420px, 1.5fr);
+  gap: 8px 18px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(101, 174, 185, 0.18);
+  border-radius: 9px;
+  background: rgba(101, 174, 185, 0.045);
+}
+
+.yt-settings-truth-policy > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.yt-settings-truth-policy > div > svg {
+  width: 16px;
+  height: 16px;
+  color: #7fc0c9;
+}
+
+.yt-settings-truth-policy strong,
+.yt-settings-truth-policy small {
+  display: block;
+}
+
+.yt-settings-truth-policy strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+}
+
+.yt-settings-truth-policy small {
+  margin-top: 2px;
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-truth-policy ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.yt-settings-truth-policy li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid var(--settings-line);
+  border-radius: 7px;
+  color: var(--settings-muted);
+  font-size: 7px;
+}
+
+.yt-settings-truth-policy > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--settings-line);
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-stack .yt-settings-row,
+.yt-settings-risk-list .yt-settings-row,
+.yt-settings-integration-list .yt-settings-row {
+  padding-right: 1px;
+  padding-left: 1px;
+}
+
+.yt-settings-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(138, 167, 174, 0.18);
+  border-radius: 999px;
+  background: rgba(120, 149, 155, 0.1);
+  cursor: pointer;
+  transition:
+    background var(--yt-fast) ease,
+    border-color var(--yt-fast) ease;
+}
+
+.yt-settings-toggle.is-on {
+  border-color: rgba(217, 187, 122, 0.42);
+  background: rgba(217, 187, 122, 0.28);
+}
+
+.yt-settings-toggle > span {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(208, 218, 216, 0.86);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.yt-settings-toggle.is-on > span {
+  background: var(--yt-gold-bright);
+}
+
+.yt-settings-risk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 7px;
+}
+
+.yt-settings-risk-toolbar p {
+  margin: 0;
+  color: var(--settings-dim);
+  font-size: 8px;
+}
+
+.yt-settings-risk-input {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--settings-line);
+  border-radius: 7px;
+  background: rgba(2, 18, 26, 0.7);
+  color: var(--settings-muted);
+}
+
+.yt-settings-risk-input.is-dirty {
+  border-color: rgba(217, 187, 122, 0.4);
+  color: var(--yt-gold-bright);
+}
+
+.yt-settings-risk-input.is-invalid {
+  border-color: rgba(240, 100, 79, 0.5);
+  color: #ef806e;
+}
+
+.yt-settings-risk-input input {
+  width: 54px;
+  height: 29px;
+  padding: 4px 4px 4px 8px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 9px;
+  text-align: right;
+}
+
+.yt-settings-risk-input > span:last-child {
+  padding-right: 7px;
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 8px;
+}
+
+.yt-settings-risk-value {
+  color: var(--yt-gold-bright) !important;
+  font-family: var(--app-font-mono, "JetBrains Mono", monospace);
+  font-size: 10px !important;
+}
+
+.yt-settings-risk-editor {
+  overflow: hidden;
+  padding-top: 9px;
+  border-top: 1px solid var(--settings-line);
+}
+
+.yt-settings-risk-editor > small {
+  display: block;
+  margin-top: 7px;
+  color: var(--settings-dim);
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.yt-settings-risk-editor .yt-settings-message {
+  margin: 0 0 8px;
+}
+
+.yt-settings-segmented {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  background: rgba(3, 20, 28, 0.68);
+}
+
+.yt-settings-segmented button {
+  min-height: 25px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--settings-dim);
+  font-size: 7px;
+  cursor: pointer;
+}
+
+.yt-settings-segmented button.is-active {
+  background: rgba(217, 187, 122, 0.12);
+  color: var(--yt-gold-bright);
+}
+
+.yt-settings-inline-state {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  margin: 0 !important;
+  color: var(--settings-copy) !important;
+  font-size: 8px !important;
+  white-space: nowrap;
+}
+
+.yt-settings-inline-state svg {
+  width: 12px;
+  height: 12px;
+  color: var(--yt-gold);
+}
+
+.yt-settings-disabled-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 11px 0 8px;
+}
+
+.yt-settings-disabled-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 39px;
+  padding: 7px;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  background: rgba(86, 114, 122, 0.04);
+  color: var(--settings-muted);
+  font-size: 8px;
+}
+
+.yt-settings-disabled-actions svg {
+  width: 12px;
+  height: 12px;
+  margin-right: 5px;
+}
+
+.yt-settings-audit-list {
+  display: grid;
+  gap: 7px;
+}
+
+.yt-settings-audit-list > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  background: rgba(4, 23, 32, 0.45);
+}
+
+.yt-settings-audit-list > div > span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(101, 174, 185, 0.07);
+  color: #7fc0c9;
+}
+
+.yt-settings-audit-list svg {
+  width: 12px;
+  height: 12px;
+}
+
+.yt-settings-audit-list p,
+.yt-settings-audit-list strong,
+.yt-settings-audit-list small {
+  display: block;
+  margin: 0;
+}
+
+.yt-settings-audit-list strong {
+  color: var(--settings-copy);
+  font-size: 8px;
+}
+
+.yt-settings-audit-list small {
+  margin-top: 2px;
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-integration-list .yt-settings-row {
+  min-height: 35px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.yt-settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 62px;
+  padding: 11px 13px;
+  border: 1px solid var(--settings-line);
+  border-radius: 12px;
+  background: rgba(4, 21, 30, 0.72);
+}
+
+.yt-settings-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.yt-settings-footer__mark {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid rgba(217, 187, 122, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(
+    145deg,
+    rgba(217, 187, 122, 0.22),
+    rgba(217, 187, 122, 0.07)
+  );
+  color: var(--yt-gold-bright);
+  font-family: var(--app-font-display, "Space Grotesk", sans-serif);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.yt-settings-footer p,
+.yt-settings-footer strong,
+.yt-settings-footer small {
+  display: block;
+  margin: 0;
+}
+
+.yt-settings-footer strong {
+  color: var(--settings-copy);
+  font-size: 9px;
+}
+
+.yt-settings-footer small {
+  margin-top: 2px;
+  color: var(--settings-dim);
+  font-size: 7px;
+}
+
+.yt-settings-footer > p {
+  display: flex;
+  align-items: center;
+  max-width: 520px;
+  color: var(--settings-dim);
+  font-size: 8px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.yt-settings-footer > p svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  margin-right: 6px;
+  color: var(--yt-gold);
+}
+
+.yt-settings.is-compact .yt-settings-panel__body {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.yt-settings.is-compact .yt-settings-row {
+  min-height: 35px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.yt-settings .is-spinning {
+  animation: yt-settings-spin 0.9s linear infinite;
+}
+
+@keyframes yt-settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1320px) {
+  .yt-settings-account-grid > .yt-settings-profile {
+    grid-column: span 12;
+    grid-row: auto;
+  }
+
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(2),
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(3),
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(4) {
+    grid-column: span 4;
+  }
+
+  .yt-settings-three-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .yt-settings-three-column > .yt-settings-panel:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .yt-settings-integration-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .yt-settings {
+    padding-right: 2px;
+    padding-left: 2px;
+  }
+
+  .yt-settings-source-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .yt-settings-provider-list {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-settings-truth-policy {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-settings-truth-policy > p {
+    grid-column: auto;
+  }
+
+  .yt-settings-diagnostics > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 880px) {
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(2),
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(3) {
+    grid-column: span 6;
+  }
+
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(4) {
+    grid-column: span 12;
+  }
+
+  .yt-settings-two-column,
+  .yt-settings-three-column {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-settings-three-column > .yt-settings-panel:last-child {
+    grid-column: auto;
+  }
+
+  .yt-settings-integration-list {
+    display: block;
+  }
+
+  .yt-settings-provider-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .yt-settings-provider-toolbar > div:last-child {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .yt-settings {
+    gap: 10px;
+    padding: 11px 2px calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .yt-settings-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 0;
+    padding: 5px 3px 13px;
+  }
+
+  .yt-settings-hero__states {
+    justify-content: flex-start;
+  }
+
+  .yt-settings-account-grid,
+  .yt-settings-two-column,
+  .yt-settings-three-column {
+    gap: 9px;
+  }
+
+  .yt-settings-account-grid > .yt-settings-profile,
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(2),
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(3),
+  .yt-settings-account-grid > .yt-settings-panel:nth-child(4) {
+    grid-column: span 12;
+  }
+
+  .yt-settings-session-facts,
+  .yt-settings-source-summary,
+  .yt-settings-truth-policy ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .yt-settings-provider-list article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .yt-settings-provider-list__source {
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
+  }
+
+  .yt-settings-truth-policy ul {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-settings-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .yt-settings-footer > p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 430px) {
+  .yt-settings-panel__header {
+    align-items: flex-start;
+  }
+
+  .yt-settings-panel__state {
+    padding-top: 3px;
+  }
+
+  .yt-settings-session-facts,
+  .yt-settings-source-summary,
+  .yt-settings-diagnostics > div,
+  .yt-settings-disabled-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-settings-actions,
+  .yt-settings-provider-toolbar > div:last-child,
+  .yt-settings-risk-editor > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .yt-settings-actions .yt-settings-button,
+  .yt-settings-provider-toolbar .yt-settings-button,
+  .yt-settings-risk-editor .yt-settings-button {
+    width: 100%;
+  }
+
+  .yt-settings-row {
+    gap: 8px;
+  }
+
+  .yt-settings-segmented {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-settings *,
+  .yt-settings *::before,
+  .yt-settings *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .yt-settings .is-spinning {
+    animation: none;
+    opacity: 0.72;
+  }
+}
+
+.yt-motion-paused .yt-settings .is-spinning {
+  animation-play-state: paused;
+}

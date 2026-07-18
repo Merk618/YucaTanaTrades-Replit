@@ -1,76 +1,71 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Settings, CheckCircle, Bell, Shield, ChevronRight, RefreshCw,
-  Clock, KeyRound, Plug, AlertTriangle, Ban, Sparkles, Activity, Layers,
-  ChevronDown, Key, Lock, X, Save, RotateCcw,
+  Activity,
+  AlertTriangle,
+  Ban,
+  BarChart3,
+  Bell,
+  Bot,
+  Check,
+  CheckCircle,
+  Clock,
+  Database,
+  Download,
+  Eye,
+  FileText,
+  Gauge,
+  Info,
+  KeyRound,
+  Layers,
+  List,
+  Lock,
+  LogOut,
+  Monitor,
+  Moon,
+  Move,
+  Plug,
+  Radio,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Server,
+  Settings,
+  Shield,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  User,
+  WifiOff,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import type {
+  ProviderStatus,
+  SourceHealthSummary,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/auth/auth-provider";
 import { RISK_CONFIG } from "@/data/riskConfig";
 import {
-  useSourceHealth, useForceSourceHealth, useTestQuotes,
-  isQuoteUsable, formatPrice, quoteBadge,
+  formatPrice,
+  isQuoteUsable,
+  quoteBadge,
+  useForceSourceHealth,
+  useSourceHealth,
+  useTestQuotes,
 } from "@/hooks/use-market";
-import { useRiskConfig, useUpdateRiskConfigMutation } from "@/hooks/use-risk-config";
-import type { ProviderStatus, SourceHealthSummary } from "@workspace/api-client-react";
+import {
+  useRiskConfig,
+  useUpdateRiskConfigMutation,
+} from "@/hooks/use-risk-config";
+import {
+  motionTokens,
+  panelReveal,
+  staggerContainer,
+  useAppReducedMotion,
+} from "@/lib/motion";
+import { cn } from "@/lib/utils";
+import "../ui2-settings.css";
 
-function statusView(p: ProviderStatus): {
-  label: string; color: string; Icon: typeof CheckCircle; positive: boolean;
-} {
-  switch (p.status) {
-    case "connected":
-      return { label: "Connected", color: "#22C55E", Icon: CheckCircle, positive: true };
-    case "delayed":
-      return { label: "Reachable · Delayed", color: "#34d399", Icon: Clock, positive: true };
-    case "read_only":
-      return { label: "Connected · Read-only", color: "#22C55E", Icon: CheckCircle, positive: true };
-    case "missing_api_key":
-      return { label: "API key required", color: "#94a3b8", Icon: KeyRound, positive: false };
-    case "auth_failed":
-      return { label: "Auth failed", color: "#f87171", Icon: Ban, positive: false };
-    case "health_check_failed":
-      return { label: "Health check failed", color: "#f87171", Icon: AlertTriangle, positive: false };
-    case "rate_limited":
-      return { label: "Rate limited", color: "#fb923c", Icon: AlertTriangle, positive: false };
-    case "stale":
-      return { label: "Stale", color: "#fb923c", Icon: AlertTriangle, positive: false };
-    case "future_ready":
-      return { label: "Future-ready", color: "#60a5fa", Icon: Sparkles, positive: false };
-    case "disabled":
-      return { label: "Disabled", color: "#94a3b8", Icon: Ban, positive: false };
-    default:
-      return { label: "Not connected", color: "#94a3b8", Icon: Plug, positive: false };
-  }
-}
-
-function summaryTone(status: string): { color: string; label: string } {
-  switch (status) {
-    case "connected":   return { color: "#22C55E", label: "Connected" };
-    case "delayed":     return { color: "#34d399", label: "Delayed" };
-    case "read_only":   return { color: "#22C55E", label: "Connected" };
-    case "analysis_only": return { color: "#94a3b8", label: "Analysis only" };
-    default:            return { color: "#94a3b8", label: "No live source" };
-  }
-}
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return "Never";
-  const diff = Date.now() - new Date(iso).getTime();
-  if (Number.isNaN(diff)) return "Never";
-  const s = Math.round(diff / 1000);
-  if (s < 60) return `${s}s ago`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m ago`;
-  return `${Math.round(m / 60)}h ago`;
-}
-
-const NOTIFICATION_SETTINGS = [
-  { label: "Bot Signal Alerts",       desc: "Notify when a bot detects a trading signal",     on: true  },
-  { label: "Risk Threshold Breached", desc: "Alert when a position exceeds size limit",        on: true  },
-  { label: "Price Alerts",            desc: "Custom ticker price level alerts",                 on: true  },
-  { label: "Journal Reminder",        desc: "Daily reminder to log your trades",                on: false },
-  { label: "Weekly Summary Email",    desc: "Performance summary every Sunday",                 on: false },
-];
+type StatusTone = "gold" | "positive" | "negative" | "neutral" | "cyan";
 
 type RiskFieldKey =
   | "singlePositionLimit"
@@ -79,58 +74,363 @@ type RiskFieldKey =
   | "sectorConcentrationLimit"
   | "maxDrawdownAlert";
 
-const RISK_FIELDS: { key: RiskFieldKey; label: string; desc: string }[] = [
-  { key: "singlePositionLimit",      label: "Max Single Position",      desc: "Triggers alert when exceeded" },
-  { key: "cryptoPositionLimit",      label: "Max Crypto Position",      desc: "Per individual crypto holding" },
-  { key: "cryptoAllocationLimit",    label: "Crypto Allocation Limit",  desc: "Of total portfolio" },
-  { key: "sectorConcentrationLimit", label: "Max Sector Concentration", desc: "Per sector limit" },
-  { key: "maxDrawdownAlert",         label: "Max Drawdown Alert",       desc: "From recent highs" },
-];
+const NOTIFICATION_SETTINGS = [
+  {
+    label: "Signal review alerts",
+    description: "Local preference foundation; delivery is not connected.",
+    enabled: true,
+  },
+  {
+    label: "Risk threshold alerts",
+    description: "Flag a configured risk boundary inside Meridian OS.",
+    enabled: true,
+  },
+  {
+    label: "Price-level alerts",
+    description: "Alert delivery and provider monitoring remain unavailable.",
+    enabled: false,
+  },
+  {
+    label: "Journal reminder",
+    description: "Local reminder preference; scheduling is deferred.",
+    enabled: false,
+  },
+  {
+    label: "Weekly summary",
+    description: "Email delivery is not configured in this phase.",
+    enabled: false,
+  },
+] as const;
+
+const RISK_FIELDS: { key: RiskFieldKey; label: string; description: string }[] =
+  [
+    {
+      key: "singlePositionLimit",
+      label: "Max single position",
+      description: "Concentration alert boundary",
+    },
+    {
+      key: "cryptoPositionLimit",
+      label: "Max crypto position",
+      description: "Individual crypto exposure",
+    },
+    {
+      key: "cryptoAllocationLimit",
+      label: "Crypto allocation",
+      description: "Total portfolio boundary",
+    },
+    {
+      key: "sectorConcentrationLimit",
+      label: "Sector concentration",
+      description: "Single-sector boundary",
+    },
+    {
+      key: "maxDrawdownAlert",
+      label: "Drawdown alert",
+      description: "Decline from recent highs",
+    },
+  ];
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return "Never";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff)) return "Never";
+  const seconds = Math.max(0, Math.round(diff / 1_000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.round(minutes / 60)}h ago`;
+}
+
+function formatExpiry(iso: string | null): string {
+  if (!iso) return "Not available";
+  const value = new Date(iso);
+  if (!Number.isFinite(value.getTime())) return "Not available";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(value);
+}
+
+function providerView(provider: ProviderStatus): {
+  label: string;
+  tone: StatusTone;
+  Icon: typeof CheckCircle;
+  description: string;
+} {
+  switch (provider.status) {
+    case "connected":
+      return {
+        label: "Connected",
+        tone: "positive",
+        Icon: CheckCircle,
+        description: "Health endpoint reports an active source.",
+      };
+    case "delayed":
+      return {
+        label: "Delayed",
+        tone: "cyan",
+        Icon: Clock,
+        description: "Reachable source with delayed data.",
+      };
+    case "read_only":
+      return {
+        label: "Read-only",
+        tone: "positive",
+        Icon: CheckCircle,
+        description: "Connected for observation; execution is disabled.",
+      };
+    case "missing_api_key":
+      return {
+        label: "Configuration required",
+        tone: "neutral",
+        Icon: KeyRound,
+        description: "Server-side provider configuration is not present.",
+      };
+    case "auth_failed":
+      return {
+        label: "Authorization failed",
+        tone: "negative",
+        Icon: Ban,
+        description: "Provider authorization was rejected.",
+      };
+    case "health_check_failed":
+      return {
+        label: "Health check failed",
+        tone: "negative",
+        Icon: AlertTriangle,
+        description: "The provider did not complete its health probe.",
+      };
+    case "rate_limited":
+      return {
+        label: "Rate limited",
+        tone: "gold",
+        Icon: AlertTriangle,
+        description: "The provider is temporarily limiting requests.",
+      };
+    case "stale":
+      return {
+        label: "Stale",
+        tone: "gold",
+        Icon: AlertTriangle,
+        description:
+          "The most recent response is outside its freshness window.",
+      };
+    case "future_ready":
+      return {
+        label: "Foundation",
+        tone: "cyan",
+        Icon: Sparkles,
+        description: "Contract foundation exists; the provider is not active.",
+      };
+    case "disabled":
+      return {
+        label: "Disabled",
+        tone: "neutral",
+        Icon: Ban,
+        description: "This integration is disabled.",
+      };
+    default:
+      return {
+        label: "Unavailable",
+        tone: "neutral",
+        Icon: Plug,
+        description: "No active provider connection is reported.",
+      };
+  }
+}
+
+function summaryView(status: string): { label: string; tone: StatusTone } {
+  switch (status) {
+    case "connected":
+      return { label: "Connected", tone: "positive" };
+    case "delayed":
+      return { label: "Delayed", tone: "cyan" };
+    case "read_only":
+      return { label: "Read-only", tone: "positive" };
+    case "analysis_only":
+      return { label: "Analysis only", tone: "neutral" };
+    default:
+      return { label: "No active source", tone: "neutral" };
+  }
+}
+
+function StatusPill({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: StatusTone;
+}) {
+  return <span className={`yt-settings-pill is-${tone}`}>{children}</span>;
+}
+
+function Panel({
+  title,
+  eyebrow,
+  icon: Icon,
+  state,
+  className,
+  children,
+}: {
+  title: string;
+  eyebrow: string;
+  icon: typeof Settings;
+  state?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <motion.section
+      className={cn("yt-settings-panel", className)}
+      variants={panelReveal}
+    >
+      <header className="yt-settings-panel__header">
+        <div className="yt-settings-panel__title">
+          <span className="yt-settings-panel__icon" aria-hidden="true">
+            <Icon />
+          </span>
+          <div>
+            <span>{eyebrow}</span>
+            <h2>{title}</h2>
+          </div>
+        </div>
+        {state ? <div className="yt-settings-panel__state">{state}</div> : null}
+      </header>
+      <div className="yt-settings-panel__body">{children}</div>
+    </motion.section>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  reducedMotion,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  reducedMotion: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn("yt-settings-toggle", checked && "is-on")}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      disabled={disabled}
+    >
+      <motion.span
+        animate={{ x: checked ? 18 : 2 }}
+        transition={
+          reducedMotion ? { duration: 0 } : motionTokens.spring.snappy
+        }
+      />
+    </button>
+  );
+}
+
+function SettingRow({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action: ReactNode;
+}) {
+  return (
+    <div className="yt-settings-row">
+      <div>
+        <strong>{title}</strong>
+        <span>{description}</span>
+      </div>
+      <div className="yt-settings-row__action">{action}</div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
-  const [notifs, setNotifs] = useState(NOTIFICATION_SETTINGS.map((n) => n.on));
+  const reducedMotion = useAppReducedMotion();
+  const { state, signOut, signOutAllDevices } = useAuth();
+  const [notifications, setNotifications] = useState(
+    NOTIFICATION_SETTINGS.map((item) => item.enabled),
+  );
+  const [density, setDensity] = useState<"comfortable" | "compact">(
+    "comfortable",
+  );
+  const [chartPreferences, setChartPreferences] = useState([true, true, false]);
+  const [authAction, setAuthAction] = useState<{
+    pending: "current" | "all" | null;
+    error: string | null;
+  }>({
+    pending: null,
+    error: null,
+  });
 
-  // ── Credential management state ──────────────────────────────────────────
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [keyValues,  setKeyValues]  = useState<Record<string, string>>({});
-  const [credMsg,    setCredMsg]    = useState<Record<string, { ok: boolean; text: string }>>({});
-  const [credLoading, setCredLoading] = useState<Record<string, boolean>>({});
-
-  const cached  = useSourceHealth();
-  const forced  = useForceSourceHealth();
-  const test    = useTestQuotes();
-
-  const useForced  = !!forced.data && forced.dataUpdatedAt >= cached.dataUpdatedAt;
-  const health     = useForced ? forced.data : cached.data;
-  const isLoading  = cached.isLoading && !forced.data;
-  const isError    = cached.isError && !forced.data;
-  const isFetching = cached.isFetching || forced.isFetching;
-
-  const providers  = health?.providers ?? [];
+  const cachedHealth = useSourceHealth();
+  const forcedHealth = useForceSourceHealth();
+  const quoteTest = useTestQuotes();
+  const useForcedHealth = Boolean(
+    forcedHealth.data &&
+    forcedHealth.dataUpdatedAt >= cachedHealth.dataUpdatedAt,
+  );
+  const health = useForcedHealth ? forcedHealth.data : cachedHealth.data;
+  const providers = health?.providers ?? [];
   const summary: SourceHealthSummary[] = health?.summary ?? [];
-  const testQuotes = (test.data?.quotes ?? []).filter(isQuoteUsable);
+  const usableQuotes = (quoteTest.data?.quotes ?? []).filter(isQuoteUsable);
+  const healthLoading = cachedHealth.isLoading && !forcedHealth.data;
+  const healthError = cachedHealth.isError && !forcedHealth.data;
+  const healthFetching = cachedHealth.isFetching || forcedHealth.isFetching;
 
-  // ── Risk thresholds state ─────────────────────────────────────────────────
   const { config: riskConfig, isLoading: riskLoading } = useRiskConfig();
   const updateRisk = useUpdateRiskConfigMutation();
   const [riskDraft, setRiskDraft] = useState<Record<RiskFieldKey, string>>({
-    singlePositionLimit:      "",
-    cryptoPositionLimit:      "",
-    cryptoAllocationLimit:    "",
+    singlePositionLimit: "",
+    cryptoPositionLimit: "",
+    cryptoAllocationLimit: "",
     sectorConcentrationLimit: "",
-    maxDrawdownAlert:         "",
+    maxDrawdownAlert: "",
   });
   const [riskEditing, setRiskEditing] = useState(false);
-  const [riskMsg, setRiskMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [riskMessage, setRiskMessage] = useState<{
+    ok: boolean;
+    text: string;
+  } | null>(null);
 
-  // Populate draft when config loads
+  const session = state.kind === "authenticated" ? state.session : null;
+  const user = state.kind === "authenticated" ? state.user : null;
+  const reviewSession = session?.sessionType === "development_review";
+  const reviewEnabled =
+    state.kind === "authenticated" && state.status.features.reviewAccessEnabled;
+  const identityName = reviewSession
+    ? "Visual Review"
+    : user?.displayName || "Meridian user";
+  const identityDetail = reviewSession
+    ? "Local development session"
+    : user?.email || "Server identity unavailable";
+
+  const providerCounts = useMemo(() => {
+    const active = providers.filter((provider) =>
+      ["connected", "delayed", "read_only"].includes(provider.status),
+    ).length;
+    return { active, total: providers.length };
+  }, [providers]);
+
   useEffect(() => {
     setRiskDraft({
-      singlePositionLimit:      String(riskConfig.singlePositionLimit),
-      cryptoPositionLimit:      String(riskConfig.cryptoPositionLimit),
-      cryptoAllocationLimit:    String(riskConfig.cryptoAllocationLimit),
+      singlePositionLimit: String(riskConfig.singlePositionLimit),
+      cryptoPositionLimit: String(riskConfig.cryptoPositionLimit),
+      cryptoAllocationLimit: String(riskConfig.cryptoAllocationLimit),
       sectorConcentrationLimit: String(riskConfig.sectorConcentrationLimit),
-      maxDrawdownAlert:         String(riskConfig.maxDrawdownAlert),
+      maxDrawdownAlert: String(riskConfig.maxDrawdownAlert),
     });
   }, [
     riskConfig.singlePositionLimit,
@@ -140,623 +440,931 @@ export default function SettingsPage() {
     riskConfig.maxDrawdownAlert,
   ]);
 
-  function riskDraftValue(key: RiskFieldKey): number {
-    const n = parseInt(riskDraft[key], 10);
-    return Number.isNaN(n) ? 0 : n;
+  function riskValue(key: RiskFieldKey): number {
+    const parsed = Number.parseInt(riskDraft[key], 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  function isDraftValid(): boolean {
-    return RISK_FIELDS.every(({ key }) => {
-      const n = riskDraftValue(key);
-      return n >= 1 && n <= 100;
+  function riskDraftValid(): boolean {
+    return RISK_FIELDS.every(
+      ({ key }) => riskValue(key) >= 1 && riskValue(key) <= 100,
+    );
+  }
+
+  function restoreRiskDraft() {
+    setRiskDraft({
+      singlePositionLimit: String(riskConfig.singlePositionLimit),
+      cryptoPositionLimit: String(riskConfig.cryptoPositionLimit),
+      cryptoAllocationLimit: String(riskConfig.cryptoAllocationLimit),
+      sectorConcentrationLimit: String(riskConfig.sectorConcentrationLimit),
+      maxDrawdownAlert: String(riskConfig.maxDrawdownAlert),
     });
   }
 
   async function saveRiskConfig() {
-    if (!isDraftValid()) {
-      setRiskMsg({ ok: false, text: "All values must be between 1 and 100" });
+    if (!riskDraftValid()) {
+      setRiskMessage({
+        ok: false,
+        text: "Use a value from 1 through 100 for every threshold.",
+      });
       return;
     }
-    setRiskMsg({ ok: true, text: "Saving…" });
+    setRiskMessage({
+      ok: true,
+      text: "Saving through the current configuration service…",
+    });
     try {
       await updateRisk.mutateAsync({
         data: {
-          singlePositionLimit:      riskDraftValue("singlePositionLimit"),
-          cryptoPositionLimit:      riskDraftValue("cryptoPositionLimit"),
-          cryptoAllocationLimit:    riskDraftValue("cryptoAllocationLimit"),
-          sectorConcentrationLimit: riskDraftValue("sectorConcentrationLimit"),
-          maxDrawdownAlert:         riskDraftValue("maxDrawdownAlert"),
+          singlePositionLimit: riskValue("singlePositionLimit"),
+          cryptoPositionLimit: riskValue("cryptoPositionLimit"),
+          cryptoAllocationLimit: riskValue("cryptoAllocationLimit"),
+          sectorConcentrationLimit: riskValue("sectorConcentrationLimit"),
+          maxDrawdownAlert: riskValue("maxDrawdownAlert"),
         },
       });
-      setRiskMsg({ ok: true, text: "Thresholds saved · Risk page will use updated values" });
+      setRiskMessage({
+        ok: true,
+        text: "Thresholds accepted by the current configuration service.",
+      });
       setRiskEditing(false);
     } catch {
-      setRiskMsg({ ok: false, text: "Save failed — is the API server running?" });
+      setRiskMessage({
+        ok: false,
+        text: "Threshold service unavailable. No change was confirmed.",
+      });
     }
   }
 
   function resetRiskToDefaults() {
     setRiskDraft({
-      singlePositionLimit:      String(RISK_CONFIG.singlePositionLimit),
-      cryptoPositionLimit:      String(RISK_CONFIG.cryptoPositionLimit),
-      cryptoAllocationLimit:    String(RISK_CONFIG.cryptoAllocationLimit),
+      singlePositionLimit: String(RISK_CONFIG.singlePositionLimit),
+      cryptoPositionLimit: String(RISK_CONFIG.cryptoPositionLimit),
+      cryptoAllocationLimit: String(RISK_CONFIG.cryptoAllocationLimit),
       sectorConcentrationLimit: String(RISK_CONFIG.sectorConcentrationLimit),
-      maxDrawdownAlert:         String(RISK_CONFIG.maxDrawdownAlert),
+      maxDrawdownAlert: String(RISK_CONFIG.maxDrawdownAlert),
     });
+    setRiskMessage(null);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function envVarToLabel(v: string): string {
-    if (v.includes("SECRET")) return "API Secret";
-    if (v.includes("KEY"))    return "API Key";
-    return v;
-  }
-
-  async function saveCredentials(providerId: string, envVars: string[]) {
-    setCredLoading((p) => ({ ...p, [providerId]: true }));
-    setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Saving…" } }));
+  async function handleAuthAction(scope: "current" | "all") {
+    setAuthAction({ pending: scope, error: null });
     try {
-      const credentials: Record<string, string> = {};
-      for (const envVar of envVars) {
-        const val = keyValues[`${providerId}::${envVar}`];
-        if (val?.trim()) credentials[envVar] = val.trim();
-      }
-      if (Object.keys(credentials).length === 0) {
-        setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Enter at least one key value first" } }));
-        return;
-      }
-      const resp = await fetch("/api/settings/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credentials }),
-      });
-      if (resp.ok) {
-        setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Key saved · run health check to verify connection" } }));
-        setKeyValues((p) => {
-          const next = { ...p };
-          for (const envVar of envVars) delete next[`${providerId}::${envVar}`];
-          return next;
-        });
-        setTimeout(() => { void forced.refetch(); }, 700);
-      } else {
-        setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Save failed — server returned an error" } }));
-      }
+      if (scope === "all") await signOutAllDevices();
+      else await signOut();
     } catch {
-      setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Network error — is the API server running?" } }));
-    } finally {
-      setCredLoading((p) => ({ ...p, [providerId]: false }));
-    }
-  }
-
-  async function removeCredentials(providerId: string, envVars: string[]) {
-    setCredLoading((p) => ({ ...p, [providerId]: true }));
-    try {
-      await fetch("/api/settings/credentials", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ envVars }),
+      setAuthAction({
+        pending: null,
+        error: "Secure session service is unavailable. Please retry.",
       });
-      setCredMsg((p) => ({ ...p, [providerId]: { ok: true, text: "Keys removed · health status will update on next check" } }));
-      setTimeout(() => { void forced.refetch(); }, 700);
-    } catch {
-      setCredMsg((p) => ({ ...p, [providerId]: { ok: false, text: "Remove failed" } }));
-    } finally {
-      setCredLoading((p) => ({ ...p, [providerId]: false }));
     }
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-3 mb-1">
-          <Settings className="w-5 h-5 text-primary" />
-          <h1 className="font-display text-3xl font-bold tracking-tight">Settings</h1>
+    <motion.main
+      className={cn("yt-settings", density === "compact" && "is-compact")}
+      initial={reducedMotion ? false : "hidden"}
+      animate="visible"
+      variants={staggerContainer}
+      aria-labelledby="yt-settings-title"
+    >
+      <motion.header className="yt-settings-hero" variants={panelReveal}>
+        <div className="yt-settings-hero__copy">
+          <span className="yt-settings-eyebrow">
+            Meridian OS · Control center
+          </span>
+          <h1 id="yt-settings-title">
+            <Settings aria-hidden="true" />
+            Settings
+          </h1>
+          <p>
+            Session security, provider truth, risk boundaries, and local
+            workspace preferences.
+          </p>
         </div>
-        <p className="text-muted-foreground text-sm ml-8">Live data sources, alerts, risk thresholds, and preferences</p>
-      </motion.div>
+        <div className="yt-settings-hero__states" aria-label="Settings scope">
+          <StatusPill tone="gold">UI-2.1</StatusPill>
+          <StatusPill>Local preferences</StatusPill>
+          <StatusPill tone="cyan">Provider-neutral</StatusPill>
+        </div>
+      </motion.header>
 
-      {/* Data Sources — real health probes */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card overflow-hidden"
-      >
-        <div className="p-4 border-b border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Plug className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-display font-semibold text-foreground">Data Sources</h2>
-            <span className="text-[10px] text-muted-foreground/60">
-              Status reflects real health checks{health ? ` · updated ${timeAgo(health.asOf)}` : ""}
+      <div className="yt-settings-account-grid">
+        <Panel
+          title="Profile & current session"
+          eyebrow="Server-derived identity"
+          icon={User}
+          className="yt-settings-profile"
+          state={<StatusPill tone="positive">Authenticated</StatusPill>}
+        >
+          <div className="yt-settings-identity">
+            <span className="yt-settings-avatar" aria-hidden="true">
+              {identityName.slice(0, 1).toUpperCase()}
             </span>
-          </div>
-          <button
-            onClick={() => void forced.refetch()}
-            disabled={isFetching}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground border border-border/50 px-2.5 py-1 rounded-lg hover:text-foreground hover:border-primary/30 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} /> Re-check now
-          </button>
-        </div>
-
-        {/* Source health summary */}
-        {summary.length > 0 && (
-          <div className="p-4 border-b border-border/40 bg-background/30">
-            <div className="flex items-center gap-2 mb-3">
-              <Layers className="w-3.5 h-3.5 text-primary" />
-              <h3 className="text-[11px] font-display font-semibold text-foreground uppercase tracking-widest">Source Health</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {summary.map((s) => {
-                const t = summaryTone(s.status);
-                return (
-                  <div key={s.assetClass} className="rounded-lg border border-border/40 bg-card/40 p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-foreground">{s.label}</span>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.color }} />
-                    </div>
-                    <p className="font-mono text-xs mt-1.5 truncate" style={{ color: t.color }}>
-                      {s.activeProviderLabel ?? t.label}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-0.5 truncate">
-                      {s.sourceLabel ?? "No active source"}
-                    </p>
-                    {s.fallbackInUse && (
-                      <span className="inline-block mt-1.5 text-[9px] font-mono px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400">
-                        FALLBACK
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {health && (
-              <p className="text-[10px] text-muted-foreground/50 mt-2.5">
-                Last checked {timeAgo(health.asOf)}{useForced ? " · forced probe" : " · cached"}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Test quote fetch */}
-        <div className="p-4 border-b border-border/40 bg-background/20">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5 text-primary" />
+            <div className="yt-settings-identity__copy">
+              <strong>{identityName}</strong>
+              <span>{identityDetail}</span>
               <div>
-                <p className="text-xs font-medium text-foreground">Test Quote Fetch</p>
-                <p className="text-[10px] text-muted-foreground/60">
-                  Fetch SPY, QQQ, NVDA, MSFT (equity) and BTC, ETH, SOL, SUI (crypto) from all active sources
-                </p>
+                <StatusPill tone={reviewSession ? "gold" : "cyan"}>
+                  {reviewSession ? "Development review" : "User session"}
+                </StatusPill>
+                {!reviewSession && user ? (
+                  <StatusPill tone={user.emailVerified ? "positive" : "gold"}>
+                    {user.emailVerified
+                      ? "Email verified"
+                      : "Verification pending"}
+                  </StatusPill>
+                ) : null}
               </div>
             </div>
+          </div>
+          <dl className="yt-settings-session-facts">
+            <div>
+              <dt>Session boundary</dt>
+              <dd>Opaque · server-side</dd>
+            </div>
+            <div>
+              <dt>Expires</dt>
+              <dd>{formatExpiry(session?.expiresAt ?? null)}</dd>
+            </div>
+            <div>
+              <dt>Browser protection</dt>
+              <dd>HttpOnly cookie · CSRF</dd>
+            </div>
+            <div>
+              <dt>Persistence</dt>
+              <dd>{reviewSession ? "None" : "Session service"}</dd>
+            </div>
+          </dl>
+          <div className="yt-settings-actions">
             <button
-              onClick={() => void test.refetch()}
-              disabled={test.isFetching}
-              className="flex items-center gap-1.5 text-xs text-primary border border-primary/30 px-2.5 py-1 rounded-lg hover:bg-primary/10 transition-colors disabled:opacity-50"
+              type="button"
+              className="yt-settings-button"
+              onClick={() => void handleAuthAction("current")}
+              disabled={authAction.pending !== null}
             >
-              <RefreshCw className={cn("w-3 h-3", test.isFetching && "animate-spin")} /> Run test (8 symbols)
+              {authAction.pending === "current" ? (
+                <RefreshCw className="is-spinning" />
+              ) : (
+                <LogOut />
+              )}
+              Sign out this session
+            </button>
+            <button
+              type="button"
+              className="yt-settings-button is-danger"
+              onClick={() => void handleAuthAction("all")}
+              disabled={authAction.pending !== null || reviewSession}
+            >
+              {authAction.pending === "all" ? (
+                <RefreshCw className="is-spinning" />
+              ) : (
+                <Shield />
+              )}
+              Sign out all devices
             </button>
           </div>
-          {test.isError ? (
-            <p className="text-[11px] text-red-400/80 mt-3">Test fetch failed — sources did not respond.</p>
-          ) : test.data ? (
-            testQuotes.length === 0 ? (
-              <p className="text-[11px] text-amber-400/80 mt-3 font-mono">No usable quotes returned — sources unavailable.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {testQuotes.map((q) => {
-                  const b = quoteBadge(q);
-                  return (
-                    <div key={q.symbol} className="rounded-lg border border-border/40 bg-card/40 p-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-mono text-sm font-bold text-primary">{q.symbol}</p>
-                        <p className="text-[10px] text-muted-foreground/60">{q.sourceLabel}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-mono text-sm text-foreground">${formatPrice(q.price)}</p>
-                        <span className="text-[9px] font-mono text-muted-foreground/60">{b.text}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
+          {reviewSession ? (
+            <p className="yt-settings-note">
+              All-device sign-out is not presented as a device-management
+              feature for a non-persistent review principal.
+            </p>
           ) : null}
+          {authAction.error ? (
+            <p className="yt-settings-message is-error" role="alert">
+              {authAction.error}
+            </p>
+          ) : null}
+        </Panel>
+
+        <Panel
+          title="Authentication"
+          eyebrow="Protected boundary"
+          icon={Lock}
+          state={<StatusPill tone="positive">Active</StatusPill>}
+        >
+          <div className="yt-settings-security-list">
+            <SettingRow
+              title="Identity"
+              description="Resolved by the server for this request."
+              action={<Check aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Session rotation"
+              description="Rotated after successful authentication."
+              action={<Check aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Write protection"
+              description="Synchronizer-token CSRF boundary."
+              action={<Check aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Password storage"
+              description="Argon2id on the authentication service."
+              action={<Check aria-hidden="true" />}
+            />
+          </div>
+        </Panel>
+
+        <Panel
+          title="Active sessions"
+          eyebrow="Revocation controls"
+          icon={Monitor}
+          state={<StatusPill>Current browser</StatusPill>}
+        >
+          <div className="yt-settings-device">
+            <span>
+              <Monitor aria-hidden="true" />
+            </span>
+            <div>
+              <strong>This browser</strong>
+              <small>
+                {reviewSession
+                  ? "Local review · short-lived"
+                  : "Current authenticated session"}
+              </small>
+            </div>
+            <StatusPill tone="positive">Current</StatusPill>
+          </div>
+          <SettingRow
+            title="Device inventory"
+            description="A cross-device inventory is not exposed in this phase."
+            action={<StatusPill>Foundation</StatusPill>}
+          />
+          <SettingRow
+            title="Revocation"
+            description="All-device revocation is available to persistent user sessions."
+            action={
+              <StatusPill tone={reviewSession ? "neutral" : "positive"}>
+                {reviewSession ? "Not applicable" : "Available"}
+              </StatusPill>
+            }
+          />
+        </Panel>
+
+        <Panel
+          title="Owner Review Access"
+          eyebrow="Development-only principal"
+          icon={KeyRound}
+          state={
+            <StatusPill
+              tone={reviewSession ? "gold" : reviewEnabled ? "cyan" : "neutral"}
+            >
+              {reviewSession
+                ? "In use"
+                : reviewEnabled
+                  ? "Enabled locally"
+                  : "Unavailable"}
+            </StatusPill>
+          }
+        >
+          <p className="yt-settings-lead">
+            A short-lived, non-persistent visual-review session. It is not a
+            production administrator account.
+          </p>
+          <dl className="yt-settings-compact-facts">
+            <div>
+              <dt>Environment</dt>
+              <dd>
+                {reviewEnabled || reviewSession
+                  ? "Local development"
+                  : "Not available"}
+              </dd>
+            </div>
+            <div>
+              <dt>Production permissions</dt>
+              <dd>None</dd>
+            </div>
+            <div>
+              <dt>Database user</dt>
+              <dd>Never created</dd>
+            </div>
+          </dl>
+        </Panel>
+      </div>
+
+      <Panel
+        title="Data providers & health"
+        eyebrow="Connection truth"
+        icon={Plug}
+        className="yt-settings-providers"
+        state={
+          <StatusPill tone={providerCounts.active > 0 ? "positive" : "neutral"}>
+            {providerCounts.active} of {providerCounts.total} active
+          </StatusPill>
+        }
+      >
+        <div className="yt-settings-provider-toolbar">
+          <div>
+            <strong>Health diagnostics</strong>
+            <span>
+              {health
+                ? `Last checked ${timeAgo(health.asOf)} · ${useForcedHealth ? "forced probe" : "cached status"}`
+                : "Waiting for the health endpoint"}
+            </span>
+          </div>
+          <div>
+            <button
+              type="button"
+              className="yt-settings-button"
+              onClick={() => void forcedHealth.refetch()}
+              disabled={healthFetching}
+            >
+              <RefreshCw className={cn(healthFetching && "is-spinning")} />
+              Re-check health
+            </button>
+            <button
+              type="button"
+              className="yt-settings-button is-primary"
+              onClick={() => void quoteTest.refetch()}
+              disabled={quoteTest.isFetching}
+            >
+              <Activity className={cn(quoteTest.isFetching && "is-spinning")} />
+              Run quote diagnostics
+            </button>
+          </div>
         </div>
 
-        {/* Provider list */}
-        {isLoading ? (
-          <div className="p-6 text-center text-xs text-muted-foreground/60">Running health checks…</div>
-        ) : isError ? (
-          <div className="p-6 text-center text-xs text-red-400/80">Unable to reach the health endpoint.</div>
-        ) : (
-          <div className="divide-y divide-border/30">
-            {providers.map((p, i) => {
-              const v = statusView(p);
-              const isExpanded  = expandedId === p.id;
-              const hasEnvVars  = p.envVars.length > 0;
-              const msg         = credMsg[p.id];
-              const provLoading = credLoading[p.id] ?? false;
-
+        {summary.length > 0 ? (
+          <div className="yt-settings-source-summary">
+            {summary.map((source) => {
+              const view = summaryView(source.status);
               return (
-                <div key={p.id}>
-                  {/* ── Provider row header ───────────────────────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="flex items-start gap-4 p-4 hover:bg-primary/5 transition-colors"
-                  >
-                    <v.Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: v.color }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-foreground">{p.name}</p>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground font-mono">
-                          {p.sourceLabel}
-                        </span>
-                        {p.isTradingCapable && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded border font-bold bg-red-500/10 text-red-400 border-red-500/20">
-                            READ-ONLY
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">{p.message}</p>
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {p.assetClasses.join(" · ")}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/50">
-                          Checked {timeAgo(p.lastCheckedAt)}
-                          {p.latencyMs != null ? ` · ${p.latencyMs}ms` : ""}
-                        </span>
-                        {hasEnvVars && !v.positive && (
-                          <span className="text-[10px] text-muted-foreground/50 font-mono">
-                            needs {p.envVars.join(", ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: v.color }}>
-                        {v.label}
-                      </span>
-                      {hasEnvVars && (
-                        <button
-                          onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                          title={isExpanded ? "Close" : "Configure API key"}
-                          className={cn(
-                            "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all duration-200",
-                            isExpanded
-                              ? "text-primary border-primary/35 bg-primary/10"
-                              : "text-muted-foreground border-border/50 hover:text-primary hover:border-primary/30"
-                          )}
-                        >
-                          <Key className="w-3 h-3" />
-                          <motion.div
-                            animate={{ rotate: isExpanded ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <ChevronDown className="w-3 h-3" />
-                          </motion.div>
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-
-                  {/* ── Expandable credential input ───────────────────────── */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <div
-                          className="mx-4 mb-4 p-4 rounded-xl border border-primary/15 bg-card/40"
-                          style={{ boxShadow: "0 0 24px rgba(212,175,55,0.05)" }}
-                        >
-                          {/* Security note */}
-                          <div className="flex items-start gap-2 mb-3 pb-3 border-b border-border/30">
-                            <Lock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                              Keys are stored <strong className="text-muted-foreground/80">server-side only</strong> and never
-                              returned to the browser. Saving a key does <em>not</em> automatically mark the provider as
-                              connected — use <em>Test Connection</em> to verify. Keys reset on server restart; for permanent
-                              storage add them as Replit Secrets using the env var name shown below.
-                            </p>
-                          </div>
-
-                          {/* Key input fields */}
-                          <div className="space-y-2.5 mb-3">
-                            {p.envVars.map((envVar) => (
-                              <div key={envVar}>
-                                <label className="flex items-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-1.5">
-                                  {envVarToLabel(envVar)}
-                                  <span className="font-mono normal-case text-muted-foreground/40">{envVar}</span>
-                                </label>
-                                <input
-                                  type="password"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                  placeholder="Paste key here…"
-                                  value={keyValues[`${p.id}::${envVar}`] ?? ""}
-                                  onChange={(e) =>
-                                    setKeyValues((prev) => ({
-                                      ...prev,
-                                      [`${p.id}::${envVar}`]: e.target.value,
-                                    }))
-                                  }
-                                  className="w-full rounded-lg px-3 py-2 text-sm font-mono bg-background/80 border border-border/50 focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder-muted-foreground/25 transition-colors text-foreground"
-                                />
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Status message */}
-                          {msg && (
-                            <p
-                              className={cn(
-                                "text-[11px] font-mono mb-2.5 leading-relaxed",
-                                msg.ok ? "text-emerald-400" : "text-red-400/80"
-                              )}
-                            >
-                              {msg.ok ? "✓ " : "✗ "}{msg.text}
-                            </p>
-                          )}
-
-                          {/* Action buttons */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <button
-                              onClick={() => void saveCredentials(p.id, p.envVars)}
-                              disabled={provLoading}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
-                            >
-                              {provLoading
-                                ? <RefreshCw className="w-3 h-3 animate-spin" />
-                                : <Key className="w-3 h-3" />}
-                              Save Key
-                            </button>
-                            <button
-                              onClick={() => {
-                                setCredMsg((prev) => ({ ...prev, [p.id]: { ok: true, text: "Re-checking connection…" } }));
-                                void forced.refetch();
-                              }}
-                              disabled={isFetching || provLoading}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-50"
-                            >
-                              <RefreshCw className={cn("w-3 h-3", isFetching && "animate-spin")} />
-                              Test Connection
-                            </button>
-                            <button
-                              onClick={() => void removeCredentials(p.id, p.envVars)}
-                              disabled={provLoading}
-                              className="ml-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/30 transition-colors disabled:opacity-50"
-                            >
-                              <X className="w-3 h-3" />
-                              Remove Keys
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <article key={source.assetClass}>
+                  <div>
+                    <span>{source.label}</span>
+                    <StatusPill tone={view.tone}>{view.label}</StatusPill>
+                  </div>
+                  <strong>
+                    {source.activeProviderLabel ?? "No active provider"}
+                  </strong>
+                  <small>
+                    {source.sourceLabel ?? "Provider unavailable"}
+                    {source.fallbackInUse ? " · fallback disclosed" : ""}
+                  </small>
+                </article>
               );
             })}
           </div>
-        )}
+        ) : null}
 
-        <div className="p-3 border-t border-border/40 bg-background/40">
-          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-            Equity & ETF quotes are <span className="text-foreground/80">delayed ~15 min</span> via Yahoo;
-            crypto is reference pricing via CoinGecko. Trading-capable providers are wired
-            <span className="text-red-400/90"> read-only</span> — no live order execution. API keys live on the server and
-            never reach the browser.
+        {healthLoading ? (
+          <div className="yt-settings-empty">
+            <RefreshCw className="is-spinning" />
+            <strong>Running provider health checks</strong>
+            <span>
+              No connection state is assumed while the endpoint responds.
+            </span>
+          </div>
+        ) : null}
+        {healthError ? (
+          <div className="yt-settings-empty is-error">
+            <WifiOff />
+            <strong>Provider health unavailable</strong>
+            <span>The application is not claiming a connection.</span>
+          </div>
+        ) : null}
+        {!healthLoading && !healthError ? (
+          <div className="yt-settings-provider-list">
+            {providers.map((provider) => {
+              const view = providerView(provider);
+              const ProviderIcon = view.Icon;
+              return (
+                <article key={provider.id}>
+                  <span
+                    className={`yt-settings-provider-list__icon is-${view.tone}`}
+                  >
+                    <ProviderIcon aria-hidden="true" />
+                  </span>
+                  <div className="yt-settings-provider-list__copy">
+                    <div>
+                      <strong>{provider.name}</strong>
+                      <StatusPill tone={view.tone}>{view.label}</StatusPill>
+                      {provider.isTradingCapable ? (
+                        <StatusPill tone="negative">Read-only</StatusPill>
+                      ) : null}
+                    </div>
+                    <p>{view.description}</p>
+                    <small>
+                      {provider.assetClasses.join(" · ") ||
+                        "Asset class unavailable"}{" "}
+                      · checked {timeAgo(provider.lastCheckedAt)}
+                      {provider.latencyMs == null
+                        ? ""
+                        : ` · ${provider.latencyMs}ms`}
+                    </small>
+                  </div>
+                  <span className="yt-settings-provider-list__source">
+                    {provider.sourceLabel}
+                  </span>
+                </article>
+              );
+            })}
+            {providers.length === 0 ? (
+              <div className="yt-settings-empty">
+                <Plug />
+                <strong>No provider inventory returned</strong>
+                <span>
+                  Connections remain unavailable until the server reports them.
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <AnimatePresence initial={false}>
+          {quoteTest.isError ? (
+            <motion.div
+              className="yt-settings-diagnostic is-error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: reducedMotion ? 0 : motionTokens.duration.fast,
+              }}
+            >
+              Quote diagnostics failed. No quote source is represented as
+              connected.
+            </motion.div>
+          ) : quoteTest.data ? (
+            <motion.div
+              className="yt-settings-diagnostics"
+              initial={reducedMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={
+                reducedMotion
+                  ? { duration: 0 }
+                  : {
+                      duration: motionTokens.duration.interface,
+                      ease: motionTokens.ease.out,
+                    }
+              }
+            >
+              <header>
+                <strong>Diagnostic result</strong>
+                <StatusPill
+                  tone={usableQuotes.length > 0 ? "positive" : "gold"}
+                >
+                  {usableQuotes.length} usable responses
+                </StatusPill>
+              </header>
+              {usableQuotes.length > 0 ? (
+                <div>
+                  {usableQuotes.map((quote) => {
+                    const badge = quoteBadge(quote);
+                    return (
+                      <span key={`${quote.symbol}-${quote.provider}`}>
+                        <strong>{quote.symbol}</strong>
+                        <b>${formatPrice(quote.price)}</b>
+                        <small>{badge.text}</small>
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p>No usable quotes returned. Providers remain unavailable.</p>
+              )}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <div className="yt-settings-truth-policy">
+          <div>
+            <Radio aria-hidden="true" />
+            <span>
+              <strong>Market-data truth policy</strong>
+              <small>
+                Presentation rules are mandatory, not a source-connection
+                control.
+              </small>
+            </span>
+          </div>
+          <ul>
+            <li>
+              <span>Source & freshness labels</span>
+              <StatusPill tone="positive">Always on</StatusPill>
+            </li>
+            <li>
+              <span>Fallback disclosure</span>
+              <StatusPill tone="positive">Required</StatusPill>
+            </li>
+            <li>
+              <span>Unavailable modules</span>
+              <StatusPill>Visible</StatusPill>
+            </li>
+          </ul>
+          <p>
+            Provider secrets are configured outside the browser. This surface
+            never accepts or displays raw keys.
           </p>
         </div>
-      </motion.div>
+      </Panel>
 
-      <div className="grid grid-cols-12 gap-6">
-        {/* Notifications */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="col-span-12 md:col-span-6 glass-card overflow-hidden"
+      <div className="yt-settings-two-column">
+        <Panel
+          title="Notifications & alerts"
+          eyebrow="Local preference foundation"
+          icon={Bell}
+          state={<StatusPill>Not persisted</StatusPill>}
         >
-          <div className="p-4 border-b border-border/50 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-display font-semibold text-foreground">Notifications</h2>
-            <span className="text-[10px] text-muted-foreground/50">Local preferences</span>
-          </div>
-          <div className="divide-y divide-border/30">
-            {NOTIFICATION_SETTINGS.map((n, i) => (
-              <div key={n.label} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{n.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
-                </div>
-                <button
-                  onClick={() => setNotifs((prev) => prev.map((v, j) => j === i ? !v : v))}
-                  className={cn(
-                    "relative w-10 h-5 rounded-full transition-colors flex-shrink-0",
-                    notifs[i] ? "bg-primary" : "bg-muted"
-                  )}
-                >
-                  <motion.div
-                    animate={{ x: notifs[i] ? 20 : 2 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm"
+          <div className="yt-settings-stack">
+            {NOTIFICATION_SETTINGS.map((item, index) => (
+              <SettingRow
+                key={item.label}
+                title={item.label}
+                description={item.description}
+                action={
+                  <Toggle
+                    checked={notifications[index] ?? false}
+                    onChange={() =>
+                      setNotifications((current) =>
+                        current.map((value, itemIndex) =>
+                          itemIndex === index ? !value : value,
+                        ),
+                      )
+                    }
+                    label={item.label}
+                    reducedMotion={reducedMotion}
                   />
-                </button>
-              </div>
+                }
+              />
             ))}
           </div>
-        </motion.div>
+        </Panel>
 
-        {/* Risk thresholds — editable */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="col-span-12 md:col-span-6 glass-card overflow-hidden"
+        <Panel
+          title="Risk thresholds"
+          eyebrow="Configuration service"
+          icon={Gauge}
+          state={
+            <StatusPill tone={riskConfig.isDefault ? "neutral" : "positive"}>
+              {riskConfig.isDefault
+                ? "Defaults"
+                : `Updated ${timeAgo(riskConfig.updatedAt ?? null)}`}
+            </StatusPill>
+          }
         >
-          <div className="p-4 border-b border-border/50 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Shield className="w-4 h-4 text-primary flex-shrink-0" />
-              <h2 className="text-sm font-display font-semibold text-foreground">Risk Thresholds</h2>
-              {riskConfig.isDefault ? (
-                <span className="text-[10px] text-muted-foreground/50 truncate">Defaults</span>
-              ) : (
-                <span className="text-[10px] text-emerald-400/70 truncate">
-                  Saved {timeAgo(riskConfig.updatedAt ?? null)}
-                </span>
-              )}
-            </div>
+          <div className="yt-settings-risk-toolbar">
+            <p>Illustrative boundaries are not financial guidance.</p>
             <button
+              type="button"
+              className="yt-settings-button"
               onClick={() => {
-                setRiskEditing((e) => !e);
-                setRiskMsg(null);
+                if (riskEditing) restoreRiskDraft();
+                setRiskEditing((current) => !current);
+                setRiskMessage(null);
               }}
-              className={cn(
-                "flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border transition-all duration-200 flex-shrink-0",
-                riskEditing
-                  ? "text-primary border-primary/35 bg-primary/10"
-                  : "text-muted-foreground border-border/50 hover:text-primary hover:border-primary/30"
-              )}
             >
-              <motion.div animate={{ rotate: riskEditing ? 45 : 0 }} transition={{ duration: 0.18 }}>
-                <ChevronRight className="w-3 h-3" />
-              </motion.div>
-              {riskEditing ? "Cancel" : "Edit"}
+              <SlidersHorizontal />
+              {riskEditing ? "Cancel editing" : "Edit thresholds"}
             </button>
           </div>
-
           {riskLoading ? (
-            <div className="p-6 text-center text-xs text-muted-foreground/60">Loading thresholds…</div>
+            <div className="yt-settings-empty">
+              <RefreshCw className="is-spinning" />
+              <strong>Loading thresholds</strong>
+            </div>
           ) : (
-            <div className="divide-y divide-border/30">
+            <div className="yt-settings-risk-list">
               {RISK_FIELDS.map((field) => {
-                const current = riskConfig[field.key];
-                const draftStr = riskDraft[field.key];
-                const draftNum = parseInt(draftStr, 10);
-                const isInvalid = riskEditing && (Number.isNaN(draftNum) || draftNum < 1 || draftNum > 100);
-                const isDirty   = riskEditing && draftNum !== current;
-
+                const parsed = Number.parseInt(riskDraft[field.key], 10);
+                const invalid =
+                  riskEditing &&
+                  (!Number.isFinite(parsed) || parsed < 1 || parsed > 100);
+                const dirty = riskEditing && parsed !== riskConfig[field.key];
                 return (
-                  <div key={field.key} className="flex items-center justify-between p-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{field.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{field.desc}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      {riskEditing ? (
-                        <div className="flex items-center gap-1">
+                  <SettingRow
+                    key={field.key}
+                    title={field.label}
+                    description={field.description}
+                    action={
+                      riskEditing ? (
+                        <label
+                          className={cn(
+                            "yt-settings-risk-input",
+                            invalid && "is-invalid",
+                            dirty && "is-dirty",
+                          )}
+                        >
+                          <span className="sr-only">{field.label} percent</span>
                           <input
                             type="number"
                             min={1}
                             max={100}
-                            value={draftStr}
-                            onChange={(e) =>
-                              setRiskDraft((prev) => ({ ...prev, [field.key]: e.target.value }))
+                            value={riskDraft[field.key]}
+                            onChange={(event) =>
+                              setRiskDraft((current) => ({
+                                ...current,
+                                [field.key]: event.target.value,
+                              }))
                             }
-                            className={cn(
-                              "w-16 rounded-lg px-2 py-1 text-sm font-mono text-right bg-background/80 border focus:outline-none focus:ring-1 transition-colors",
-                              isInvalid
-                                ? "border-red-500/50 text-red-400 focus:ring-red-500/20 focus:border-red-500/50"
-                                : isDirty
-                                ? "border-primary/50 text-primary focus:ring-primary/20 focus:border-primary/60"
-                                : "border-border/50 text-foreground focus:ring-primary/20 focus:border-primary/40"
-                            )}
                           />
-                          <span className={cn("text-sm font-mono", isDirty ? "text-primary" : "text-muted-foreground")}>%</span>
-                        </div>
+                          <span>%</span>
+                        </label>
                       ) : (
-                        <span className="font-mono text-sm font-bold text-primary">{current}%</span>
-                      )}
-                    </div>
-                  </div>
+                        <strong className="yt-settings-risk-value">
+                          {riskConfig[field.key]}%
+                        </strong>
+                      )
+                    }
+                  />
                 );
               })}
             </div>
           )}
-
-          {/* Edit footer */}
-          <AnimatePresence>
-            {riskEditing && (
+          <AnimatePresence initial={false}>
+            {riskEditing ? (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden"
+                className="yt-settings-risk-editor"
+                initial={reducedMotion ? false : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : {
+                        duration: motionTokens.duration.interface,
+                        ease: motionTokens.ease.out,
+                      }
+                }
               >
-                <div className="p-4 border-t border-border/40 bg-background/30 space-y-3">
-                  {riskMsg && (
-                    <p className={cn("text-[11px] font-mono leading-relaxed", riskMsg.ok ? "text-emerald-400" : "text-red-400/80")}>
-                      {riskMsg.ok ? "✓ " : "✗ "}{riskMsg.text}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => void saveRiskConfig()}
-                      disabled={updateRisk.isPending || !isDraftValid()}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-colors disabled:opacity-50"
-                    >
-                      {updateRisk.isPending
-                        ? <RefreshCw className="w-3 h-3 animate-spin" />
-                        : <Save className="w-3 h-3" />}
-                      Save Thresholds
-                    </button>
-                    <button
-                      onClick={resetRiskToDefaults}
-                      disabled={updateRisk.isPending}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-50"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      Reset to Defaults
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-                    Changes persist to the database and apply immediately to the Risk page.
-                    Values must be between 1–100%.
+                {riskMessage ? (
+                  <p
+                    className={cn(
+                      "yt-settings-message",
+                      riskMessage.ok ? "is-success" : "is-error",
+                    )}
+                    role="status"
+                  >
+                    {riskMessage.text}
                   </p>
+                ) : null}
+                <div>
+                  <button
+                    type="button"
+                    className="yt-settings-button is-primary"
+                    onClick={() => void saveRiskConfig()}
+                    disabled={updateRisk.isPending || !riskDraftValid()}
+                  >
+                    {updateRisk.isPending ? (
+                      <RefreshCw className="is-spinning" />
+                    ) : (
+                      <Save />
+                    )}
+                    Save thresholds
+                  </button>
+                  <button
+                    type="button"
+                    className="yt-settings-button"
+                    onClick={resetRiskToDefaults}
+                    disabled={updateRisk.isPending}
+                  >
+                    <RotateCcw />
+                    Load defaults
+                  </button>
                 </div>
+                <small>
+                  Values must be 1–100. A successful response confirms only the
+                  current configuration service.
+                </small>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
-        </motion.div>
+        </Panel>
       </div>
 
-      {/* App info */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="glass-card p-5"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-yellow-600 flex items-center justify-center">
-                <span className="text-xs font-bold text-primary-foreground">YT</span>
+      <div className="yt-settings-two-column is-preferences">
+        <Panel
+          title="Display, appearance & motion"
+          eyebrow="This device"
+          icon={Moon}
+          state={<StatusPill>Local</StatusPill>}
+        >
+          <SettingRow
+            title="Display density"
+            description="Adjusts this Settings command center only."
+            action={
+              <div className="yt-settings-segmented">
+                <button
+                  type="button"
+                  className={
+                    density === "comfortable" ? "is-active" : undefined
+                  }
+                  onClick={() => setDensity("comfortable")}
+                >
+                  Comfortable
+                </button>
+                <button
+                  type="button"
+                  className={density === "compact" ? "is-active" : undefined}
+                  onClick={() => setDensity("compact")}
+                >
+                  Compact
+                </button>
               </div>
-              <h3 className="font-display font-bold text-foreground">YucaTanaTrades</h3>
-              <span className="text-xs text-muted-foreground font-mono">v1.0.0</span>
+            }
+          />
+          <SettingRow
+            title="Appearance"
+            description="The approved Meridian dark system remains fixed."
+            action={
+              <span className="yt-settings-inline-state">
+                <Moon />
+                Meridian dark
+              </span>
+            }
+          />
+          <SettingRow
+            title="Motion"
+            description="Follows the browser and operating-system preference."
+            action={
+              <StatusPill tone={reducedMotion ? "gold" : "positive"}>
+                {reducedMotion ? "Reduced" : "Full"}
+              </StatusPill>
+            }
+          />
+          <SettingRow
+            title="Ambient movement"
+            description={
+              reducedMotion
+                ? "Parallax and drift are removed."
+                : "Calm shell transitions are enabled."
+            }
+            action={<Move aria-hidden="true" />}
+          />
+        </Panel>
+
+        <Panel
+          title="Charts & watchlists"
+          eyebrow="Workspace preferences"
+          icon={BarChart3}
+          state={<StatusPill>Local preview</StatusPill>}
+        >
+          {[
+            ["Moving averages", "Show the approved MA 8 and MA 21 context."],
+            ["Volume context", "Preserve the analytical volume band."],
+            [
+              "Dense chart labels",
+              "A local preview preference; not persisted.",
+            ],
+          ].map(([title, description], index) => (
+            <SettingRow
+              key={title}
+              title={title}
+              description={description}
+              action={
+                <Toggle
+                  checked={chartPreferences[index] ?? false}
+                  onChange={() =>
+                    setChartPreferences((current) =>
+                      current.map((value, itemIndex) =>
+                        itemIndex === index ? !value : value,
+                      ),
+                    )
+                  }
+                  label={title}
+                  reducedMotion={reducedMotion}
+                />
+              }
+            />
+          ))}
+          <SettingRow
+            title="Watchlist organization"
+            description="Editing and cloud synchronization are deferred."
+            action={<StatusPill>Foundation</StatusPill>}
+          />
+        </Panel>
+      </div>
+
+      <div className="yt-settings-three-column">
+        <Panel
+          title="Privacy & data controls"
+          eyebrow="Fail-closed foundation"
+          icon={Shield}
+          state={<StatusPill>Unavailable</StatusPill>}
+        >
+          <p className="yt-settings-lead">
+            No export or deletion job is connected. Actions stay disabled until
+            server contracts and confirmation flows are approved.
+          </p>
+          <div className="yt-settings-disabled-actions">
+            <button type="button" disabled>
+              <Download />
+              Export account data
+            </button>
+            <button type="button" disabled>
+              <Trash2 />
+              Request deletion
+            </button>
+          </div>
+          <SettingRow
+            title="Browser secrets"
+            description="Raw provider credentials are never accepted here."
+            action={<Check />}
+          />
+        </Panel>
+
+        <Panel
+          title="Audit activity"
+          eyebrow="Security-safe visibility"
+          icon={FileText}
+          state={<StatusPill>Foundation</StatusPill>}
+        >
+          <div className="yt-settings-audit-list">
+            <div>
+              <span>
+                <User />
+              </span>
+              <p>
+                <strong>Session identity</strong>
+                <small>Resolved by the authentication service</small>
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">Premium AI-powered trading intelligence terminal</p>
+            <div>
+              <span>
+                <Lock />
+              </span>
+              <p>
+                <strong>Mutation boundary</strong>
+                <small>CSRF-protected server requests</small>
+              </p>
+            </div>
+            <div>
+              <span>
+                <Eye />
+              </span>
+              <p>
+                <strong>Secret handling</strong>
+                <small>No raw tokens or keys shown</small>
+              </p>
+            </div>
           </div>
-          <div className="text-right space-y-1">
-            <p className="text-xs text-muted-foreground">
-              All bots operate in <span className="text-red-400 font-semibold">READ-ONLY</span> mode
-            </p>
-            <p className="text-xs text-muted-foreground">No live trade execution permitted</p>
+          <p className="yt-settings-note">
+            A persistent, user-visible audit timeline is not implemented.
+          </p>
+        </Panel>
+
+        <Panel
+          title="Application & integrations"
+          eyebrow="Build information"
+          icon={Info}
+          state={<StatusPill tone="gold">UI-2.1</StatusPill>}
+        >
+          <div className="yt-settings-integration-list">
+            <SettingRow
+              title="Authentication"
+              description="Opaque session foundation"
+              action={<StatusPill tone="positive">Available</StatusPill>}
+            />
+            <SettingRow
+              title="Market providers"
+              description="Health endpoint status"
+              action={
+                <StatusPill tone={health ? "cyan" : "neutral"}>
+                  {health ? "Reported" : "Unavailable"}
+                </StatusPill>
+              }
+            />
+            <SettingRow
+              title="Production AI"
+              description="No model provider connected"
+              action={<Bot aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Brokerage"
+              description="No execution or custody connection"
+              action={<WifiOff aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Database persistence"
+              description="Not asserted by this UI phase"
+              action={<Database aria-hidden="true" />}
+            />
+            <SettingRow
+              title="Build metadata"
+              description="No runtime build identifier injected"
+              action={<Server aria-hidden="true" />}
+            />
           </div>
+        </Panel>
+      </div>
+
+      <motion.footer className="yt-settings-footer" variants={panelReveal}>
+        <div>
+          <span className="yt-settings-footer__mark">YT</span>
+          <p>
+            <strong>YucaTanaTrades</strong>
+            <small>Meridian OS · UI-2.1 experience foundation</small>
+          </p>
         </div>
-      </motion.div>
-    </div>
+        <p>
+          <Layers aria-hidden="true" />
+          No live execution, brokerage, production AI, or database persistence
+          is claimed.
+        </p>
+      </motion.footer>
+    </motion.main>
   );
 }

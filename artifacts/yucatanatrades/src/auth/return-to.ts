@@ -1,5 +1,5 @@
 const protectedPaths = [
-  "/",
+  "/overview",
   "/markets",
   "/charts",
   "/portfolio",
@@ -14,27 +14,27 @@ const protectedPaths = [
   "/settings",
 ] as const;
 
+const defaultProtectedDestination = "/overview";
+
 function isProtectedPath(pathname: string): boolean {
   return protectedPaths.some((path) =>
-    path === "/"
-      ? pathname === "/"
-      : pathname === path || pathname.startsWith(`${path}/`),
+    pathname === path || pathname.startsWith(`${path}/`),
   );
 }
 
 export function sanitizeReturnTo(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
-    return "/";
+    return defaultProtectedDestination;
   }
 
   try {
     const parsed = new URL(value, "https://return.local");
     if (parsed.origin !== "https://return.local" || !isProtectedPath(parsed.pathname)) {
-      return "/";
+      return defaultProtectedDestination;
     }
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
-    return "/";
+    return defaultProtectedDestination;
   }
 }
 

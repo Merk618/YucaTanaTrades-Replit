@@ -731,6 +731,37 @@
   box-shadow: 0 0 0 4px rgba(119, 183, 122, 0.07), 0 0 12px rgba(119, 183, 122, 0.2);
 }
 
+.yt-auth-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.yt-auth-public-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(159, 179, 182, .72);
+  font-size: 9px;
+  font-weight: 560;
+  letter-spacing: .11em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color var(--yt-fast), transform var(--yt-fast) var(--yt-ease-out);
+}
+
+.yt-auth-public-link svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 1.6;
+}
+
+.yt-auth-public-link:hover,
+.yt-auth-public-link:focus-visible {
+  color: var(--yt-text-warm);
+  transform: translateX(-2px);
+}
+
 .yt-auth-layout {
   grid-template-columns: minmax(0, 1fr) minmax(440px, var(--yt-auth-panel-width));
   gap: clamp(62px, 7vw, 112px);
@@ -1414,6 +1445,15 @@
     letter-spacing: 0.27em;
   }
 
+  .yt-auth-header-actions { gap: 0; }
+
+  .yt-auth-header-status { display: none; }
+
+  .yt-auth-public-link {
+    font-size: 8px;
+    letter-spacing: .08em;
+  }
+
   .yt-auth-layout {
     gap: 26px;
     min-height: calc(100dvh - 68px);
@@ -1533,6 +1573,11 @@
 
   .yt-auth-reveal:active,
   .yt-auth-submit:hover .yt-auth-submit-arrow {
+    transform: none;
+  }
+
+  .yt-auth-public-link:hover,
+  .yt-auth-public-link:focus-visible {
     transform: none;
   }
 }

@@ -5,14 +5,20 @@ import {
   BookOpen,
   Bot,
   BriefcaseBusiness,
+  CalendarDays,
   ChartCandlestick,
   ChevronDown,
+  CircleHelp,
   CircleUserRound,
   Command,
+  Eye,
   Home,
   LineChart,
   LogOut,
+  MoreHorizontal,
   Newspaper,
+  NotebookPen,
+  Radar,
   Search,
   Settings,
   ShieldOff,
@@ -34,38 +40,62 @@ import { useToast } from "@/hooks/use-toast";
 import { motionTokens } from "@/lib/motion";
 
 const topRoutes = [
-  { label: "Overview", href: "/" },
-  { label: "Markets", href: "/markets" },
-  { label: "Charts", href: "/charts" },
-  { label: "Portfolio", href: "/portfolio" },
-  { label: "Research", href: "/research" },
-  { label: "News", href: "/news" },
-  { label: "AI Hub", href: "/ai-lab" },
-] as const;
-
-const railRoutes = [
-  { label: "Overview", href: "/", icon: Home },
+  { label: "Overview", href: "/overview", icon: Home },
   { label: "Markets", href: "/markets", icon: LineChart },
   { label: "Charts", href: "/charts", icon: ChartCandlestick },
   { label: "Portfolio", href: "/portfolio", icon: BriefcaseBusiness },
   { label: "Research", href: "/research", icon: BookOpen },
   { label: "News", href: "/news", icon: Newspaper },
-  { label: "AI Intelligence", href: "/ai-lab", icon: Bot },
+  { label: "AI Hub", href: "/ai-lab", icon: Bot },
+] as const;
+
+const railRoutes = [
+  { label: "Ask Meridian / Scan", href: "/scanners", icon: Radar },
+  { label: "Watchlist", href: "/watchlist", icon: Eye },
+  { label: "Journal", href: "/journal", icon: NotebookPen },
 ] as const;
 
 const commandItems = [
-  { label: "Open overview", detail: "Demo decision workspace", href: "/", icon: Home },
+  { label: "Open overview", detail: "Demo decision workspace", href: "/overview", icon: Home },
   { label: "Open market overview", detail: "Historical structure · Demo", href: "/markets", icon: LineChart },
   { label: "Open chart workspace", detail: "Historical · Demo", href: "/charts", icon: ChartCandlestick },
   { label: "Review portfolio", detail: "Demo snapshot · provider-neutral", href: "/portfolio", icon: BriefcaseBusiness },
   { label: "Open research", detail: "Demo organization · providers unavailable", href: "/research", icon: BookOpen },
   { label: "Open news intelligence", detail: "News provider unavailable", href: "/news", icon: Newspaper },
   { label: "Open Meridian AI", detail: "AI-generated Demo · provider unavailable", href: "/ai-lab", icon: Sparkles },
+  { label: "Open scanner", detail: "Deterministic utility workspace", href: "/scanners", icon: Radar },
+  { label: "Open watchlist", detail: "Local utility workspace", href: "/watchlist", icon: Eye },
+  { label: "Open journal", detail: "Private notes workspace", href: "/journal", icon: NotebookPen },
+  { label: "Open settings", detail: "Session, truth, and display controls", href: "/settings", icon: Settings },
 ] as const;
 
 function isRouteActive(location: string, href: string) {
-  if (href === "/") return location === "/";
+  if (href === "/overview") return location === "/overview";
   return location === href || location.startsWith(`${href}/`);
+}
+
+function WorkspaceLink({
+  label,
+  href,
+  location,
+  indicator,
+}: {
+  label: string;
+  href: string;
+  location: string;
+  indicator: string;
+}) {
+  const active = isRouteActive(location, href);
+  return (
+    <Link
+      href={href}
+      className={active ? "is-active" : undefined}
+      aria-current={active ? "page" : undefined}
+    >
+      {label}
+      {active ? <motion.span layoutId={indicator} transition={motionTokens.spring.snappy} /> : null}
+    </Link>
+  );
 }
 
 export function BrandMark() {
@@ -101,6 +131,25 @@ function RailLink({
       <Icon aria-hidden="true" />
       <span className="yt-rail-tooltip" role="tooltip">{label}</span>
     </Link>
+  );
+}
+
+function RailAction({
+  label,
+  icon: Icon,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  icon: React.ElementType;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button className="yt-rail-link" type="button" disabled={disabled} aria-label={label} onClick={onClick}>
+      <Icon aria-hidden="true" />
+      <span className="yt-rail-tooltip" role="tooltip">{label}</span>
+    </button>
   );
 }
 
@@ -255,6 +304,7 @@ function CommandPalette({
 
 function AccountMenu({ compact = false }: { compact?: boolean }) {
   const { state, signOut, signOutAllDevices } = useAuth();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const [pending, setPending] = React.useState<"current" | "all" | null>(null);
 
@@ -271,6 +321,7 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
     try {
       if (allDevices) await signOutAllDevices();
       else await signOut();
+      navigate("/");
     } catch (error) {
       toast({
         title: "Secure sign-out unavailable",
@@ -372,22 +423,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="yt-app">
       <motion.aside
         className="yt-icon-rail"
-        aria-label="Primary navigation"
+        aria-label="Global utilities"
         initial={reducedMotion ? false : { opacity: 0, x: -14 }}
         animate={{ opacity: 1, x: 0 }}
         transition={reducedMotion ? { duration: 0 } : motionTokens.spring.panel}
       >
-        <Link href="/" className="yt-rail-brand" aria-label="YucaTanaTrades overview">
+        <Link href="/overview" className="yt-rail-brand" aria-label="YucaTanaTrades overview">
           <BrandMark />
         </Link>
         <nav className="yt-rail-routes">
           {railRoutes.map((item) => (
             <RailLink key={item.href} {...item} active={isRouteActive(location, item.href)} />
           ))}
-          <button className="yt-rail-link" type="button" disabled aria-label="Learning deferred">
-            <BookOpen aria-hidden="true" />
-            <span className="yt-rail-tooltip" role="tooltip">Learning · Deferred</span>
-          </button>
+          <RailAction label="Alerts · Deferred" icon={Bell} disabled />
+          <RailAction label="Calendar · Deferred" icon={CalendarDays} disabled />
         </nav>
         <div className="yt-rail-utilities">
           <RailLink
@@ -396,6 +445,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             icon={Settings}
             active={isRouteActive(location, "/settings")}
           />
+          <RailAction label="Help · Deferred" icon={CircleHelp} disabled />
           <AccountMenu compact />
         </div>
       </motion.aside>
@@ -407,30 +457,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           animate={{ opacity: 1, y: 0 }}
           transition={reducedMotion ? { duration: 0 } : { ...motionTokens.spring.panel, delay: motionTokens.delay.topbar }}
         >
-          <Link href="/" className="yt-wordmark" aria-label="YucaTanaTrades overview">
+          <Link href="/overview" className="yt-wordmark" aria-label="YucaTanaTrades overview">
             YUCATANATRADES
           </Link>
-          <nav className="yt-topnav" aria-label="Workspace navigation">
-            {topRoutes.map((route) => {
-              const active = isRouteActive(location, route.href);
-              return (
-                <Link
-                  key={route.href}
-                  href={route.href}
-                  className={active ? "is-active" : undefined}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {route.label}
-                  {active && (
-                    <motion.span
-                      layoutId="yt-topnav-active"
-                      transition={motionTokens.spring.snappy}
-                    />
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="yt-topnav yt-topnav-wide" aria-label="Workspace navigation">
+            {topRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
           </nav>
+          <nav className="yt-topnav yt-topnav-compact" aria-label="Workspace navigation">
+            {topRoutes.slice(0, 5).map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" />)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={`yt-topnav-more${topRoutes.slice(5).some((route) => isRouteActive(location, route.href)) ? " is-active" : ""}`} type="button">
+                  More <ChevronDown aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="yt-workspace-dropdown">
+                <DropdownMenuLabel>More workspaces</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {topRoutes.slice(5).map((route) => (
+                  <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
+                    <route.icon aria-hidden="true" /> {route.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+          <div className="yt-tablet-workspaces">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="yt-workspace-trigger" type="button"><span>Workspaces</span><ChevronDown aria-hidden="true" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="yt-workspace-dropdown">
+                <DropdownMenuLabel>Meridian OS workspaces</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {topRoutes.map((route) => (
+                  <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
+                    <route.icon aria-hidden="true" /> {route.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <button
             ref={searchTriggerRef}
             className="yt-search-trigger"
@@ -479,6 +546,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </main>
       </div>
+
+      <nav className="yt-mobile-bottom-nav" aria-label="Mobile workspace navigation">
+        {topRoutes.slice(0, 4).map((route) => {
+          const active = isRouteActive(location, route.href);
+          const Icon = route.icon;
+          return (
+            <Link key={route.href} href={route.href} className={active ? "is-active" : undefined} aria-current={active ? "page" : undefined}>
+              <Icon aria-hidden="true" /><span>{route.label}</span>
+            </Link>
+          );
+        })}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={topRoutes.slice(4).some((route) => isRouteActive(location, route.href)) || ["/scanners", "/watchlist", "/journal", "/settings"].some((href) => isRouteActive(location, href)) ? "is-active" : undefined} type="button">
+              <MoreHorizontal aria-hidden="true" /><span>More</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="top" className="yt-workspace-dropdown yt-mobile-more-menu">
+            <DropdownMenuLabel>More destinations</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {topRoutes.slice(4).map((route) => (
+              <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
+                <route.icon aria-hidden="true" /> {route.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            {[...railRoutes, { label: "Settings", href: "/settings", icon: Settings }].map((route) => (
+              <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
+                <route.icon aria-hidden="true" /> {route.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </nav>
 
       <CommandPalette
         open={commandOpen}
