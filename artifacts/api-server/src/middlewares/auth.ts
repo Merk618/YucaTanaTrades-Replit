@@ -186,6 +186,15 @@ export function createAuthMiddlewares(
         next();
         return;
       }
+      if (req.authSession?.session.kind === "development_review") {
+        sendStructuredError(
+          res,
+          403,
+          "unauthorized",
+          "A persistent user session is required.",
+        );
+        return;
+      }
       if (req.authFailure === "disabled") {
         sendStructuredError(
           res,

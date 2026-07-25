@@ -158,6 +158,10 @@ export function MarketChart({
   data: ChartWorkspaceView;
   routeMode?: boolean;
 }) {
+  const chartInstanceId = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const chartTitleId = `yt-chart-title-${chartInstanceId}`;
+  const volumeGradientId = `yt-volume-fill-${chartInstanceId}`;
+  const lineGlowId = `yt-line-glow-${chartInstanceId}`;
   const timeframes = Object.keys(data.timeframes);
   const [timeframe, setTimeframe] = React.useState(timeframes[0] ?? "1D");
   const [showIndicators, setShowIndicators] = React.useState(true);
@@ -275,7 +279,7 @@ export function MarketChart({
     <motion.section
       ref={workspaceRef}
       className={`yt-chart-workspace ${routeMode ? "is-route" : ""} ${expanded ? "is-expanded" : ""}`}
-      aria-labelledby={routeMode ? "yt-route-chart-title" : "yt-dashboard-chart-title"}
+      aria-labelledby={chartTitleId}
       data-density={densityBand}
       layout={!reducedMotion}
       initial={reducedMotion ? false : { opacity: 0, y: 10 }}
@@ -289,14 +293,14 @@ export function MarketChart({
           {routeMode ? (
             <div className="yt-symbol-select is-static" aria-label={`${data.name}, ${data.symbol}, selected in the chart workspace`}>
               <span>
-                <strong id="yt-route-chart-title">{data.name}</strong>
+                <strong id={chartTitleId}>{data.name}</strong>
                 <small>{data.symbol}</small>
               </span>
             </div>
           ) : (
             <button className="yt-symbol-select" type="button" aria-label="Select symbol, preview fixed to S&P 500">
               <span>
-                <strong id="yt-dashboard-chart-title">{data.name}</strong>
+                <strong id={chartTitleId}>{data.name}</strong>
                 <small>{data.symbol}</small>
               </span>
               <ChevronDown aria-hidden="true" />
@@ -387,11 +391,11 @@ export function MarketChart({
               onKeyDown={moveKeyboardCrosshair}
             >
               <defs>
-                <linearGradient id="yt-volume-fill" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id={volumeGradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#8eb9a0" stopOpacity="0.42" />
                   <stop offset="100%" stopColor="#8eb9a0" stopOpacity="0.08" />
                 </linearGradient>
-                <filter id="yt-line-glow" x="-20%" y="-50%" width="140%" height="200%">
+                <filter id={lineGlowId} x="-20%" y="-50%" width="140%" height="200%">
                   <feGaussianBlur stdDeviation="1.4" result="blur" />
                   <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
@@ -441,6 +445,7 @@ export function MarketChart({
                       y={chartBottom - volumeHeight}
                       width={candleWidth}
                       height={volumeHeight}
+                      style={{ fill: `url(#${volumeGradientId})` }}
                     />
                     <line className="yt-candle-wick" x1={x} x2={x} y1={yAt(point.high)} y2={yAt(point.low)} />
                     <rect
@@ -467,6 +472,7 @@ export function MarketChart({
                     <motion.path
                       className="yt-ma-line is-fast"
                       d={linePath(maFast, xAt, yAt)}
+                      style={{ filter: `url(#${lineGlowId})` }}
                       initial={reducedMotion ? false : { pathLength: 0.76 }}
                       animate={{ pathLength: 1 }}
                       transition={{ duration: reducedMotion ? 0 : 0.28, ease: "easeOut" }}

@@ -303,10 +303,10 @@ describe("HTTP authentication contract", () => {
       const protectedRoute = await fetch(`${harness.baseUrl}${path}`, {
         headers: { cookie: reviewCookie },
       });
-      expect(protectedRoute.status).toBe(401);
+      expect(protectedRoute.status).toBe(403);
       await expect(readJson<ErrorWire>(protectedRoute)).resolves.toEqual({
         code: "unauthorized",
-        message: "Authentication is required.",
+        message: "A persistent user session is required.",
       });
     }
 
@@ -323,11 +323,19 @@ describe("HTTP authentication contract", () => {
         body: JSON.stringify({ credentials: {} }),
       },
     );
-    expect(providerMutation.status).toBe(401);
+    expect(providerMutation.status).toBe(403);
     await expect(readJson<ErrorWire>(providerMutation)).resolves.toEqual({
       code: "unauthorized",
-      message: "Authentication is required.",
+      message: "A persistent user session is required.",
     });
+
+    const stillCurrent = await fetch(`${harness.baseUrl}/api/auth/session`, {
+      headers: { cookie: reviewCookie },
+    });
+    expect(stillCurrent.status).toBe(200);
+    await expect(
+      readJson<SessionEnvelopeWire>(stillCurrent),
+    ).resolves.toEqual(body);
 
     const signOutAll = await fetch(
       `${harness.baseUrl}/api/auth/sign-out-all`,

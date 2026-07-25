@@ -87,10 +87,11 @@ export function useTickerQuotes() {
   };
 }
 
-export function useSourceHealth(refetchMs = 60_000) {
+export function useSourceHealth(refetchMs = 60_000, enabled = true) {
   return useGetSourceHealth(undefined, {
     query: {
       queryKey: getGetSourceHealthQueryKey(),
+      enabled,
       refetchInterval: refetchMs,
       staleTime: 30_000,
     },

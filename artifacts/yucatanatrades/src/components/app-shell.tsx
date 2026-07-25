@@ -39,47 +39,76 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { motionTokens } from "@/lib/motion";
 import { MeridianAtmosphere } from "@/components/meridian-atmosphere";
+import { RouteErrorBoundary } from "@/components/route-error-boundary";
+import {
+  footerUtilityRoutes,
+  moreWorkspaceRoutes,
+  navigableUtilityRoutes,
+  primaryWorkspaceRoutes,
+  railUtilityRoutes,
+  workspaceRoutes,
+  type NavigationIconKey,
+} from "@/navigation/workspace-navigation";
 import "../meridian-eclipse-shell.css";
 
-const topRoutes = [
-  { label: "Overview", href: "/overview", icon: Home },
-  { label: "Markets", href: "/markets", icon: LineChart },
-  { label: "Charts", href: "/charts", icon: ChartCandlestick },
-  { label: "Portfolio", href: "/portfolio", icon: BriefcaseBusiness },
-  { label: "Research", href: "/research", icon: BookOpen },
-  {
-    label: "News",
-    href: "/news",
-    icon: Newspaper,
-    description: "Source-first intelligence and market context",
-  },
-  {
-    label: "AI Hub",
-    href: "/ai-lab",
-    icon: Bot,
-    description: "Meridian synthesis in a provider-neutral workspace",
-  },
-] as const;
+const navigationIcons = {
+  home: Home,
+  markets: LineChart,
+  charts: ChartCandlestick,
+  portfolio: BriefcaseBusiness,
+  research: BookOpen,
+  news: Newspaper,
+  ai: Bot,
+  ask: Sparkles,
+  scan: Radar,
+  watchlist: Eye,
+  alerts: Bell,
+  journal: NotebookPen,
+  calendar: CalendarDays,
+  settings: Settings,
+  help: CircleHelp,
+  bots: Bot,
+  risk: ShieldOff,
+} satisfies Record<NavigationIconKey, React.ElementType>;
 
-const railRoutes = [
-  { label: "Ask Meridian / Scan", href: "/scanners", icon: Radar },
-  { label: "Watchlist", href: "/watchlist", icon: Eye },
-  { label: "Journal", href: "/journal", icon: NotebookPen },
-] as const;
-
+const topRoutes = workspaceRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
+const primaryTopRoutes = primaryWorkspaceRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
+const moreTopRoutes = moreWorkspaceRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
+const railRoutes = railUtilityRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
+const footerRoutes = footerUtilityRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
+const mobileUtilityRoutes = navigableUtilityRoutes.map((route) => ({
+  ...route,
+  icon: navigationIcons[route.icon],
+}));
 const commandItems = [
-  { label: "Open overview", detail: "Demo decision workspace", href: "/overview", icon: Home },
-  { label: "Open market overview", detail: "Historical structure · Demo", href: "/markets", icon: LineChart },
-  { label: "Open chart workspace", detail: "Historical · Demo", href: "/charts", icon: ChartCandlestick },
-  { label: "Review portfolio", detail: "Demo snapshot · provider-neutral", href: "/portfolio", icon: BriefcaseBusiness },
-  { label: "Open research", detail: "Demo organization · providers unavailable", href: "/research", icon: BookOpen },
-  { label: "Open news intelligence", detail: "News provider unavailable", href: "/news", icon: Newspaper },
-  { label: "Open Meridian AI", detail: "AI-generated Demo · provider unavailable", href: "/ai-lab", icon: Sparkles },
-  { label: "Open scanner", detail: "Deterministic utility workspace", href: "/scanners", icon: Radar },
-  { label: "Open watchlist", detail: "Local utility workspace", href: "/watchlist", icon: Eye },
-  { label: "Open journal", detail: "Private notes workspace", href: "/journal", icon: NotebookPen },
-  { label: "Open settings", detail: "Session, truth, and display controls", href: "/settings", icon: Settings },
-] as const;
+  ...workspaceRoutes.map((route) => ({
+    label: route.commandLabel,
+    detail: route.commandDetail,
+    href: route.href,
+    icon: navigationIcons[route.icon],
+  })),
+  ...navigableUtilityRoutes.map((route) => ({
+    label: route.commandLabel,
+    detail: route.commandDetail,
+    href: route.href,
+    icon: navigationIcons[route.icon],
+  })),
+];
 
 function isRouteActive(location: string, href: string) {
   if (href === "/overview") return location === "/overview";
@@ -125,8 +154,9 @@ function WorkspaceMoreMenu({
   onNavigate: (href: string) => void;
   indicator: string;
 }) {
-  const moreRoutes = [topRoutes[5], topRoutes[6]] as const;
-  const active = moreRoutes.some((route) => isRouteActive(location, route.href));
+  const active = moreTopRoutes.some((route) =>
+    isRouteActive(location, route.href),
+  );
 
   return (
     <DropdownMenu>
@@ -158,7 +188,7 @@ function WorkspaceMoreMenu({
           <small>Continue from market structure into sourced context or synthesis.</small>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {moreRoutes.map((route) => (
+        {moreTopRoutes.map((route) => (
           <DropdownMenuItem
             key={route.href}
             onSelect={() => onNavigate(route.href)}
@@ -221,41 +251,6 @@ function RailLink({
       <Icon aria-hidden="true" />
       <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
     </Link>
-  );
-}
-
-function RailAction({
-  label,
-  icon: Icon,
-  disabled = false,
-  onClick,
-}: {
-  label: string;
-  icon: React.ElementType;
-  disabled?: boolean;
-  onClick?: () => void;
-}) {
-  const tooltipId = React.useId();
-
-  return (
-    <button
-      className="yt-rail-link"
-      type="button"
-      aria-label={label}
-      aria-describedby={tooltipId}
-      aria-disabled={disabled || undefined}
-      data-deferred={disabled || undefined}
-      onClick={(event) => {
-        if (disabled) {
-          event.preventDefault();
-          return;
-        }
-        onClick?.();
-      }}
-    >
-      <Icon aria-hidden="true" />
-      <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
-    </button>
   );
 }
 
@@ -565,17 +560,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {railRoutes.map((item) => (
             <RailLink key={item.href} {...item} active={isRouteActive(location, item.href)} />
           ))}
-          <RailAction label="Alerts · Deferred" icon={Bell} disabled />
-          <RailAction label="Calendar · Deferred" icon={CalendarDays} disabled />
         </nav>
         <div className="yt-rail-utilities">
-          <RailLink
-            label="Settings"
-            href="/settings"
-            icon={Settings}
-            active={isRouteActive(location, "/settings")}
-          />
-          <RailAction label="Help · Deferred" icon={CircleHelp} disabled />
+          {footerRoutes.map((item) => (
+            <RailLink
+              key={item.href}
+              {...item}
+              active={isRouteActive(location, item.href)}
+            />
+          ))}
           <AccountMenu compact />
         </div>
       </motion.aside>
@@ -591,11 +584,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             YUCATANATRADES
           </Link>
           <nav className="yt-topnav yt-topnav-wide" aria-label="Workspace navigation">
-            {topRoutes.slice(0, 5).map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
+            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
             <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-wide" />
           </nav>
           <nav className="yt-topnav yt-topnav-compact" aria-label="Workspace navigation">
-            {topRoutes.slice(0, 5).map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" />)}
+            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" />)}
             <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-compact" />
           </nav>
           <div className="yt-tablet-workspaces">
@@ -632,7 +625,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </motion.header>
 
         <main className="yt-route-frame">
-          <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               ref={routeContentRef}
               key={location}
@@ -640,7 +633,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               tabIndex={-1}
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -7 }}
+              exit={
+                reducedMotion
+                  ? { opacity: 0, pointerEvents: "none" }
+                  : { opacity: 0, y: -7, pointerEvents: "none" }
+              }
               transition={reducedMotion
                 ? { duration: 0.06 }
                 : { duration: motionTokens.duration.route, ease: motionTokens.ease.out }}
@@ -650,7 +647,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 routeContentRef.current?.focus({ preventScroll: true });
               }}
             >
-              {children}
+              <RouteErrorBoundary route={location}>
+                {children}
+              </RouteErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </main>
@@ -668,7 +667,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         })}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className={topRoutes.slice(4).some((route) => isRouteActive(location, route.href)) || ["/scanners", "/watchlist", "/journal", "/settings"].some((href) => isRouteActive(location, href)) ? "is-active" : undefined} type="button">
+            <button className={topRoutes.slice(4).some((route) => isRouteActive(location, route.href)) || mobileUtilityRoutes.some((route) => isRouteActive(location, route.href)) ? "is-active" : undefined} type="button">
               <MoreHorizontal aria-hidden="true" /><span>More</span>
             </button>
           </DropdownMenuTrigger>
@@ -681,7 +680,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            {[...railRoutes, { label: "Settings", href: "/settings", icon: Settings }].map((route) => (
+            {mobileUtilityRoutes.map((route) => (
               <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
                 <route.icon aria-hidden="true" /> {route.label}
               </DropdownMenuItem>

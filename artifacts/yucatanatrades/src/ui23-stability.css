@@ -1,0 +1,195 @@
+.yt-utility-status-stage {
+  isolation: isolate;
+}
+
+.yt-utility-status-stage > div:last-of-type {
+  max-width: 560px;
+}
+
+.yt-utility-truth-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 5px 0 2px;
+}
+
+.yt-utility-truth-list > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(134, 178, 184, 0.13);
+  border-radius: 9px;
+  background: rgba(4, 20, 28, 0.5);
+}
+
+.yt-utility-truth-list dt {
+  color: var(--yt-text-muted);
+  font-size: 8px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.yt-utility-truth-list dd {
+  margin: 0;
+  color: var(--yt-text-secondary);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.yt-utility-return,
+.yt-route-failure-actions a,
+.yt-route-failure-actions button {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(217, 187, 122, 0.28);
+  border-radius: 9px;
+  background: rgba(217, 187, 122, 0.08);
+  color: var(--yt-text-warm);
+  font: inherit;
+  font-size: 9px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.yt-utility-return svg,
+.yt-route-failure-actions svg {
+  width: 13px;
+  height: 13px;
+}
+
+.yt-utility-return:hover,
+.yt-utility-return:focus-visible,
+.yt-route-failure-actions a:hover,
+.yt-route-failure-actions a:focus-visible,
+.yt-route-failure-actions button:hover,
+.yt-route-failure-actions button:focus-visible {
+  border-color: rgba(238, 207, 146, 0.5);
+  background: rgba(217, 187, 122, 0.14);
+  outline: none;
+}
+
+.yt-utility-status-watermark {
+  position: absolute;
+  z-index: -1;
+  right: 6%;
+  bottom: -13%;
+  width: min(260px, 28vw);
+  height: auto;
+  color: rgba(111, 168, 176, 0.025);
+  pointer-events: none;
+}
+
+.yt-route-failure {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 560px);
+  align-items: start;
+  justify-content: center;
+  gap: 18px;
+  min-height: 100%;
+  padding: clamp(44px, 10vh, 110px) 24px 40px;
+  color: var(--yt-text);
+}
+
+.yt-route-failure-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid rgba(217, 187, 122, 0.24);
+  border-radius: 14px;
+  color: var(--yt-gold);
+  background: rgba(217, 187, 122, 0.06);
+}
+
+.yt-route-failure-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.yt-route-failure > div {
+  display: grid;
+  gap: 11px;
+}
+
+.yt-route-failure > div > span {
+  color: var(--yt-gold);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.yt-route-failure h1,
+.yt-route-failure p {
+  margin: 0;
+}
+
+.yt-route-failure h1 {
+  font-size: clamp(23px, 3vw, 32px);
+  font-weight: 440;
+}
+
+.yt-route-failure p {
+  max-width: 520px;
+  color: var(--yt-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.yt-route-failure code {
+  width: fit-content;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--yt-text-muted);
+  font-size: 9px;
+}
+
+.yt-route-failure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .yt-utility-status-route {
+    padding-inline: 3px;
+  }
+
+  .yt-utility-status-stage {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 24px;
+    min-height: 0;
+    padding: 28px 20px 34px;
+  }
+
+  .yt-utility-status-stage .yt-unavailable-orbit {
+    width: 86px;
+    height: 86px;
+  }
+
+  .yt-utility-truth-list {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .yt-route-failure {
+    grid-template-columns: 1fr;
+    justify-content: start;
+    padding: 34px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-utility-return,
+  html:not(.yt-force-full-motion) .yt-route-failure-actions a,
+  html:not(.yt-force-full-motion) .yt-route-failure-actions button {
+    transition: none;
+  }
+}

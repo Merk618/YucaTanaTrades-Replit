@@ -9,10 +9,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export type { RiskConfig };
 
-export function useRiskConfig() {
+export function useRiskConfig(enabled = true) {
   const query = useGetRiskConfig({
     query: {
       queryKey: getGetRiskConfigQueryKey(),
+      enabled,
       staleTime: 30_000,
       retry: 1,
     },

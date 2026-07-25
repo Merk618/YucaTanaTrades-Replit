@@ -1,26 +1,7 @@
-const protectedPaths = [
-  "/overview",
-  "/markets",
-  "/charts",
-  "/portfolio",
-  "/research",
-  "/news",
-  "/ai-lab",
-  "/scanners",
-  "/bots",
-  "/journal",
-  "/watchlist",
-  "/risk",
-  "/settings",
-] as const;
-
-const defaultProtectedDestination = "/overview";
-
-function isProtectedPath(pathname: string): boolean {
-  return protectedPaths.some((path) =>
-    pathname === path || pathname.startsWith(`${path}/`),
-  );
-}
+import {
+  defaultProtectedDestination,
+  isProtectedRoutePath,
+} from "../navigation/workspace-navigation.ts";
 
 export function sanitizeReturnTo(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
@@ -29,7 +10,10 @@ export function sanitizeReturnTo(value: string | null | undefined): string {
 
   try {
     const parsed = new URL(value, "https://return.local");
-    if (parsed.origin !== "https://return.local" || !isProtectedPath(parsed.pathname)) {
+    if (
+      parsed.origin !== "https://return.local" ||
+      !isProtectedRoutePath(parsed.pathname)
+    ) {
       return defaultProtectedDestination;
     }
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;

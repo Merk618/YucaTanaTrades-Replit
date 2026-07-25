@@ -1,5 +1,6 @@
 import { MotionConfig } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ComponentType } from "react";
 import { Redirect, Route, Router as WouterRouter, Switch } from "wouter";
 import { AuthProvider, useAuth } from "@/auth/auth-provider";
 import {
@@ -32,6 +33,15 @@ import {
   PortfolioRoute,
   ResearchRoute,
 } from "@/pages/intelligence-routes-ui2";
+import { UtilityStatusRoute } from "@/pages/utility-status-route";
+import {
+  utilityAvailabilityForSession,
+  utilityRoutes,
+  workspaceRoutes,
+  type ImplementedUtilityRouteId,
+  type UtilityRoute as UtilityRouteDefinition,
+  type WorkspaceRouteId,
+} from "@/navigation/workspace-navigation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,25 +52,57 @@ const queryClient = new QueryClient({
   },
 });
 
+const workspaceRouteComponents = {
+  overview: Home,
+  markets: MarketsRoute,
+  charts: ChartsRoute,
+  portfolio: PortfolioRoute,
+  research: ResearchRoute,
+  news: NewsRoute,
+  "ai-hub": AIHubRoute,
+} satisfies Record<WorkspaceRouteId, ComponentType>;
+
+const utilityRouteComponents = {
+  scan: Scanners,
+  watchlist: Watchlist,
+  journal: Journal,
+  settings: Settings,
+  bots: Bots,
+  risk: Risk,
+} satisfies Record<ImplementedUtilityRouteId, ComponentType>;
+
+function UtilityRoute({ route }: { route: UtilityRouteDefinition }) {
+  const { state } = useAuth();
+  const sessionType =
+    state.kind === "authenticated" ? state.session.sessionType : "guest";
+  const availability = utilityAvailabilityForSession(route, sessionType);
+
+  if (availability !== "available") {
+    return <UtilityStatusRoute route={route} reason={availability} />;
+  }
+
+  const Component =
+    utilityRouteComponents[route.id as ImplementedUtilityRouteId];
+  return <Component />;
+}
+
 function WorkspaceRoutes() {
   return (
     <AppShell>
       <Switch>
-        <Route path="/overview" component={Home} />
-        <Route path="/markets"><MarketsRoute /></Route>
-        <Route path="/markets/stocks"><MarketsRoute /></Route>
-        <Route path="/markets/crypto"><MarketsRoute /></Route>
-        <Route path="/charts"><ChartsRoute /></Route>
-        <Route path="/portfolio"><PortfolioRoute /></Route>
-        <Route path="/research"><ResearchRoute /></Route>
-        <Route path="/news"><NewsRoute /></Route>
-        <Route path="/ai-lab"><AIHubRoute /></Route>
-        <Route path="/scanners" component={Scanners} />
-        <Route path="/bots" component={Bots} />
-        <Route path="/journal" component={Journal} />
-        <Route path="/watchlist" component={Watchlist} />
-        <Route path="/risk" component={Risk} />
-        <Route path="/settings" component={Settings} />
+        {workspaceRoutes.flatMap((route) => {
+          const Component = workspaceRouteComponents[route.id];
+          return [route.href, ...route.aliases].map((path) => (
+            <Route key={path} path={path}>
+              <Component />
+            </Route>
+          ));
+        })}
+        {utilityRoutes.map((route) => (
+          <Route key={route.href} path={route.href}>
+            <UtilityRoute route={route} />
+          </Route>
+        ))}
         <Route component={NotFound} />
       </Switch>
     </AppShell>

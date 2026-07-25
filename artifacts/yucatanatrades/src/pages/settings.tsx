@@ -360,6 +360,17 @@ function SettingRow({
 export default function SettingsPage() {
   const reducedMotion = useAppReducedMotion();
   const { state, signOut, signOutAllDevices } = useAuth();
+  const session = state.kind === "authenticated" ? state.session : null;
+  const user = state.kind === "authenticated" ? state.user : null;
+  const reviewSession = session?.sessionType === "development_review";
+  const reviewEnabled =
+    state.kind === "authenticated" && state.status.features.reviewAccessEnabled;
+  const identityName = reviewSession
+    ? "Visual Review"
+    : user?.displayName || "Meridian user";
+  const identityDetail = reviewSession
+    ? "Local development session"
+    : user?.email || "Server identity unavailable";
   const [notifications, setNotifications] = useState(
     NOTIFICATION_SETTINGS.map((item) => item.enabled),
   );
@@ -375,7 +386,7 @@ export default function SettingsPage() {
     error: null,
   });
 
-  const cachedHealth = useSourceHealth();
+  const cachedHealth = useSourceHealth(60_000, !reviewSession);
   const forcedHealth = useForceSourceHealth();
   const quoteTest = useTestQuotes();
   const useForcedHealth = Boolean(
@@ -390,7 +401,9 @@ export default function SettingsPage() {
   const healthError = cachedHealth.isError && !forcedHealth.data;
   const healthFetching = cachedHealth.isFetching || forcedHealth.isFetching;
 
-  const { config: riskConfig, isLoading: riskLoading } = useRiskConfig();
+  const { config: riskConfig, isLoading: riskLoading } = useRiskConfig(
+    !reviewSession,
+  );
   const updateRisk = useUpdateRiskConfigMutation();
   const [riskDraft, setRiskDraft] = useState<Record<RiskFieldKey, string>>({
     singlePositionLimit: "",
@@ -404,18 +417,6 @@ export default function SettingsPage() {
     ok: boolean;
     text: string;
   } | null>(null);
-
-  const session = state.kind === "authenticated" ? state.session : null;
-  const user = state.kind === "authenticated" ? state.user : null;
-  const reviewSession = session?.sessionType === "development_review";
-  const reviewEnabled =
-    state.kind === "authenticated" && state.status.features.reviewAccessEnabled;
-  const identityName = reviewSession
-    ? "Visual Review"
-    : user?.displayName || "Meridian user";
-  const identityDetail = reviewSession
-    ? "Local development session"
-    : user?.email || "Server identity unavailable";
 
   const providerCounts = useMemo(() => {
     const active = providers.filter((provider) =>

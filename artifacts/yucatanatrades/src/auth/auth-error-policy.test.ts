@@ -11,6 +11,7 @@ describe("auth error observer policy", () => {
   });
 
   it("does not unmount the shell for feature-disabled or unrelated errors", () => {
+    assert.equal(shouldStartFailClosedAuthRevalidation(403, "unauthorized", false, "/api/market/quotes"), false);
     assert.equal(shouldStartFailClosedAuthRevalidation(403, "unavailable", false, "/api/auth/register"), false);
     assert.equal(shouldStartFailClosedAuthRevalidation(503, "invalid_request", false, "/api/portfolio"), false);
     assert.equal(shouldStartFailClosedAuthRevalidation(400, null, false, "/api/auth/register"), false);

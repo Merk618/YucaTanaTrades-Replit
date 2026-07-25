@@ -6,7 +6,7 @@ export function shouldStartFailClosedAuthRevalidation(
 ): boolean {
   const requiresRevalidation =
     code === "session_expired" ||
-    code === "unauthorized" ||
+    (status === 401 && code === "unauthorized") ||
     code === "csrf_invalid" ||
     (status === 503 && code === "unavailable");
   if (!requiresRevalidation) return false;
