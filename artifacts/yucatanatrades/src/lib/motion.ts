@@ -12,6 +12,7 @@ export const motionTokens = {
     panel: 0.34,
     route: 0.32,
     entrance: 0.74,
+    atmosphereRoute: 1.45,
   },
   delay: {
     topbar: 0.06,
@@ -31,6 +32,7 @@ export const motionTokens = {
     out: easeOut,
     standard: easeStandard,
     inOut: easeInOut,
+    atmosphere: [0.16, 0.84, 0.26, 1] as const,
   },
   spring: {
     snappy: { type: "spring", stiffness: 430, damping: 36, mass: 0.7 } satisfies Transition,

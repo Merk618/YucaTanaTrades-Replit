@@ -1,0 +1,692 @@
+.yt-atmospheric-hero.yt-meridian-eclipse-hero {
+  position: relative;
+  height: 326px;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(225, 196, 137, 0.24);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 73% 73%, rgba(90, 140, 144, 0.19), transparent 35%),
+    radial-gradient(ellipse at 58% 15%, rgba(68, 102, 124, 0.16), transparent 41%),
+    linear-gradient(128deg, #071a24 0%, #092630 43%, #071d29 72%, #061721 100%);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 -1px rgba(67, 129, 137, 0.08),
+    0 28px 76px rgba(0, 8, 13, 0.28),
+    0 0 0 1px rgba(93, 152, 157, 0.025);
+}
+
+.yt-atmospheric-hero.yt-meridian-eclipse-hero::before {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(102deg, transparent 31%, rgba(255, 231, 181, 0.035) 45%, transparent 61%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 13%, transparent 82%, rgba(2, 10, 15, 0.2));
+  mask: linear-gradient(#000, #000) padding-box, linear-gradient(#000, #000);
+  pointer-events: none;
+}
+
+.yt-atmospheric-hero.yt-meridian-eclipse-hero::after {
+  z-index: 9;
+  border-color: rgba(225, 196, 137, 0.18);
+  box-shadow:
+    inset 0 1px rgba(255, 245, 222, 0.055),
+    inset 1px 0 rgba(112, 166, 170, 0.04),
+    inset -1px 0 rgba(225, 196, 137, 0.035);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-stage {
+  z-index: 1;
+  inset: -5px -9px -5px -8px;
+  width: calc(100% + 17px);
+  height: calc(100% + 10px);
+  will-change: auto;
+}
+
+.yt-meridian-eclipse-hero .yt-eclipse-visual {
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.yt-meridian-eclipse-hero .yt-eclipse-visual::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -22% -8% -30% 31%;
+  background:
+    radial-gradient(ellipse at 61% 62%, rgba(239, 208, 148, 0.12), transparent 18%),
+    radial-gradient(ellipse at 58% 54%, rgba(88, 147, 153, 0.2), transparent 48%),
+    conic-gradient(from 206deg at 59% 56%, transparent, rgba(106, 151, 158, 0.05), transparent 28%, rgba(228, 196, 134, 0.035), transparent 55%);
+  clip-path: polygon(4% 31%, 29% 5%, 83% 12%, 100% 45%, 91% 91%, 51% 100%, 11% 78%);
+  opacity: 0.92;
+  animation: yt-eclipse-aurora-breathe 24s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+  pointer-events: none;
+}
+
+.yt-meridian-eclipse-hero .yt-eclipse-visual::after {
+  z-index: 7;
+  background:
+    linear-gradient(90deg, rgba(3, 14, 20, 0.96) 0%, rgba(5, 20, 27, 0.87) 27%, rgba(5, 22, 29, 0.4) 38%, rgba(4, 17, 24, 0.04) 57%, rgba(4, 17, 24, 0.13) 100%),
+    linear-gradient(180deg, rgba(2, 10, 15, 0.08), transparent 51%, rgba(2, 11, 17, 0.28));
+}
+
+.yt-eclipse-aurora {
+  position: absolute;
+  z-index: 1;
+  inset: -30% -17% -34% 30%;
+  background:
+    radial-gradient(ellipse at 48% 48%, rgba(104, 170, 166, 0.17), transparent 38%),
+    radial-gradient(ellipse at 72% 42%, rgba(80, 111, 145, 0.17), transparent 45%),
+    radial-gradient(ellipse at 62% 68%, rgba(232, 201, 139, 0.075), transparent 29%);
+  clip-path: polygon(8% 22%, 42% 4%, 91% 19%, 100% 63%, 73% 98%, 18% 85%, 0 51%);
+  animation: yt-eclipse-aurora-drift 29s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+  transform: translate3d(0, 0, 0);
+}
+
+.yt-eclipse-scan {
+  position: absolute;
+  z-index: 4;
+  top: 17%;
+  right: -22%;
+  width: 76%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(237, 210, 156, 0.13), rgba(117, 180, 179, 0.1), transparent 71%);
+  opacity: 0;
+  transform: rotate(-7deg) translate3d(0, 0, 0);
+  animation: yt-eclipse-signal-sweep 18s cubic-bezier(0.22, 1, 0.36, 1) 7s infinite;
+  pointer-events: none;
+}
+
+.yt-meridian-eclipse-hero .yt-eclipse-art {
+  z-index: 3;
+  overflow: visible;
+}
+
+.yt-eclipse-grid {
+  opacity: 0.56;
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 88%, transparent);
+}
+
+.yt-eclipse-horizon-glow {
+  opacity: 0.8;
+  animation: yt-eclipse-horizon-pulse 12s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+}
+
+.yt-eclipse-terrain,
+.yt-eclipse-wave-field,
+.yt-eclipse-depth-particles {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.yt-eclipse-terrain-edge {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.yt-eclipse-terrain-edge.is-mid {
+  stroke: rgba(113, 166, 168, 0.22);
+  stroke-width: 0.85;
+}
+
+.yt-eclipse-terrain-edge.is-front {
+  stroke: rgba(230, 199, 140, 0.19);
+  stroke-width: 1;
+}
+
+.yt-eclipse-wave {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.yt-eclipse-wave--primary-bloom {
+  stroke: url(#yt-eclipse-primary);
+  stroke-width: 8;
+  filter: url(#yt-eclipse-path-bloom);
+}
+
+.yt-eclipse-wave--primary {
+  stroke: url(#yt-eclipse-primary);
+  stroke-width: 2.25;
+  filter: url(#yt-eclipse-path-bloom);
+}
+
+.yt-eclipse-wave--travel {
+  stroke: rgba(255, 237, 196, 0.52);
+  stroke-width: 0.75;
+  stroke-dasharray: 8 28 3 45;
+  animation: yt-eclipse-path-travel 12s linear 2.7s infinite;
+}
+
+.yt-eclipse-wave--secondary {
+  stroke-width: 1.15;
+}
+
+.yt-eclipse-wave--secondary.is-jade {
+  stroke: url(#yt-eclipse-jade);
+}
+
+.yt-eclipse-wave--secondary.is-mineral {
+  stroke: url(#yt-eclipse-mineral);
+  stroke-width: 1;
+}
+
+.yt-eclipse-wave--secondary.is-context {
+  stroke: rgba(183, 202, 195, 0.22);
+  stroke-width: 0.75;
+  stroke-dasharray: 3 9;
+}
+
+.yt-eclipse-signal__halo {
+  fill: rgba(244, 215, 158, 0.14);
+  filter: url(#yt-eclipse-node-bloom);
+}
+
+.yt-eclipse-signal__core {
+  fill: #f4d89d;
+  stroke: rgba(255, 249, 231, 0.84);
+  stroke-width: 0.75;
+}
+
+.yt-eclipse-signal.is-secondary .yt-eclipse-signal__halo {
+  fill: rgba(101, 178, 157, 0.13);
+}
+
+.yt-eclipse-signal.is-secondary .yt-eclipse-signal__core {
+  fill: #7fc0a4;
+  stroke: rgba(205, 238, 223, 0.7);
+}
+
+.yt-eclipse-node__bloom {
+  fill: rgba(240, 207, 145, 0.08);
+  filter: url(#yt-eclipse-node-bloom);
+  opacity: 0.2;
+  animation: yt-eclipse-node-bloom 13.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.yt-eclipse-node__ring {
+  fill: rgba(8, 28, 35, 0.74);
+  stroke: rgba(221, 197, 148, 0.48);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.yt-eclipse-node__core {
+  fill: #e8c987;
+}
+
+.yt-eclipse-node__annotation {
+  opacity: 0;
+  transform: translateY(2px);
+  animation: yt-eclipse-node-annotation 13.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+}
+
+.yt-eclipse-node__annotation rect {
+  fill: rgba(5, 20, 27, 0.9);
+  stroke: rgba(223, 195, 137, 0.27);
+  stroke-width: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.yt-eclipse-node__annotation text {
+  fill: rgba(226, 232, 224, 0.83);
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+.yt-eclipse-node.is-momentum .yt-eclipse-node__bloom,
+.yt-eclipse-node.is-momentum .yt-eclipse-node__annotation {
+  animation-delay: 3.7s;
+}
+
+.yt-eclipse-node.is-volatility .yt-eclipse-node__bloom,
+.yt-eclipse-node.is-volatility .yt-eclipse-node__annotation {
+  animation-delay: 5.6s;
+}
+
+.yt-eclipse-node.is-concentration .yt-eclipse-node__bloom,
+.yt-eclipse-node.is-concentration .yt-eclipse-node__annotation {
+  animation-delay: 7.3s;
+}
+
+.yt-eclipse-node.is-breadth .yt-eclipse-node__bloom,
+.yt-eclipse-node.is-breadth .yt-eclipse-node__annotation {
+  animation-delay: 8.5s;
+}
+
+.yt-eclipse-node.is-risk .yt-eclipse-node__bloom,
+.yt-eclipse-node.is-risk .yt-eclipse-node__annotation {
+  animation-delay: 10s;
+}
+
+.yt-eclipse-mote {
+  opacity: 0.2;
+  animation: yt-eclipse-mote-drift var(--yt-mote-duration) cubic-bezier(0.65, 0, 0.35, 1) var(--yt-mote-delay) infinite alternate;
+  transform-origin: center;
+}
+
+.yt-eclipse-mote.is-gold {
+  fill: #e7c984;
+}
+
+.yt-eclipse-mote.is-ice {
+  fill: #b1ced0;
+}
+
+.yt-eclipse-mote.is-teal {
+  fill: #72aaa6;
+}
+
+.yt-meridian-eclipse-hero .yt-eclipse-horizon {
+  z-index: 4;
+  right: 2%;
+  bottom: 25px;
+  width: 66%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(241, 211, 154, 0.57), rgba(111, 171, 170, 0.18), transparent);
+  opacity: 0.65;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-briefing {
+  z-index: 6;
+  inset: 0 auto 0 0;
+  width: 35.5%;
+  min-width: 342px;
+  padding: 30px 28px 20px 36px;
+  border: 0;
+  border-right: 1px solid rgba(220, 192, 136, 0.15);
+  border-radius: 19px 0 0 19px;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(62, 110, 114, 0.13), transparent 52%),
+    linear-gradient(109deg, rgba(7, 25, 33, 0.96), rgba(10, 32, 40, 0.91) 72%, rgba(12, 38, 45, 0.67));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    18px 0 56px rgba(0, 9, 14, 0.17);
+  backdrop-filter: blur(14px);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-briefing::after {
+  content: "";
+  position: absolute;
+  top: 12%;
+  right: -1px;
+  bottom: 12%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(241, 211, 154, 0.35), rgba(100, 162, 164, 0.16), transparent);
+  box-shadow: 7px 0 22px rgba(226, 193, 126, 0.08);
+  pointer-events: none;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-heading {
+  gap: 12px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-heading > div {
+  gap: 10px;
+  color: #efd498;
+  font-size: clamp(20px, 1.45vw, 25px);
+  font-weight: 430;
+  letter-spacing: -0.035em;
+  text-shadow: 0 0 22px rgba(237, 205, 142, 0.09);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-heading svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(237, 204, 139, 0.78);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-briefing h1 {
+  margin-top: 10px;
+  color: rgba(239, 243, 237, 0.95);
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-briefing > p {
+  max-width: 322px;
+  margin-top: 8px;
+  color: rgba(195, 210, 209, 0.8);
+  font-size: 11px;
+  line-height: 1.58;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-briefing .yt-hero-detail {
+  overflow: hidden;
+  margin-top: 6px;
+  color: rgba(222, 196, 143, 0.72);
+  font-size: 8.5px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-action {
+  position: relative;
+  min-width: 142px;
+  height: 34px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-color: rgba(226, 197, 138, 0.3);
+  background:
+    linear-gradient(115deg, rgba(230, 200, 139, 0.09), rgba(11, 34, 41, 0.58) 48%, rgba(119, 173, 171, 0.06)),
+    rgba(7, 25, 33, 0.6);
+  box-shadow: inset 0 1px rgba(255, 247, 226, 0.05), 0 8px 22px rgba(0, 7, 11, 0.12);
+  color: rgba(238, 241, 234, 0.92);
+  font-size: 9.5px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-action::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 22%, rgba(255, 235, 194, 0.16), transparent 76%);
+  transform: translateX(-120%);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-action:hover::before,
+.yt-meridian-eclipse-hero .yt-hero-action:focus-visible::before {
+  transform: translateX(120%);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-action:focus-visible {
+  outline: 2px solid rgba(236, 204, 142, 0.7);
+  outline-offset: 2px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-metrics {
+  margin-top: auto;
+  padding-top: 13px;
+  border-top-color: rgba(224, 195, 137, 0.16);
+}
+
+.yt-meridian-eclipse-hero .yt-hero-metrics > div {
+  padding-inline: 11px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-metrics dt {
+  color: rgba(157, 178, 180, 0.73);
+  font-size: 8px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-metrics dd {
+  margin-top: 5px;
+  color: rgba(231, 235, 228, 0.92);
+  font-size: 10.5px;
+}
+
+.yt-meridian-eclipse-hero .yt-hero-stage-label {
+  z-index: 7;
+  top: 17px;
+  right: 18px;
+  padding: 5px 7px;
+  border: 1px solid rgba(124, 169, 170, 0.1);
+  border-radius: 999px;
+  background: rgba(5, 20, 28, 0.32);
+  color: rgba(202, 218, 215, 0.64);
+  backdrop-filter: blur(9px);
+}
+
+@keyframes yt-eclipse-aurora-breathe {
+  from { opacity: 0.72; transform: translate3d(-1.2%, 0.7%, 0) scale(0.99); }
+  to { opacity: 1; transform: translate3d(1.6%, -1%, 0) scale(1.018); }
+}
+
+@keyframes yt-eclipse-aurora-drift {
+  from { opacity: 0.66; transform: translate3d(-1.5%, 0.4%, 0) scale(0.985); }
+  to { opacity: 0.9; transform: translate3d(1.8%, -0.8%, 0) scale(1.025); }
+}
+
+@keyframes yt-eclipse-signal-sweep {
+  0%, 72% { opacity: 0; transform: rotate(-7deg) translate3d(-14%, 0, 0); }
+  78% { opacity: 0.45; }
+  88% { opacity: 0.1; }
+  100% { opacity: 0; transform: rotate(-7deg) translate3d(98%, 0, 0); }
+}
+
+@keyframes yt-eclipse-horizon-pulse {
+  from { opacity: 0.55; transform: scaleX(0.96); }
+  to { opacity: 0.82; transform: scaleX(1.025); }
+}
+
+@keyframes yt-eclipse-path-travel {
+  to { stroke-dashoffset: -168; }
+}
+
+@keyframes yt-eclipse-node-bloom {
+  0%, 24%, 42%, 100% { opacity: 0.12; transform: scale(0.72); }
+  30% { opacity: 0.78; transform: scale(1.14); }
+  36% { opacity: 0.26; transform: scale(1); }
+}
+
+@keyframes yt-eclipse-node-annotation {
+  0%, 23%, 40%, 100% { opacity: 0; transform: translateY(2px); }
+  29%, 35% { opacity: 0.92; transform: translateY(0); }
+}
+
+@keyframes yt-eclipse-mote-drift {
+  from { opacity: 0.14; transform: translate3d(-2px, 4px, 0) scale(0.86); }
+  62% { opacity: 0.5; }
+  to { opacity: 0.22; transform: translate3d(3px, -5px, 0) scale(1.08); }
+}
+
+html.yt-motion-paused .yt-meridian-eclipse-hero *,
+html.yt-motion-paused .yt-meridian-eclipse-hero *::before,
+html.yt-motion-paused .yt-meridian-eclipse-hero *::after {
+  animation-play-state: paused !important;
+}
+
+@media (max-width: 1359px) {
+  .yt-atmospheric-hero.yt-meridian-eclipse-hero {
+    height: 316px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing {
+    width: 39%;
+    min-width: 330px;
+    padding-inline: 27px 24px;
+  }
+}
+
+@media (max-width: 1179px) {
+  .yt-atmospheric-hero.yt-meridian-eclipse-hero {
+    height: 324px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing {
+    width: 36%;
+    min-width: 335px;
+  }
+}
+
+@media (max-width: 899px) {
+  .yt-atmospheric-hero.yt-meridian-eclipse-hero {
+    height: 510px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing {
+    inset: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    height: 250px;
+    padding: 24px 25px 17px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(220, 192, 136, 0.13);
+    border-radius: 19px 19px 0 0;
+    background:
+      radial-gradient(ellipse at 18% 16%, rgba(63, 111, 114, 0.14), transparent 46%),
+      linear-gradient(180deg, rgba(7, 24, 32, 0.97), rgba(9, 31, 39, 0.91) 76%, rgba(9, 30, 38, 0.69));
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing::after {
+    inset: auto 8% -1px;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(241, 211, 154, 0.32), rgba(99, 164, 164, 0.15), transparent);
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage {
+    inset: 214px -7px -8px;
+    width: calc(100% + 14px);
+    height: auto;
+  }
+
+  .yt-meridian-eclipse-hero .yt-eclipse-visual::after {
+    background:
+      linear-gradient(180deg, rgba(4, 18, 25, 0.82) 0%, rgba(4, 18, 25, 0.2) 25%, transparent 54%, rgba(2, 11, 17, 0.24)),
+      linear-gradient(90deg, rgba(3, 14, 20, 0.18), transparent 50%, rgba(3, 14, 20, 0.08));
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage-label {
+    top: 266px;
+    right: 13px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-eclipse-art {
+    transform: scaleX(1.12) translateX(-3%);
+    transform-origin: center;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-heading > div {
+    font-size: 22px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics {
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 639px) {
+  .yt-atmospheric-hero.yt-meridian-eclipse-hero {
+    height: 538px;
+    border-radius: 17px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing {
+    height: 286px;
+    padding: 22px 18px 16px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage {
+    inset: 252px -6px -6px;
+    width: calc(100% + 12px);
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage-label {
+    top: 298px;
+    right: 10px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-heading {
+    align-items: flex-start;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-heading > div {
+    font-size: 20px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-heading > .yt-truth-badge {
+    margin-top: 2px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing h1 {
+    margin-top: 8px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing > p {
+    max-width: none;
+    font-size: 10.5px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-action {
+    height: 32px;
+    margin-top: 9px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics {
+    padding-top: 11px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics > div {
+    padding-inline: 8px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics dt {
+    font-size: 7.5px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics dd {
+    font-size: 9.5px;
+  }
+
+  .yt-eclipse-node__annotation,
+  .yt-eclipse-mote.is-mobile-hidden {
+    display: none;
+  }
+
+  .yt-eclipse-wave--secondary.is-context {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .yt-atmospheric-hero.yt-meridian-eclipse-hero {
+    height: 566px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-briefing {
+    height: 312px;
+    padding-inline: 15px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage {
+    top: 278px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-stage-label {
+    top: 322px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-heading > div {
+    font-size: 18px;
+  }
+
+  .yt-meridian-eclipse-hero .yt-hero-metrics > div {
+    padding-inline: 6px;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .yt-meridian-eclipse-hero .yt-eclipse-wave-field,
+  .yt-meridian-eclipse-hero .yt-eclipse-terrain,
+  .yt-meridian-eclipse-hero .yt-eclipse-depth-particles {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero *,
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero *::before,
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero .yt-eclipse-wave-field,
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero .yt-eclipse-terrain,
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero .yt-eclipse-depth-particles {
+    transform: none !important;
+  }
+
+  html:not(.yt-force-full-motion) .yt-meridian-eclipse-hero .yt-eclipse-node__annotation {
+    display: none;
+  }
+}

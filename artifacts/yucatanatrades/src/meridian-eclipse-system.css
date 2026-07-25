@@ -1,0 +1,368 @@
+/* Meridian Eclipse Intelligence System: authenticated visual hierarchy only. */
+.yt-app {
+  --yt-canvas-top: #020910;
+  --yt-canvas: #041721;
+  --yt-canvas-bottom: #062430;
+  --yt-panel: rgba(8, 27, 38, 0.8);
+  --yt-panel-solid: #091e29;
+  --yt-panel-raised: rgba(13, 38, 49, 0.9);
+  --yt-text: #eef1ec;
+  --yt-text-warm: #f2d49a;
+  --yt-text-secondary: #a6b3b7;
+  --yt-text-muted: #70858d;
+  --yt-gold: #d7b979;
+  --yt-gold-bright: #f3d79f;
+  --yt-positive: #78bd8c;
+  --yt-negative: #e87563;
+  --yt-cyan: #75b6c5;
+  --yt-border: rgba(151, 190, 201, 0.145);
+  --yt-border-warm: rgba(226, 197, 139, 0.3);
+  --yt-eclipse-line: rgba(171, 205, 210, 0.11);
+  --yt-eclipse-shadow: 0 28px 74px rgba(0, 4, 9, 0.3);
+  --yt-route-accent: 215, 185, 121;
+  --yt-route-cool: 98, 171, 183;
+}
+
+.yt-route-frame {
+  border-radius: 18px;
+}
+
+.yt-route-content {
+  background: transparent;
+}
+
+.yt-route-content::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  top: 58px;
+  right: 1.5%;
+  left: 92px;
+  height: 190px;
+  pointer-events: none;
+  background: radial-gradient(62% 95% at 48% 0%, rgba(var(--yt-route-accent), 0.055), transparent 74%);
+  opacity: 0.9;
+}
+
+.yt-ui2-markets-route { --yt-route-accent: 94, 176, 183; --yt-route-cool: 64, 130, 162; }
+.yt-ui2-charts-route { --yt-route-accent: 111, 178, 191; --yt-route-cool: 88, 121, 180; }
+.yt-ui2-portfolio-route { --yt-route-accent: 215, 184, 116; --yt-route-cool: 98, 161, 145; }
+.yt-ui2-research-route { --yt-route-accent: 205, 176, 122; --yt-route-cool: 109, 133, 177; }
+.yt-ui2-news-route { --yt-route-accent: 116, 181, 183; --yt-route-cool: 68, 129, 166; }
+.yt-ui2-ai-route { --yt-route-accent: 157, 147, 203; --yt-route-cool: 94, 170, 187; }
+
+/* Route heading: quiet focal light with an intentional signal edge. */
+:is(.yt-ui2-route-heading, .yt-ui2-route-header) {
+  position: relative;
+  isolation: isolate;
+}
+
+:is(.yt-ui2-route-heading, .yt-ui2-route-header)::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -26px;
+  top: -20px;
+  width: min(560px, 54vw);
+  height: 116px;
+  pointer-events: none;
+  background: radial-gradient(65% 75% at 18% 54%, rgba(var(--yt-route-accent), 0.105), transparent 74%);
+  filter: blur(8px);
+}
+
+:is(.yt-ui2-route-heading, .yt-ui2-route-header) h1 {
+  color: #f1f3ee;
+  text-shadow: 0 10px 35px rgba(0, 0, 0, 0.24);
+}
+
+.yt-ui2-route-heading::after {
+  background: linear-gradient(90deg, rgba(var(--yt-route-accent), 0.42), rgba(var(--yt-route-cool), 0.14) 48%, transparent 94%);
+  box-shadow: 0 1px 10px rgba(var(--yt-route-accent), 0.08);
+}
+
+.yt-ui2-route-icon {
+  border-color: rgba(var(--yt-route-accent), 0.35);
+  background:
+    radial-gradient(circle at 35% 15%, rgba(255, 245, 219, 0.17), transparent 42%),
+    linear-gradient(145deg, rgba(var(--yt-route-accent), 0.12), rgba(7, 27, 37, 0.76));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07), 0 15px 38px rgba(0, 0, 0, 0.24);
+}
+
+/* Level 1 — workspace surfaces. */
+:is(.yt-ui2-panel, .yt-analytics-panel, .yt-overview-band, .yt-portfolio-band, .yt-settings-panel) {
+  border-color: rgba(151, 190, 201, 0.15);
+  background:
+    radial-gradient(100% 80% at 8% -28%, rgba(var(--yt-route-cool), 0.07), transparent 47%),
+    linear-gradient(148deg, rgba(12, 36, 47, 0.88), rgba(4, 21, 31, 0.86));
+  box-shadow:
+    inset 0 1px rgba(245, 249, 245, 0.042),
+    0 18px 54px rgba(0, 4, 9, 0.17);
+}
+
+/* Level 2 — primary intelligence surfaces. */
+:is(
+  .yt-atmospheric-hero,
+  .yt-chart-workspace,
+  .yt-ui2-performance-panel,
+  .yt-ui2-holdings-panel,
+  .yt-ui2-dossier,
+  .yt-ui2-ai-workspace,
+  .yt-ui2-news-unavailable
+) {
+  position: relative;
+  border-color: rgba(var(--yt-route-accent), 0.25);
+  background:
+    radial-gradient(80% 92% at 10% -25%, rgba(var(--yt-route-accent), 0.085), transparent 46%),
+    radial-gradient(70% 100% at 100% 0%, rgba(var(--yt-route-cool), 0.075), transparent 50%),
+    linear-gradient(145deg, rgba(14, 39, 50, 0.94), rgba(4, 19, 29, 0.93));
+  box-shadow:
+    inset 0 1px rgba(255, 249, 229, 0.075),
+    inset 0 -1px rgba(77, 132, 145, 0.04),
+    0 26px 74px rgba(0, 4, 9, 0.28),
+    0 0 36px rgba(var(--yt-route-accent), 0.025);
+}
+
+:is(
+  .yt-atmospheric-hero,
+  .yt-chart-workspace,
+  .yt-ui2-performance-panel,
+  .yt-ui2-holdings-panel,
+  .yt-ui2-dossier,
+  .yt-ui2-ai-workspace,
+  .yt-ui2-news-unavailable
+)::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 10%;
+  left: 2%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(246, 222, 172, 0.42) 18%, rgba(var(--yt-route-cool), 0.16) 67%, transparent);
+  opacity: 0.72;
+}
+
+/* Level 3 — supporting panels stay quieter. */
+:is(
+  .yt-intelligence-card,
+  .yt-ui2-chart-side-panel,
+  .yt-ui2-allocation-stack .yt-ui2-panel,
+  .yt-ui2-saved-research,
+  .yt-ui2-news-policy,
+  .yt-ui2-news-operations,
+  .yt-ui2-ai-bottom .yt-ui2-panel
+) {
+  background:
+    linear-gradient(152deg, rgba(11, 31, 41, 0.82), rgba(4, 19, 28, 0.78));
+  border-color: rgba(139, 176, 187, 0.12);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03), 0 14px 38px rgba(0, 3, 7, 0.13);
+}
+
+/* Level 4 — interactive tiles. */
+:is(
+  .yt-ui2-index-card,
+  .yt-ui2-saved-layouts button,
+  .yt-ui2-report-list button,
+  .yt-ui2-ai-prompt,
+  .yt-opportunity-row,
+  .yt-ui2-position-row:not(.is-head),
+  .yt-overview-module
+) {
+  transition:
+    transform var(--yt-fast) var(--yt-ease-out),
+    border-color var(--yt-interface) ease,
+    background var(--yt-interface) ease,
+    box-shadow var(--yt-interface) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(
+    .yt-ui2-saved-layouts button,
+    .yt-ui2-report-list button,
+    .yt-ui2-ai-prompt,
+    .yt-opportunity-row,
+    .yt-ui2-position-row:not(.is-head)
+  ):hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--yt-route-accent), 0.28);
+    background-color: rgba(var(--yt-route-accent), 0.055);
+    box-shadow: 0 12px 28px rgba(0, 4, 8, 0.2);
+  }
+}
+
+:is(.yt-ui2-panel-head, .yt-ui2-panel-heading) {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.012), transparent 70%);
+  border-bottom-color: rgba(155, 194, 201, 0.09);
+}
+
+:is(.yt-ui2-panel-head, .yt-ui2-panel-heading) svg {
+  filter: drop-shadow(0 0 7px rgba(var(--yt-route-accent), 0.18));
+}
+
+.yt-ui2-truth,
+.yt-state-pill,
+.yt-ui2-truth-label {
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.028);
+  backdrop-filter: blur(8px);
+}
+
+.yt-state-pill.is-demo,
+.yt-ui2-truth.is-demo {
+  border-color: rgba(117, 182, 197, 0.3);
+  background: linear-gradient(180deg, rgba(117, 182, 197, 0.115), rgba(71, 126, 139, 0.055));
+  color: #a4d0d8;
+}
+
+.yt-state-pill.is-historical,
+.yt-ui2-truth.is-historical {
+  border-color: rgba(224, 193, 130, 0.29);
+  background: linear-gradient(180deg, rgba(224, 193, 130, 0.12), rgba(128, 99, 48, 0.055));
+}
+
+.yt-state-pill.is-unavailable,
+.yt-ui2-truth.is-unavailable {
+  border-color: rgba(232, 117, 99, 0.28);
+  background: rgba(232, 117, 99, 0.075);
+  color: #e59a8b;
+}
+
+/* Route-specific focal materials. */
+.yt-ui2-portfolio-route .yt-portfolio-band,
+.yt-ui2-portfolio-route .yt-ui2-source-banner {
+  border-color: rgba(218, 185, 120, 0.24);
+  background:
+    radial-gradient(85% 160% at 4% 10%, rgba(218, 185, 120, 0.085), transparent 46%),
+    linear-gradient(90deg, rgba(15, 42, 50, 0.9), rgba(5, 23, 32, 0.84));
+}
+
+.yt-ui2-research-command {
+  border-color: rgba(209, 178, 119, 0.3);
+  background:
+    linear-gradient(100deg, rgba(26, 53, 60, 0.88), rgba(8, 28, 39, 0.88)),
+    radial-gradient(circle at 0 0, rgba(211, 184, 125, 0.12), transparent 44%);
+  box-shadow: inset 0 1px rgba(255, 248, 222, 0.06), 0 20px 48px rgba(0, 4, 8, 0.2);
+}
+
+.yt-ui2-news-unavailable {
+  min-height: 184px;
+  background:
+    radial-gradient(55% 130% at 4% 50%, rgba(93, 169, 181, 0.12), transparent 68%),
+    radial-gradient(42% 110% at 86% 30%, rgba(71, 111, 167, 0.09), transparent 72%),
+    linear-gradient(138deg, rgba(13, 43, 53, 0.94), rgba(5, 22, 32, 0.92));
+}
+
+.yt-ui2-ai-workspace {
+  background:
+    radial-gradient(65% 120% at 7% 0, rgba(160, 146, 202, 0.1), transparent 56%),
+    radial-gradient(48% 100% at 100% 20%, rgba(94, 169, 187, 0.11), transparent 62%),
+    linear-gradient(145deg, rgba(13, 35, 49, 0.95), rgba(5, 19, 31, 0.94));
+}
+
+.yt-ui2-ai-message.is-ai,
+.yt-ui2-ai-state {
+  border-color: rgba(148, 151, 202, 0.2);
+  background: linear-gradient(145deg, rgba(48, 50, 88, 0.18), rgba(12, 39, 49, 0.38));
+}
+
+.yt-ui2-breadth-ring,
+.yt-ui2-allocation-donut {
+  filter: drop-shadow(0 12px 26px rgba(0, 4, 8, 0.28));
+}
+
+.yt-ui2-performance-chart {
+  background:
+    linear-gradient(rgba(102, 153, 163, 0.052) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 153, 163, 0.042) 1px, transparent 1px),
+    radial-gradient(90% 80% at 80% 100%, rgba(112, 184, 139, 0.05), transparent 68%);
+  background-size: 100% 42px, 96px 100%, 100% 100%;
+}
+
+/* Tactile controls and selection feedback. */
+:is(
+  .yt-ui2-segments button,
+  .yt-timeframes button,
+  .yt-chart-controls > button,
+  .yt-hero-action,
+  .yt-ui2-tool-button
+):active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+:is(.yt-ui2-segments button.is-active, .yt-timeframes button.is-active, .yt-chart-controls > button.is-active) {
+  color: #f4d99f;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(255, 246, 219, 0.18), transparent 66%),
+    rgba(211, 177, 110, 0.115);
+  box-shadow: inset 0 0 0 1px rgba(226, 198, 143, 0.2), 0 8px 20px rgba(0, 0, 0, 0.14);
+}
+
+:is(.yt-ui2-panel, .yt-intelligence-card, .yt-overview-module, .yt-ui2-ai-prompt):focus-within {
+  border-color: rgba(var(--yt-route-accent), 0.28);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04), 0 0 0 3px rgba(var(--yt-route-accent), 0.035);
+}
+
+@media (max-width: 1099px) {
+  .yt-route-content::before {
+    left: 78px;
+    height: 145px;
+  }
+
+  :is(.yt-ui2-route-heading, .yt-ui2-route-header)::before {
+    width: min(500px, 70vw);
+    opacity: 0.74;
+  }
+}
+
+@media (max-width: 767px) {
+  .yt-route-frame { border-radius: 14px; }
+
+  .yt-route-content::before {
+    top: 54px;
+    right: 0;
+    left: 0;
+    height: 120px;
+    opacity: 0.62;
+  }
+
+  :is(.yt-ui2-route-heading, .yt-ui2-route-header)::before {
+    left: -12px;
+    top: -12px;
+    width: 90vw;
+    height: 92px;
+    opacity: 0.55;
+  }
+
+  :is(.yt-ui2-panel, .yt-analytics-panel, .yt-overview-band, .yt-portfolio-band) {
+    backdrop-filter: none;
+  }
+
+  :is(
+    .yt-atmospheric-hero,
+    .yt-chart-workspace,
+    .yt-ui2-performance-panel,
+    .yt-ui2-holdings-panel,
+    .yt-ui2-dossier,
+    .yt-ui2-ai-workspace
+  ) {
+    box-shadow: inset 0 1px rgba(255, 249, 229, 0.06), 0 16px 38px rgba(0, 4, 9, 0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-app *,
+  .yt-app *::before,
+  .yt-app *::after {
+    scroll-behavior: auto !important;
+  }
+
+  :is(
+    .yt-ui2-saved-layouts button,
+    .yt-ui2-report-list button,
+    .yt-ui2-ai-prompt,
+    .yt-opportunity-row,
+    .yt-ui2-position-row:not(.is-head)
+  ) {
+    transform: none !important;
+  }
+}

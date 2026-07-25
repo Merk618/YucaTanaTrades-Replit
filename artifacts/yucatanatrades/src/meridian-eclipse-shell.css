@@ -1,0 +1,524 @@
+/* UI-2.2 · Meridian Eclipse shell materials and interaction refinement. */
+
+.yt-app {
+  --yt-eclipse-glass: rgba(7, 25, 34, 0.68);
+  --yt-eclipse-glass-strong: rgba(7, 27, 37, 0.91);
+  --yt-eclipse-edge: rgba(163, 198, 202, 0.14);
+  --yt-eclipse-champagne: rgba(233, 204, 143, 0.92);
+  --yt-eclipse-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.yt-app .yt-topbar {
+  position: relative;
+}
+
+.yt-app .yt-topbar::after {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(123, 166, 174, 0.12) 18%, rgba(218, 194, 139, 0.1) 52%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+/* Shared-layout workspace capsule. */
+.yt-app .yt-topnav > a,
+.yt-app .yt-topnav-more {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.yt-app .yt-topnav > a > .yt-workspace-link-label {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  display: inline;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.yt-app .yt-topnav > a > .yt-workspace-active-capsule,
+.yt-app .yt-topnav-more > .yt-workspace-active-capsule {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid rgba(240, 211, 153, 0.46);
+  border-radius: inherit;
+  background:
+    radial-gradient(90% 120% at 50% -25%, rgba(255, 246, 218, 0.26), transparent 58%),
+    linear-gradient(145deg, rgba(205, 168, 103, 0.29), rgba(105, 82, 49, 0.23));
+  box-shadow:
+    inset 0 1px rgba(255, 250, 230, 0.12),
+    inset 0 -8px 16px rgba(24, 15, 5, 0.1),
+    0 7px 24px rgba(204, 165, 96, 0.15),
+    0 0 0 1px rgba(238, 215, 167, 0.025);
+  pointer-events: none;
+}
+
+.yt-app .yt-topnav > a::after,
+.yt-app .yt-topnav-more::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70%;
+  z-index: 1;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 244, 216, 0.08), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: skewX(-16deg);
+  transition: left 520ms var(--yt-eclipse-ease), opacity 180ms ease;
+}
+
+.yt-app .yt-topnav > a:hover::after,
+.yt-app .yt-topnav-more:hover::after {
+  left: 125%;
+  opacity: 1;
+}
+
+.yt-app .yt-topnav > a:hover,
+.yt-app .yt-topnav-more:hover {
+  color: rgba(247, 246, 235, 0.96);
+  background: rgba(141, 178, 184, 0.045);
+}
+
+.yt-app .yt-topnav-more {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.yt-app .yt-topnav-more.is-active {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.yt-app .yt-topnav-more-label,
+.yt-app .yt-topnav-more > svg {
+  position: relative;
+  z-index: 2;
+}
+
+.yt-app .yt-topnav-more[data-state="open"] > svg,
+.yt-app .yt-workspace-trigger[data-state="open"] > svg {
+  transform: rotate(180deg);
+}
+
+.yt-app .yt-topnav-more > svg,
+.yt-app .yt-workspace-trigger > svg,
+.yt-app .yt-account-control > svg:last-child {
+  transition: transform 240ms var(--yt-eclipse-ease);
+}
+
+/* Intelligence-workspace menu: editorial, not a generic dropdown. */
+.yt-eclipse-more-menu.yt-workspace-dropdown {
+  width: min(348px, calc(100vw - 24px));
+  padding: 8px !important;
+  overflow: hidden;
+  border-color: rgba(226, 201, 151, 0.28) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(100% 90% at 86% 0%, rgba(49, 93, 102, 0.24), transparent 60%),
+    linear-gradient(145deg, rgba(12, 37, 47, 0.985), rgba(4, 19, 28, 0.992)) !important;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.055),
+    0 28px 76px rgba(0, 0, 0, 0.58),
+    0 0 38px rgba(207, 170, 104, 0.075) !important;
+  backdrop-filter: blur(24px) saturate(116%);
+  transform-origin: 50% 0;
+}
+
+.yt-eclipse-more-menu[data-state="open"] {
+  animation: yt-eclipse-menu-enter 260ms var(--yt-eclipse-ease) both;
+}
+
+.yt-eclipse-more-menu[data-state="closed"] {
+  animation: yt-eclipse-menu-exit 150ms ease both;
+}
+
+.yt-eclipse-more-heading {
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px 12px !important;
+  white-space: normal;
+}
+
+.yt-eclipse-more-heading > span {
+  color: rgba(224, 190, 123, 0.78);
+  font-size: 8px;
+  font-weight: 680;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.yt-eclipse-more-heading > strong {
+  color: rgba(244, 245, 237, 0.94);
+  font-size: 12.5px;
+  font-weight: 580;
+  letter-spacing: -0.01em;
+}
+
+.yt-eclipse-more-heading > small {
+  max-width: 285px;
+  color: rgba(155, 174, 178, 0.68);
+  font-size: 9.5px;
+  font-weight: 430;
+  line-height: 1.45;
+}
+
+.yt-eclipse-more-menu.yt-workspace-dropdown .yt-eclipse-more-item[role="menuitem"] {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 11px;
+  min-height: 65px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  outline: 0;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 220ms var(--yt-eclipse-ease);
+}
+
+.yt-eclipse-more-menu.yt-workspace-dropdown .yt-eclipse-more-item[role="menuitem"]:focus,
+.yt-eclipse-more-menu.yt-workspace-dropdown .yt-eclipse-more-item[role="menuitem"]:hover {
+  border-color: rgba(219, 191, 136, 0.16);
+  background: linear-gradient(100deg, rgba(217, 187, 122, 0.105), rgba(78, 130, 139, 0.055));
+  transform: translateX(2px);
+}
+
+.yt-eclipse-more-menu.yt-workspace-dropdown .yt-eclipse-more-item.is-active {
+  border-color: rgba(223, 195, 139, 0.23);
+  background: linear-gradient(100deg, rgba(217, 187, 122, 0.14), rgba(77, 127, 136, 0.07));
+}
+
+.yt-eclipse-more-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(150, 191, 196, 0.15);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(79, 137, 145, 0.12), rgba(3, 20, 28, 0.2));
+  color: rgba(116, 183, 190, 0.82);
+}
+
+.yt-eclipse-more-menu.yt-workspace-dropdown .yt-eclipse-more-icon svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.yt-eclipse-more-item.is-active .yt-eclipse-more-icon {
+  border-color: rgba(230, 200, 141, 0.25);
+  color: rgba(231, 199, 137, 0.92);
+}
+
+.yt-eclipse-more-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.yt-eclipse-more-copy strong {
+  color: rgba(238, 242, 235, 0.91);
+  font-size: 11px;
+  font-weight: 570;
+}
+
+.yt-eclipse-more-copy small {
+  color: rgba(141, 163, 168, 0.68);
+  font-size: 9px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.yt-eclipse-more-footnote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 4px 1px;
+  padding: 8px 7px 3px;
+  border-top: 1px solid rgba(142, 177, 183, 0.09);
+  color: rgba(117, 143, 149, 0.52);
+}
+
+.yt-eclipse-more-footnote > span {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(111, 172, 177, 0.72);
+  box-shadow: 0 0 9px rgba(92, 171, 179, 0.4);
+}
+
+.yt-eclipse-more-footnote small {
+  font-size: 8px;
+  letter-spacing: 0.015em;
+}
+
+/* Search, notification, and identity materials. */
+.yt-app .yt-search-trigger,
+.yt-app .yt-utility-button,
+.yt-app .yt-account-control,
+.yt-app .yt-workspace-trigger {
+  border-color: var(--yt-eclipse-edge);
+  background:
+    linear-gradient(180deg, rgba(17, 42, 52, 0.72), rgba(7, 25, 34, 0.72)),
+    var(--yt-eclipse-glass);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.04),
+    0 8px 25px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(13px) saturate(112%);
+}
+
+.yt-app .yt-search-trigger:hover,
+.yt-app .yt-search-trigger:focus-visible,
+.yt-app .yt-account-control:hover,
+.yt-app .yt-account-control:focus-visible,
+.yt-app .yt-workspace-trigger:hover,
+.yt-app .yt-workspace-trigger:focus-visible {
+  border-color: rgba(222, 195, 141, 0.34);
+  background: linear-gradient(180deg, rgba(22, 49, 58, 0.84), rgba(8, 28, 38, 0.84));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.055),
+    0 0 0 3px rgba(218, 190, 135, 0.045),
+    0 13px 34px rgba(0, 0, 0, 0.18);
+}
+
+.yt-app .yt-search-trigger {
+  cursor: pointer;
+}
+
+.yt-app .yt-search-trigger > svg {
+  color: rgba(131, 177, 184, 0.78);
+}
+
+.yt-app .yt-search-trigger kbd {
+  border: 1px solid rgba(164, 192, 194, 0.08);
+  background: rgba(188, 207, 205, 0.055);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.yt-notification-control {
+  position: relative;
+  display: inline-grid;
+}
+
+.yt-app .yt-notification-control .yt-utility-button {
+  position: relative;
+  cursor: help;
+}
+
+.yt-utility-status {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(10, 31, 39, 0.92);
+  border-radius: 50%;
+  background: rgba(116, 149, 154, 0.52);
+}
+
+.yt-top-utility-tooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 100;
+  width: max-content;
+  padding: 7px 9px;
+  border: 1px solid rgba(209, 187, 143, 0.2);
+  border-radius: 8px;
+  background: rgba(5, 20, 28, 0.97);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+  color: rgba(188, 202, 201, 0.8);
+  font-size: 9px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 200ms var(--yt-eclipse-ease);
+}
+
+.yt-notification-control:hover .yt-top-utility-tooltip,
+.yt-notification-control:focus-within .yt-top-utility-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.yt-app .yt-account-control {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 240ms ease, transform 240ms var(--yt-eclipse-ease);
+}
+
+.yt-app .yt-account-control::after {
+  position: absolute;
+  top: 7px;
+  left: 30px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(7, 25, 34, 0.95);
+  border-radius: 50%;
+  background: rgba(113, 181, 128, 0.86);
+  box-shadow: 0 0 8px rgba(99, 184, 120, 0.42);
+  content: "";
+}
+
+.yt-app .yt-account-control[data-state="open"] {
+  border-color: rgba(222, 195, 141, 0.36);
+  background: linear-gradient(180deg, rgba(25, 51, 60, 0.88), rgba(8, 28, 38, 0.88));
+}
+
+.yt-app .yt-account-control[data-state="open"] > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.yt-account-menu {
+  border-color: rgba(221, 197, 149, 0.24) !important;
+  border-radius: 13px !important;
+  background:
+    radial-gradient(80% 90% at 85% 0%, rgba(53, 100, 108, 0.17), transparent 62%),
+    rgba(5, 22, 31, 0.985) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(22px);
+}
+
+/* OS-dock utility rail. */
+.yt-app .yt-icon-rail {
+  border-color: rgba(216, 193, 145, 0.25);
+  background:
+    radial-gradient(100% 16% at 50% 0%, rgba(232, 204, 147, 0.11), transparent 100%),
+    linear-gradient(180deg, rgba(17, 41, 49, 0.9), rgba(6, 28, 38, 0.83)),
+    rgba(3, 17, 25, 0.86);
+  box-shadow:
+    inset 1px 0 rgba(255, 255, 255, 0.035),
+    inset -1px 0 rgba(95, 144, 151, 0.025),
+    0 26px 74px rgba(0, 0, 0, 0.34),
+    0 0 35px rgba(80, 139, 148, 0.04);
+  backdrop-filter: blur(21px) saturate(114%);
+}
+
+.yt-app .yt-rail-link {
+  isolation: isolate;
+  transition: color 180ms ease, background 180ms ease, transform 240ms var(--yt-eclipse-ease), box-shadow 240ms ease;
+}
+
+.yt-app .yt-rail-link:hover:not([aria-disabled="true"]),
+.yt-app .yt-rail-link:focus-visible:not([aria-disabled="true"]) {
+  color: rgba(245, 246, 236, 0.95);
+  background: radial-gradient(circle at 50% 20%, rgba(154, 196, 199, 0.1), rgba(255, 255, 255, 0.025));
+  box-shadow: inset 0 0 0 1px rgba(150, 188, 192, 0.07);
+  transform: translateY(-1px) scale(1.035);
+}
+
+.yt-app .yt-rail-link[aria-current="page"]::after {
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 3px;
+  height: 13px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(255, 230, 176, 0.95), rgba(194, 151, 83, 0.72));
+  box-shadow: 0 0 11px rgba(224, 187, 117, 0.48);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.yt-app .yt-rail-active {
+  border-color: rgba(240, 211, 153, 0.42);
+  background:
+    radial-gradient(80% 85% at 50% 5%, rgba(255, 245, 214, 0.21), transparent 62%),
+    linear-gradient(150deg, rgba(199, 161, 96, 0.33), rgba(72, 62, 43, 0.28));
+  box-shadow:
+    inset 0 1px rgba(255, 250, 230, 0.1),
+    inset 0 -8px 15px rgba(21, 15, 7, 0.1),
+    0 7px 19px rgba(197, 158, 91, 0.14);
+}
+
+.yt-app .yt-rail-link[aria-disabled="true"] {
+  color: rgba(137, 158, 162, 0.36);
+  cursor: help;
+}
+
+.yt-app .yt-rail-link[aria-disabled="true"]::after {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(135, 164, 167, 0.32);
+  content: "";
+}
+
+.yt-app .yt-rail-link[aria-disabled="true"]:hover,
+.yt-app .yt-rail-link[aria-disabled="true"]:focus-visible {
+  background: rgba(129, 160, 164, 0.025);
+  color: rgba(151, 171, 173, 0.48);
+}
+
+.yt-app .yt-rail-tooltip {
+  padding: 8px 10px;
+  border-color: rgba(218, 193, 142, 0.23);
+  background:
+    linear-gradient(145deg, rgba(12, 36, 45, 0.98), rgba(4, 19, 27, 0.985));
+  box-shadow: 0 15px 38px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255, 255, 255, 0.045);
+  color: rgba(226, 232, 225, 0.9);
+  font-size: 10px;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(18px);
+}
+
+.yt-app .yt-rail-link[aria-disabled="true"] .yt-rail-tooltip {
+  color: rgba(183, 197, 195, 0.72);
+}
+
+@keyframes yt-eclipse-menu-enter {
+  from { opacity: 0; transform: translateY(-7px) scale(0.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes yt-eclipse-menu-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-4px) scale(0.985); }
+}
+
+@media (max-width: 767px) {
+  .yt-app .yt-topbar::after {
+    right: 2px;
+    left: 2px;
+  }
+
+  .yt-eclipse-more-menu.yt-workspace-dropdown {
+    width: min(340px, calc(100vw - 18px));
+  }
+
+  .yt-app .yt-account-control::after {
+    top: 5px;
+    left: 25px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-eclipse-more-menu[data-state],
+  html:not(.yt-force-full-motion) .yt-topnav > a::after,
+  html:not(.yt-force-full-motion) .yt-topnav-more::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html:not(.yt-force-full-motion) .yt-topnav-more[data-state="open"] > svg,
+  html:not(.yt-force-full-motion) .yt-workspace-trigger[data-state="open"] > svg,
+  html:not(.yt-force-full-motion) .yt-account-control[data-state="open"] > svg:last-child,
+  html:not(.yt-force-full-motion) .yt-rail-link {
+    transform: none !important;
+  }
+}

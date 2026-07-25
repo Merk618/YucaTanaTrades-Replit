@@ -42,9 +42,7 @@ html {
 
 body {
   overflow: hidden;
-  background:
-    radial-gradient(1200px 620px at 54% 100%, rgba(17, 91, 109, 0.2), transparent 70%),
-    linear-gradient(180deg, var(--yt-canvas-top) 0%, var(--yt-canvas) 56%, #05212d 100%);
+  background: linear-gradient(180deg, var(--yt-canvas-top), #03111c 56%, #041923);
   color: var(--yt-text);
   font-family: Inter, "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -94,32 +92,6 @@ button:disabled {
   overflow: hidden;
   isolation: isolate;
   font-size: 13px;
-}
-
-.yt-app::before,
-.yt-app::after {
-  content: "";
-  position: fixed;
-  z-index: -2;
-  pointer-events: none;
-  border-radius: 50%;
-  filter: blur(1px);
-}
-
-.yt-app::before {
-  width: 720px;
-  height: 420px;
-  left: 29%;
-  bottom: -260px;
-  background: rgba(24, 116, 134, 0.17);
-}
-
-.yt-app::after {
-  width: 440px;
-  height: 440px;
-  right: -180px;
-  top: 25%;
-  background: rgba(13, 76, 94, 0.13);
 }
 
 .yt-icon-rail {

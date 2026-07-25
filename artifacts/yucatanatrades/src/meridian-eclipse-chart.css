@@ -1,0 +1,448 @@
+/* UI-2.2 · Meridian Eclipse analytical chart surface
+   Presentation only: the series remains the deterministic historical fixture. */
+
+.yt-chart-workspace.yt-chart-workspace {
+  isolation: isolate;
+  border-color: rgba(139, 183, 185, 0.16);
+  background:
+    radial-gradient(ellipse 72% 90% at 78% 18%, rgba(39, 106, 116, 0.12), transparent 62%),
+    radial-gradient(ellipse 50% 78% at 16% 86%, rgba(37, 84, 91, 0.12), transparent 68%),
+    linear-gradient(180deg, rgba(8, 31, 42, 0.96), rgba(3, 19, 27, 0.975));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.045),
+    inset 0 -1px rgba(102, 151, 154, 0.035),
+    0 24px 62px rgba(0, 0, 0, 0.2);
+}
+
+.yt-chart-workspace.yt-chart-workspace::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(110deg, transparent 14%, rgba(221, 199, 144, 0.027) 48%, transparent 72%),
+    radial-gradient(circle at 83% 9%, rgba(221, 199, 144, 0.1), transparent 15%);
+  content: "";
+  pointer-events: none;
+}
+
+.yt-chart-workspace.yt-chart-workspace::after {
+  position: absolute;
+  z-index: 0;
+  inset: 58px 0 0;
+  background: linear-gradient(90deg, rgba(1, 10, 15, 0.24), transparent 9%, transparent 91%, rgba(1, 10, 15, 0.28));
+  content: "";
+  pointer-events: none;
+}
+
+.yt-chart-workspace .yt-chart-header {
+  border-bottom-color: rgba(126, 170, 174, 0.1);
+  background: linear-gradient(180deg, rgba(11, 37, 47, 0.82), rgba(6, 27, 37, 0.66));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.09);
+  backdrop-filter: blur(14px);
+}
+
+.yt-chart-workspace .yt-chart-identity {
+  position: relative;
+  z-index: 2;
+}
+
+.yt-chart-workspace .yt-chart-quote strong {
+  color: rgba(239, 241, 235, 0.96);
+  text-shadow: 0 0 24px rgba(173, 215, 203, 0.08);
+}
+
+.yt-chart-workspace .yt-chart-controls {
+  position: relative;
+  z-index: 3;
+}
+
+.yt-chart-workspace .yt-chart-controls button {
+  border-radius: 8px;
+  outline: none;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.yt-chart-workspace .yt-chart-controls button:hover:not(:disabled) {
+  border-color: rgba(217, 187, 122, 0.2);
+  background: rgba(217, 187, 122, 0.075);
+}
+
+.yt-chart-workspace .yt-chart-controls button.is-active {
+  border-color: rgba(229, 204, 145, 0.25);
+  background: linear-gradient(180deg, rgba(217, 187, 122, 0.14), rgba(217, 187, 122, 0.065));
+  box-shadow: inset 0 1px rgba(255, 245, 214, 0.06), 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.yt-chart-workspace .yt-chart-controls button:focus-visible,
+.yt-chart-workspace .yt-chart-svg-wrap svg:focus-visible {
+  outline: 1px solid rgba(237, 211, 150, 0.72);
+  outline-offset: 2px;
+}
+
+.yt-chart-workspace .yt-chart-canvas {
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(5, 27, 37, 0.1), rgba(1, 14, 21, 0.22)),
+    radial-gradient(ellipse at 70% 34%, rgba(60, 125, 126, 0.045), transparent 55%);
+}
+
+.yt-chart-workspace .yt-chart-svg-wrap {
+  position: relative;
+  z-index: 2;
+  will-change: opacity, transform;
+}
+
+.yt-chart-workspace .yt-chart-svg-wrap svg {
+  cursor: crosshair;
+}
+
+.yt-chart-workspace .yt-chart-plot-wash {
+  fill: rgba(6, 35, 45, 0.12);
+}
+
+.yt-chart-workspace .yt-chart-grid {
+  stroke: rgba(104, 146, 153, 0.16);
+  stroke-width: 0.75;
+}
+
+.yt-chart-workspace .yt-chart-grid.is-vertical {
+  stroke: rgba(86, 130, 139, 0.105);
+}
+
+.yt-chart-workspace .yt-chart-volume-separator {
+  stroke: rgba(116, 159, 164, 0.11);
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.yt-chart-workspace .yt-chart-axis {
+  fill: rgba(156, 178, 181, 0.62);
+  letter-spacing: 0.015em;
+}
+
+.yt-chart-workspace .yt-chart-axis.is-time {
+  fill: rgba(147, 170, 174, 0.58);
+}
+
+.yt-chart-workspace .yt-chart-volume {
+  opacity: 0.72;
+}
+
+.yt-chart-workspace .is-up .yt-chart-volume {
+  fill: rgba(99, 162, 132, 0.28);
+}
+
+.yt-chart-workspace .is-down .yt-chart-volume {
+  fill: rgba(212, 92, 76, 0.22);
+}
+
+.yt-chart-workspace .is-up .yt-candle-body {
+  fill: #79b987;
+  stroke: rgba(153, 216, 166, 0.48);
+}
+
+.yt-chart-workspace .is-up .yt-candle-wick {
+  stroke: #78ae84;
+}
+
+.yt-chart-workspace .is-down .yt-candle-body {
+  fill: #e06553;
+  stroke: rgba(242, 135, 116, 0.4);
+}
+
+.yt-chart-workspace .is-down .yt-candle-wick {
+  stroke: #d86656;
+}
+
+.yt-chart-workspace .yt-candle-body {
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
+}
+
+.yt-chart-workspace .yt-candle-wick {
+  stroke-width: 0.76;
+  opacity: 0.9;
+}
+
+.yt-chart-workspace .is-current .yt-candle-body {
+  filter: drop-shadow(0 0 3px rgba(222, 201, 144, 0.28));
+}
+
+.yt-chart-workspace .yt-ma-line,
+.yt-chart-workspace .yt-compare-line {
+  stroke-width: 1.2;
+}
+
+.yt-chart-workspace .yt-ma-line.is-fast {
+  stroke: #d5b96f;
+  opacity: 0.9;
+}
+
+.yt-chart-workspace .yt-ma-line.is-slow {
+  stroke: #5ba180;
+  opacity: 0.82;
+}
+
+.yt-chart-workspace .yt-compare-line {
+  stroke: #63aeb8;
+  stroke-dasharray: 5 4;
+  opacity: 0.72;
+}
+
+.yt-chart-workspace .yt-last-price line {
+  stroke-width: 0.8;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+
+.yt-chart-workspace .yt-last-price.is-up line,
+.yt-chart-workspace .yt-last-price.is-up circle {
+  stroke: #86c18e;
+}
+
+.yt-chart-workspace .yt-last-price.is-up rect,
+.yt-chart-workspace .yt-last-price.is-up circle {
+  fill: #6fa579;
+}
+
+.yt-chart-workspace .yt-last-price.is-down line,
+.yt-chart-workspace .yt-last-price.is-down circle {
+  stroke: #eb735f;
+}
+
+.yt-chart-workspace .yt-last-price.is-down rect,
+.yt-chart-workspace .yt-last-price.is-down circle {
+  fill: #c85c4d;
+}
+
+.yt-chart-workspace .yt-last-price text,
+.yt-chart-workspace .yt-crosshair-price {
+  fill: #f6f5ec;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.yt-chart-workspace .yt-current-price-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: yt-eclipse-price-pulse 2.8s ease-out infinite;
+  vector-effect: non-scaling-stroke;
+}
+
+@keyframes yt-eclipse-price-pulse {
+  0%, 45% { opacity: 0.9; transform: scale(1); }
+  72% { opacity: 0.35; transform: scale(2.35); }
+  100% { opacity: 0; transform: scale(2.9); }
+}
+
+.yt-chart-workspace .yt-crosshair line {
+  stroke: rgba(223, 232, 228, 0.34);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 3;
+}
+
+.yt-chart-workspace .yt-crosshair circle {
+  fill: #efd48f;
+  stroke: rgba(2, 14, 21, 0.94);
+  stroke-width: 1.5;
+}
+
+.yt-chart-workspace .yt-crosshair-price-bg {
+  fill: rgba(19, 51, 59, 0.98);
+  stroke: rgba(208, 190, 140, 0.32);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.yt-chart-workspace .yt-chart-tooltip {
+  z-index: 9;
+  gap: 3px 12px;
+  min-width: 138px;
+  padding: 9px 11px;
+  border-color: rgba(212, 192, 142, 0.28);
+  background:
+    linear-gradient(145deg, rgba(14, 43, 52, 0.98), rgba(3, 19, 27, 0.98));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.045),
+    0 16px 38px rgba(0, 0, 0, 0.44),
+    0 0 24px rgba(63, 124, 126, 0.06);
+  backdrop-filter: blur(16px);
+}
+
+.yt-chart-workspace .yt-chart-tooltip[data-side="right"] {
+  transform: translate(-100%, -100%);
+}
+
+.yt-chart-workspace .yt-chart-tooltip strong {
+  color: rgba(248, 246, 235, 0.96);
+  letter-spacing: 0.02em;
+}
+
+.yt-chart-workspace .yt-chart-tooltip-volume,
+.yt-chart-workspace .yt-chart-tooltip-derived {
+  grid-column: 1 / -1;
+}
+
+.yt-chart-workspace .yt-chart-tooltip-volume {
+  padding-top: 3px;
+  border-top: 1px solid rgba(121, 158, 160, 0.12);
+  color: rgba(167, 190, 190, 0.68);
+}
+
+.yt-chart-workspace .yt-chart-tooltip-derived {
+  color: rgba(217, 187, 122, 0.68);
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.yt-chart-workspace .yt-chart-legend {
+  z-index: 4;
+  color: rgba(160, 181, 182, 0.62);
+}
+
+.yt-chart-workspace .yt-chart-density-note {
+  position: absolute;
+  z-index: 4;
+  right: 72px;
+  bottom: 6px;
+  color: rgba(133, 157, 160, 0.46);
+  font-size: 7px;
+  letter-spacing: 0.025em;
+  pointer-events: none;
+}
+
+.yt-chart-workspace.is-expanded.is-expanded {
+  inset: 18px 22px 18px 82px;
+  border-color: rgba(221, 196, 137, 0.34);
+  background:
+    radial-gradient(ellipse at 74% 18%, rgba(42, 112, 119, 0.15), transparent 60%),
+    linear-gradient(180deg, rgba(7, 29, 39, 0.995), rgba(2, 16, 23, 0.995));
+  box-shadow: 0 0 0 9999px rgba(0, 7, 11, 0.86), 0 36px 120px rgba(0, 0, 0, 0.72);
+}
+
+/* The Overview chart shares the desktop canvas with the intelligence rail.
+   Collapse secondary toolbar copy before the viewport itself becomes narrow. */
+@media (max-width: 1699px) {
+  .yt-chart-workspace .yt-chart-asof,
+  .yt-chart-workspace .yt-chart-controls > button span {
+    display: none;
+  }
+}
+
+/* Keep every chart action reachable on phones without allowing controls to
+   bleed beneath the card edge. The analytical canvas keeps its visual height;
+   only the compact control shelf gains a deliberate second row. */
+@media (max-width: 599px) {
+  .yt-app .yt-dashboard .yt-chart-workspace {
+    height: 344px;
+  }
+
+  .yt-ui2-charts-route .yt-ui2-chart-primary .yt-chart-workspace.is-route {
+    height: 504px;
+  }
+
+  .yt-chart-workspace .yt-chart-header {
+    min-height: 124px;
+  }
+
+  .yt-chart-workspace .yt-chart-canvas {
+    height: calc(100% - 124px);
+  }
+
+  .yt-chart-workspace .yt-chart-controls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    row-gap: 4px;
+  }
+
+  .yt-chart-workspace .yt-timeframes {
+    flex: 1 0 100%;
+    justify-content: space-between;
+    min-width: 0;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .yt-chart-workspace .yt-timeframes button {
+    min-width: 24px;
+    padding-inline: 3px;
+  }
+}
+
+@media (max-width: 899px) {
+  .yt-chart-workspace .yt-chart-header {
+    align-items: flex-start;
+  }
+
+  .yt-chart-workspace .yt-chart-density-note {
+    display: none;
+  }
+
+  .yt-chart-workspace .yt-chart-tooltip {
+    min-width: 124px;
+    padding: 7px 8px;
+  }
+
+  .yt-chart-workspace.is-expanded.is-expanded {
+    inset: 10px;
+  }
+}
+
+@media (max-width: 539px) {
+  .yt-chart-workspace .yt-chart-svg-wrap svg {
+    cursor: default;
+  }
+
+  .yt-chart-workspace .yt-chart-axis {
+    font-size: 8px;
+  }
+
+  .yt-chart-workspace .yt-chart-axis.is-time {
+    font-size: 7.5px;
+  }
+
+  .yt-chart-workspace .yt-chart-grid.is-vertical {
+    opacity: 0.72;
+  }
+
+  .yt-chart-workspace .yt-chart-tooltip {
+    display: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .yt-chart-workspace .yt-chart-svg-wrap svg {
+    cursor: default;
+    touch-action: pan-y;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-chart-workspace *,
+  html:not(.yt-force-full-motion) .yt-chart-workspace *::before,
+  html:not(.yt-force-full-motion) .yt-chart-workspace *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  html:not(.yt-force-full-motion) .yt-chart-workspace .yt-current-price-pulse {
+    animation: none !important;
+    opacity: 0.8;
+  }
+}
+
+html.yt-motion-paused .yt-chart-workspace .yt-current-price-pulse {
+  animation-play-state: paused;
+}

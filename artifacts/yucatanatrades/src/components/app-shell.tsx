@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { motionTokens } from "@/lib/motion";
+import { MeridianAtmosphere } from "@/components/meridian-atmosphere";
+import "../meridian-eclipse-shell.css";
 
 const topRoutes = [
   { label: "Overview", href: "/overview", icon: Home },
@@ -45,8 +47,18 @@ const topRoutes = [
   { label: "Charts", href: "/charts", icon: ChartCandlestick },
   { label: "Portfolio", href: "/portfolio", icon: BriefcaseBusiness },
   { label: "Research", href: "/research", icon: BookOpen },
-  { label: "News", href: "/news", icon: Newspaper },
-  { label: "AI Hub", href: "/ai-lab", icon: Bot },
+  {
+    label: "News",
+    href: "/news",
+    icon: Newspaper,
+    description: "Source-first intelligence and market context",
+  },
+  {
+    label: "AI Hub",
+    href: "/ai-lab",
+    icon: Bot,
+    description: "Meridian synthesis in a provider-neutral workspace",
+  },
 ] as const;
 
 const railRoutes = [
@@ -92,9 +104,79 @@ function WorkspaceLink({
       className={active ? "is-active" : undefined}
       aria-current={active ? "page" : undefined}
     >
-      {label}
-      {active ? <motion.span layoutId={indicator} transition={motionTokens.spring.snappy} /> : null}
+      <span className="yt-workspace-link-label">{label}</span>
+      {active ? (
+        <motion.span
+          className="yt-workspace-active-capsule"
+          layoutId={indicator}
+          transition={motionTokens.spring.snappy}
+        />
+      ) : null}
     </Link>
+  );
+}
+
+function WorkspaceMoreMenu({
+  location,
+  onNavigate,
+  indicator,
+}: {
+  location: string;
+  onNavigate: (href: string) => void;
+  indicator: string;
+}) {
+  const moreRoutes = [topRoutes[5], topRoutes[6]] as const;
+  const active = moreRoutes.some((route) => isRouteActive(location, route.href));
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={`yt-topnav-more${active ? " is-active" : ""}`}
+          type="button"
+          aria-label="Open News and AI Hub workspaces"
+        >
+          <span className="yt-topnav-more-label">More</span>
+          <ChevronDown aria-hidden="true" />
+          {active ? (
+            <motion.span
+              className="yt-workspace-active-capsule"
+              layoutId={indicator}
+              transition={motionTokens.spring.snappy}
+            />
+          ) : null}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="center"
+        sideOffset={9}
+        className="yt-workspace-dropdown yt-eclipse-more-menu"
+      >
+        <DropdownMenuLabel className="yt-eclipse-more-heading">
+          <span>Meridian OS</span>
+          <strong>Intelligence workspaces</strong>
+          <small>Continue from market structure into sourced context or synthesis.</small>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {moreRoutes.map((route) => (
+          <DropdownMenuItem
+            key={route.href}
+            onSelect={() => onNavigate(route.href)}
+            className={`yt-eclipse-more-item${isRouteActive(location, route.href) ? " is-active" : ""}`}
+          >
+            <span className="yt-eclipse-more-icon"><route.icon aria-hidden="true" /></span>
+            <span className="yt-eclipse-more-copy">
+              <strong>{route.label}</strong>
+              <small>{route.description}</small>
+            </span>
+          </DropdownMenuItem>
+        ))}
+        <div className="yt-eclipse-more-footnote" aria-hidden="true">
+          <span />
+          <small>Provider boundaries remain visible in each workspace</small>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -119,8 +201,16 @@ function RailLink({
   icon: React.ElementType;
   active: boolean;
 }) {
+  const tooltipId = React.useId();
+
   return (
-    <Link href={href} className="yt-rail-link" aria-label={label} aria-current={active ? "page" : undefined}>
+    <Link
+      href={href}
+      className="yt-rail-link"
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      aria-describedby={tooltipId}
+    >
       {active && (
         <motion.span
           layoutId="yt-active-route"
@@ -129,7 +219,7 @@ function RailLink({
         />
       )}
       <Icon aria-hidden="true" />
-      <span className="yt-rail-tooltip" role="tooltip">{label}</span>
+      <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
     </Link>
   );
 }
@@ -145,11 +235,50 @@ function RailAction({
   disabled?: boolean;
   onClick?: () => void;
 }) {
+  const tooltipId = React.useId();
+
   return (
-    <button className="yt-rail-link" type="button" disabled={disabled} aria-label={label} onClick={onClick}>
+    <button
+      className="yt-rail-link"
+      type="button"
+      aria-label={label}
+      aria-describedby={tooltipId}
+      aria-disabled={disabled || undefined}
+      data-deferred={disabled || undefined}
+      onClick={(event) => {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+        onClick?.();
+      }}
+    >
       <Icon aria-hidden="true" />
-      <span className="yt-rail-tooltip" role="tooltip">{label}</span>
+      <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
     </button>
+  );
+}
+
+function NotificationControl() {
+  const tooltipId = React.useId();
+
+  return (
+    <span className="yt-notification-control">
+      <button
+        className="yt-utility-button"
+        type="button"
+        aria-label="Notifications unavailable"
+        aria-describedby={tooltipId}
+        aria-disabled="true"
+        onClick={(event) => event.preventDefault()}
+      >
+        <Bell aria-hidden="true" />
+        <span className="yt-utility-status" aria-hidden="true" />
+      </button>
+      <span id={tooltipId} className="yt-top-utility-tooltip" role="tooltip">
+        Notifications · Deferred
+      </span>
+    </span>
   );
 }
 
@@ -421,6 +550,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="yt-app">
+      <MeridianAtmosphere location={location} reducedMotion={Boolean(reducedMotion)} />
       <motion.aside
         className="yt-icon-rail"
         aria-label="Global utilities"
@@ -461,26 +591,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             YUCATANATRADES
           </Link>
           <nav className="yt-topnav yt-topnav-wide" aria-label="Workspace navigation">
-            {topRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
+            {topRoutes.slice(0, 5).map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
+            <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-wide" />
           </nav>
           <nav className="yt-topnav yt-topnav-compact" aria-label="Workspace navigation">
             {topRoutes.slice(0, 5).map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" />)}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className={`yt-topnav-more${topRoutes.slice(5).some((route) => isRouteActive(location, route.href)) ? " is-active" : ""}`} type="button">
-                  More <ChevronDown aria-hidden="true" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="yt-workspace-dropdown">
-                <DropdownMenuLabel>More workspaces</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {topRoutes.slice(5).map((route) => (
-                  <DropdownMenuItem key={route.href} onSelect={() => goTo(route.href)} className={isRouteActive(location, route.href) ? "is-active" : undefined}>
-                    <route.icon aria-hidden="true" /> {route.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-compact" />
           </nav>
           <div className="yt-tablet-workspaces">
             <DropdownMenu>
@@ -510,14 +626,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <kbd><Command aria-hidden="true" />K</kbd>
           </button>
           <div className="yt-top-utilities">
-            <button
-              className="yt-utility-button"
-              type="button"
-              disabled
-              aria-label="Notifications unavailable"
-            >
-              <Bell aria-hidden="true" />
-            </button>
+            <NotificationControl />
             <AccountMenu />
           </div>
         </motion.header>
