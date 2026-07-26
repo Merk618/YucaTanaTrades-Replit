@@ -9,6 +9,7 @@ import {
   ProtectedRoute,
 } from "@/auth/auth-guards";
 import { AppShell } from "@/components/app-shell";
+import { AuthEntryTransition } from "@/components/auth/auth-entry-transition";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/home";
@@ -156,6 +157,7 @@ export default function App() {
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Router />
             </WouterRouter>
+            <AuthEntryTransition />
             <Toaster />
           </TooltipProvider>
         </AuthProvider>

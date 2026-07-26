@@ -1,4 +1,5 @@
 import * as React from "react";
+import { LockKeyhole } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Link, useSearch } from "wouter";
 import { useAuth } from "@/auth/auth-provider";
@@ -38,15 +39,33 @@ export default function SignInPage() {
 
   return (
     <AuthFrame
-      eyebrow="YucaTanaTrades access"
-      title="Sign in to Meridian OS"
-      description="Your identity is resolved by the server before the approved intelligence workspace opens."
+      variant="sign-in"
+      eyebrow="YucaTanaTrades · secure entry"
+      title="Enter Meridian OS"
+      description="Sign in with your YucaTanaTrades credentials. The server resolves your session before the private intelligence workspace opens."
       notice={expired ? (
-        <AuthNotice tone="warning">Your prior session expired. Sign in again to continue.</AuthNotice>
+        <AuthNotice tone="warning">
+          <span className="yt-auth-notice-copy">
+            <strong>Session expired</strong>
+            <span>Your prior session ended safely. Sign in again to continue.</span>
+          </span>
+        </AuthNotice>
       ) : undefined}
     >
-      <form className="yt-auth-form" onSubmit={submit} noValidate>
-        {serverError && <AuthNotice tone="error">{serverError}</AuthNotice>}
+      <div className="yt-auth-sign-in-mode" aria-label="Account sign-in">
+        <span><LockKeyhole aria-hidden="true" /> Account access</span>
+        <small>Opaque server-side session</small>
+      </div>
+
+      <form className="yt-auth-form" aria-label="Sign in to Meridian OS" onSubmit={submit} noValidate>
+        {serverError && (
+          <AuthNotice tone="error">
+            <span className="yt-auth-notice-copy">
+              <strong>Sign-in not accepted</strong>
+              <span>{serverError}</span>
+            </span>
+          </AuthNotice>
+        )}
         <AuthField
           id="sign-in-email"
           label="Email"
@@ -68,7 +87,7 @@ export default function SignInPage() {
           error={errors.password?.message}
           {...register("password", { required: "Enter your password." })}
         />
-        <AuthSubmitButton pending={isSubmitting}>Open Meridian OS</AuthSubmitButton>
+        <AuthSubmitButton pending={isSubmitting}>Enter Meridian OS</AuthSubmitButton>
       </form>
 
       <AuthActions>

@@ -1,0 +1,48 @@
+.yt-auth-entry-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #f0f2eb;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(42, 115, 120, 0.2), transparent 35%),
+    rgba(1, 9, 15, 0.93);
+  backdrop-filter: blur(8px);
+}
+
+.yt-auth-entry-transition > div {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.yt-auth-entry-transition svg {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 5px;
+  color: #e3c27d;
+  filter: drop-shadow(0 0 20px rgba(227, 194, 125, 0.28));
+}
+
+.yt-auth-entry-transition span {
+  color: #e3c27d;
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: 0.28em;
+}
+
+.yt-auth-entry-transition strong {
+  color: rgba(231, 236, 229, 0.78);
+  font-size: 12px;
+  font-weight: 520;
+  letter-spacing: 0.025em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-auth-entry-transition {
+    backdrop-filter: none;
+  }
+}

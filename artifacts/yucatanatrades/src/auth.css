@@ -1944,3 +1944,492 @@
     animation: none !important;
   }
 }
+
+/* UI-2.4 secure threshold — intentionally scoped to the sign-in route. */
+.yt-auth-root.is-sign-in {
+  --yt-auth-panel-width: 510px;
+  background:
+    radial-gradient(980px 680px at 4% 84%, rgba(29, 111, 126, 0.23), transparent 68%),
+    radial-gradient(780px 560px at 91% 18%, rgba(205, 172, 105, 0.13), transparent 71%),
+    radial-gradient(600px 460px at 55% 49%, rgba(32, 100, 113, 0.1), transparent 73%),
+    linear-gradient(142deg, #010910 0%, #03141e 44%, #052630 100%);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-field {
+  position: fixed;
+  z-index: -1;
+  inset: 84px 0 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.5;
+  transform: translate3d(
+    calc(var(--yt-auth-parallax-x, 0px) * 0.45),
+    calc(var(--yt-auth-parallax-y, 0px) * 0.45),
+    0
+  );
+  transition: transform 720ms var(--yt-ease);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-field::before {
+  position: absolute;
+  inset: 13% 5% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(215, 185, 120, 0.13), transparent);
+  content: "";
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-field svg {
+  position: absolute;
+  right: -5%;
+  bottom: 2%;
+  width: 112%;
+  height: 54%;
+  overflow: visible;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: yt-auth-threshold-resolve 1.35s var(--yt-ease-out) forwards;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-path.is-primary {
+  stroke: rgba(221, 194, 134, 0.19);
+  stroke-width: 1.1;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-path.is-secondary {
+  stroke: rgba(92, 169, 178, 0.13);
+  stroke-width: 0.8;
+  animation-delay: 90ms;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-node {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(231, 204, 145, 0.65);
+  box-shadow: 0 0 0 5px rgba(217, 187, 122, 0.04), 0 0 18px rgba(217, 187, 122, 0.25);
+  animation: yt-auth-threshold-node 5.4s ease-in-out infinite;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-node.is-one {
+  right: 31%;
+  bottom: 35%;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-node.is-two {
+  right: 18%;
+  bottom: 28%;
+  width: 3px;
+  height: 3px;
+  animation-delay: -1.8s;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-threshold-node.is-three {
+  left: 30%;
+  bottom: 20%;
+  width: 3px;
+  height: 3px;
+  animation-delay: -3.4s;
+}
+
+@keyframes yt-auth-threshold-resolve {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes yt-auth-threshold-node {
+  0%, 100% { opacity: 0.38; transform: scale(0.86); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+
+.yt-auth-root.is-sign-in.yt-auth-motion-paused .yt-auth-threshold-path,
+.yt-auth-root.is-sign-in.yt-auth-motion-paused .yt-auth-threshold-node {
+  animation-play-state: paused !important;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-header {
+  border-bottom-color: rgba(168, 197, 201, 0.1);
+  background: linear-gradient(180deg, rgba(2, 12, 19, 0.24), transparent);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(460px, var(--yt-auth-panel-width));
+  gap: clamp(70px, 7.4vw, 122px);
+  width: min(1320px, 100%);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-identity {
+  max-width: 710px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-identity h1 {
+  max-width: 710px;
+  font-size: clamp(47px, 4.1vw, 66px);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-panel {
+  min-height: 610px;
+  padding: 40px 40px 34px;
+  border-color: rgba(219, 193, 137, 0.28);
+  background:
+    radial-gradient(420px 240px at 86% 0%, rgba(209, 175, 105, 0.065), transparent 72%),
+    linear-gradient(145deg, rgba(19, 47, 57, 0.96), rgba(5, 25, 34, 0.965));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.06),
+    0 38px 96px rgba(0, 0, 0, 0.38),
+    0 0 74px rgba(204, 165, 92, 0.055);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-panel-context {
+  margin-bottom: 34px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-panel-heading > span {
+  letter-spacing: 0.28em;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-panel-heading h2 {
+  margin-top: 11px;
+  font-size: 31px;
+  letter-spacing: -0.035em;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-panel-heading p {
+  max-width: 410px;
+  margin-bottom: 26px;
+  font-size: 10.5px;
+  line-height: 1.7;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-sign-in-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 9px 11px;
+  border: 1px solid rgba(159, 191, 198, 0.09);
+  border-radius: 10px;
+  background: rgba(3, 20, 28, 0.42);
+  color: rgba(146, 168, 171, 0.75);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-sign-in-mode > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(216, 225, 220, 0.78);
+  font-size: 9px;
+  font-weight: 620;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-sign-in-mode svg {
+  width: 13px;
+  height: 13px;
+  color: var(--yt-gold);
+  stroke-width: 1.6;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-sign-in-mode small {
+  color: rgba(112, 139, 145, 0.72);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-form {
+  gap: 18px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-form > .yt-auth-notice {
+  margin-bottom: 0;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-field {
+  gap: 8px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-field label {
+  transition: color var(--yt-fast);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-field:focus-within label {
+  color: rgba(239, 216, 169, 0.94);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-input-wrap input {
+  height: 50px;
+  border-color: rgba(159, 191, 198, 0.2);
+  border-radius: 12px;
+  background: rgba(1, 15, 22, 0.72);
+  font-size: 12.5px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-input-wrap input:focus {
+  border-color: rgba(237, 207, 148, 0.73);
+  background: rgba(3, 22, 30, 0.96);
+  box-shadow:
+    0 0 0 3px rgba(217, 187, 122, 0.085),
+    0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.yt-auth-root.is-sign-in .yt-auth-input-wrap input:focus-visible,
+.yt-auth-root.is-sign-in .yt-auth-reveal:focus-visible,
+.yt-auth-root.is-sign-in .yt-auth-submit:focus-visible,
+.yt-auth-root.is-sign-in .yt-review-access-trigger:focus-visible,
+.yt-auth-root.is-sign-in .yt-review-access-close:focus-visible,
+.yt-auth-root.is-sign-in .yt-review-access-cell:focus-visible,
+.yt-auth-root.is-sign-in .yt-review-access-submit:focus-visible {
+  outline: 2px solid rgba(241, 211, 154, 0.84);
+  outline-offset: 3px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-submit {
+  min-height: 50px;
+  margin-top: 2px;
+  border-radius: 12px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-notice-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-notice-copy strong {
+  color: currentColor;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-notice-copy > span {
+  color: inherit;
+  opacity: 0.88;
+}
+
+.yt-auth-root.is-sign-in .yt-auth-actions {
+  margin-top: 20px;
+  padding-top: 17px;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-entry {
+  margin-top: 16px;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-divider {
+  display: grid;
+  grid-template-columns: minmax(16px, 1fr) auto minmax(16px, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  color: rgba(106, 133, 139, 0.64);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-divider::before,
+.yt-auth-root.is-sign-in .yt-review-access-divider::after {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(159, 191, 198, 0.12));
+  content: "";
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-divider::after {
+  background: linear-gradient(90deg, rgba(159, 191, 198, 0.12), transparent);
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-trigger {
+  min-height: 52px;
+  padding: 7px 13px 7px 9px;
+  border-color: rgba(171, 197, 199, 0.13);
+  background:
+    linear-gradient(120deg, rgba(217, 187, 122, 0.035), transparent 30%),
+    rgba(3, 20, 28, 0.52);
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-trigger-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-trigger strong {
+  font-size: 10px;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-trigger small {
+  margin-top: 1px;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-surface {
+  margin-top: 11px;
+  padding: 20px;
+  border-color: rgba(217, 187, 122, 0.22);
+  background:
+    radial-gradient(260px 140px at 0 0, rgba(217, 187, 122, 0.07), transparent 72%),
+    linear-gradient(145deg, rgba(11, 36, 45, 0.96), rgba(2, 19, 27, 0.97));
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-cell {
+  height: 48px;
+  border-color: rgba(169, 197, 199, 0.22);
+  background: rgba(0, 12, 18, 0.78);
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-surface[data-phase="success"] {
+  border-color: rgba(126, 190, 132, 0.34);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035), 0 0 34px rgba(91, 154, 103, 0.055);
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-surface[data-failure="rate-limited"] {
+  border-color: rgba(217, 187, 122, 0.34);
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-surface[data-failure="rate-limited"] .yt-review-access-message {
+  color: #d9bd82;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-boundaries {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px 15px;
+  margin: 12px 0 0;
+  padding: 0;
+  color: rgba(103, 133, 138, 0.68);
+  font-size: 7px;
+  font-weight: 620;
+  letter-spacing: 0.08em;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-boundaries li {
+  position: relative;
+}
+
+.yt-auth-root.is-sign-in .yt-review-access-boundaries li + li::before {
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(217, 187, 122, 0.42);
+  content: "";
+  transform: translateY(-50%);
+}
+
+@media (max-width: 1120px) {
+  .yt-auth-root.is-sign-in {
+    --yt-auth-panel-width: 465px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(430px, var(--yt-auth-panel-width));
+    gap: 46px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-panel {
+    padding-inline: 34px;
+  }
+}
+
+@media (max-width: 900px) {
+  .yt-auth-root.is-sign-in .yt-auth-layout {
+    grid-template-columns: 1fr;
+    width: min(640px, 100%);
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-panel {
+    min-height: 0;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-threshold-field {
+    opacity: 0.34;
+  }
+}
+
+@media (max-width: 620px) {
+  .yt-auth-root.is-sign-in .yt-auth-layout {
+    gap: 24px;
+    padding-top: 30px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-panel {
+    order: -1;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-identity h1 {
+    font-size: clamp(34px, 10.8vw, 43px);
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-panel {
+    padding: 30px 22px 25px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-panel-heading h2 {
+    font-size: 27px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-sign-in-mode {
+    margin-bottom: 16px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-sign-in-mode small {
+    display: none;
+  }
+
+  .yt-auth-root.is-sign-in .yt-review-access-surface {
+    padding: 16px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-review-access-cell {
+    height: 44px;
+  }
+}
+
+@media (max-width: 390px) {
+  .yt-auth-root.is-sign-in .yt-auth-panel {
+    padding-inline: 18px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-review-access-surface {
+    padding-inline: 13px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-review-access-boundaries {
+    gap: 6px 12px;
+    font-size: 6.5px;
+  }
+
+  .yt-auth-root.is-sign-in .yt-review-access-boundaries li + li::before {
+    left: -7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yt-auth-root.is-sign-in .yt-auth-threshold-field {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-threshold-path {
+    stroke-dashoffset: 0;
+  }
+
+  .yt-auth-root.is-sign-in .yt-auth-threshold-path,
+  .yt-auth-root.is-sign-in .yt-auth-threshold-node {
+    animation: none !important;
+  }
+}

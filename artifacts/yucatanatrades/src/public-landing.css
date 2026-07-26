@@ -25,6 +25,10 @@
   isolation: isolate;
 }
 
+body:has(.yt-public-root) {
+  overflow-x: clip;
+}
+
 .yt-public-root *,
 .yt-public-root *::before,
 .yt-public-root *::after {
@@ -632,7 +636,7 @@
   bottom: 7%;
   left: -10%;
   height: 35%;
-  overflow: hidden;
+  overflow: clip;
   opacity: 0.55;
   transform: translate3d(calc(var(--yt-public-parallax-x) * 0.25), calc(var(--yt-public-parallax-y) * 0.25), 0);
   transition: transform 620ms var(--yt-ease);

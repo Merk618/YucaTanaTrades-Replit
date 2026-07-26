@@ -11,16 +11,19 @@ export function AuthFrame({
   title,
   description,
   notice,
+  variant = "default",
   children,
 }: {
   eyebrow: string;
   title: string;
   description: string;
   notice?: React.ReactNode;
+  variant?: "default" | "sign-in";
   children: React.ReactNode;
 }) {
   const reducedMotion = useReducedMotion();
   const rootRef = React.useRef<HTMLElement>(null);
+  const isSignIn = variant === "sign-in";
 
   React.useEffect(() => {
     const updateVisibility = () => {
@@ -67,9 +70,24 @@ export function AuthFrame({
   }, [reducedMotion]);
 
   return (
-    <main ref={rootRef} className="yt-auth-root">
+    <main
+      ref={rootRef}
+      className={`yt-auth-root${isSignIn ? " is-sign-in" : ""}`}
+      data-auth-variant={variant}
+    >
       <div className="yt-auth-grid" aria-hidden="true" />
       <div className="yt-auth-aurora" aria-hidden="true" />
+      {isSignIn ? (
+        <div className="yt-auth-threshold-field" aria-hidden="true">
+          <svg viewBox="0 0 1200 460" preserveAspectRatio="none">
+            <path className="yt-auth-threshold-path is-primary" d="M-40 354 C 160 304, 228 412, 390 318 S 674 176, 846 246 S 1030 338, 1240 146" />
+            <path className="yt-auth-threshold-path is-secondary" d="M-30 390 C 168 334, 262 428, 436 346 S 714 222, 894 286 S 1090 354, 1240 214" />
+          </svg>
+          <span className="yt-auth-threshold-node is-one" />
+          <span className="yt-auth-threshold-node is-two" />
+          <span className="yt-auth-threshold-node is-three" />
+        </div>
+      ) : null}
 
       <header className="yt-auth-header">
         <Link href="/" className="yt-auth-brand" aria-label="YucaTanaTrades public site">
@@ -92,12 +110,29 @@ export function AuthFrame({
           <div className="yt-auth-kicker-row">
             <span className="yt-auth-kicker">MERIDIAN OS</span>
             <span className="yt-auth-kicker-rule" aria-hidden="true" />
-            <span className="yt-auth-kicker-detail">Private intelligence workspace</span>
+            <span className="yt-auth-kicker-detail">
+              {isSignIn ? "Secure intelligence threshold" : "Private intelligence workspace"}
+            </span>
           </div>
-          <h1>See the market.<br /><em>Keep your edge.</em></h1>
+          <h1>
+            {isSignIn ? (
+              <>Intelligence, organized.<br /><em>Decisions, in context.</em></>
+            ) : (
+              <>See the market.<br /><em>Keep your edge.</em></>
+            )}
+          </h1>
           <p>
-            The public YucaTanaTrades experience becomes Meridian OS after authentication—
-            a focused environment for research, risk context, and source-aware decisions.
+            {isSignIn ? (
+              <>
+                YucaTanaTrades becomes Meridian OS after authentication—a focused
+                environment for market context, research, risk, and source-aware decisions.
+              </>
+            ) : (
+              <>
+                The public YucaTanaTrades experience becomes Meridian OS after authentication—
+                a focused environment for research, risk context, and source-aware decisions.
+              </>
+            )}
           </p>
 
           <motion.div

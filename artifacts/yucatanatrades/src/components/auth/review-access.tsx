@@ -18,6 +18,7 @@ import {
   reviewAccessBackspaceTarget,
   type ReviewAccessCells,
 } from "../../auth/review-access-code";
+import { getAuthErrorCode } from "../../auth/auth-client";
 import { motionTokens, useAppReducedMotion } from "../../lib/motion";
 
 interface ReviewAccessEntryProps {
@@ -47,6 +48,9 @@ export function ReviewAccessEntry({
 
   return (
     <div className="yt-review-access-entry">
+      <div className="yt-review-access-divider" aria-hidden="true">
+        <span>Development review</span>
+      </div>
       <button
         ref={triggerRef}
         type="button"
@@ -94,6 +98,7 @@ export function ReviewAccessCodeForm({
   const [cells, setCells] = React.useState<ReviewAccessCells>(() => emptyReviewAccessCells());
   const [phase, setPhase] = React.useState<"idle" | "submitting" | "success">("idle");
   const [error, setError] = React.useState<string | null>(null);
+  const [failureKind, setFailureKind] = React.useState<"invalid" | "rate-limited" | null>(null);
   const inputRefs = React.useRef<Array<HTMLInputElement | null>>([]);
   const complete = cells.every(Boolean);
   const pending = phase === "submitting";
@@ -112,6 +117,8 @@ export function ReviewAccessCodeForm({
         next[index] = "";
         return next;
       });
+      setError(null);
+      setFailureKind(null);
       return;
     }
 
@@ -123,18 +130,21 @@ export function ReviewAccessCodeForm({
     setCells((current) => insertReviewAccessDigits(current, startIndex, digits).cells);
     window.requestAnimationFrame(() => focusCell(nextFocusIndex));
     setError(null);
+    setFailureKind(null);
   };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!complete || pending) {
       setError("Enter the complete six-digit review code.");
+      setFailureKind("invalid");
       return;
     }
 
     const code = cells.join("");
     setCells(emptyReviewAccessCells());
     setError(null);
+    setFailureKind(null);
     setPhase("submitting");
 
     try {
@@ -142,6 +152,9 @@ export function ReviewAccessCodeForm({
       setPhase("success");
     } catch (submitError) {
       setError(safeAuthErrorMessage(submitError, "review-access"));
+      setFailureKind(
+        getAuthErrorCode(submitError) === "rate_limited" ? "rate-limited" : "invalid",
+      );
       setPhase("idle");
       window.requestAnimationFrame(() => focusCell(0));
     }
@@ -150,6 +163,8 @@ export function ReviewAccessCodeForm({
   return (
     <section
       className="yt-review-access-surface"
+      data-phase={phase}
+      data-failure={failureKind ?? undefined}
       aria-labelledby="review-access-heading"
       aria-busy={pending}
       onKeyDown={(event) => {
@@ -201,6 +216,7 @@ export function ReviewAccessCodeForm({
                 value={digit}
                 aria-label={`Review access code digit ${index + 1} of ${REVIEW_ACCESS_CODE_LENGTH}`}
                 aria-invalid={Boolean(error)}
+                aria-errormessage={error ? messageId : undefined}
                 autoFocus={index === 0}
                 onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => applyValue(index, event.currentTarget.value)}
@@ -220,6 +236,8 @@ export function ReviewAccessCodeForm({
                         next[target] = "";
                         return next;
                       });
+                      setError(null);
+                      setFailureKind(null);
                       focusCell(target);
                     }
                   } else if (event.key === "ArrowLeft") {
@@ -260,6 +278,12 @@ export function ReviewAccessCodeForm({
           {pending ? <LoaderCircle className="yt-review-access-spinner" aria-hidden="true" /> : <ShieldCheck aria-hidden="true" />}
           <span>{pending ? "Checking access…" : phase === "success" ? "Opening Meridian OS…" : "Enter review session"}</span>
         </button>
+
+        <ul className="yt-review-access-boundaries" aria-label="Review session boundaries">
+          <li>Short-lived</li>
+          <li>No persistence</li>
+          <li>Local only</li>
+        </ul>
       </form>
     </section>
   );
