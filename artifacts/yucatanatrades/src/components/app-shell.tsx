@@ -46,6 +46,8 @@ import {
   navigableUtilityRoutes,
   primaryWorkspaceRoutes,
   railUtilityRoutes,
+  routeLocationMatches,
+  workspaceRouteForLocation,
   workspaceRoutes,
   type NavigationIconKey,
 } from "@/navigation/workspace-navigation";
@@ -111,8 +113,30 @@ const commandItems = [
 ];
 
 function isRouteActive(location: string, href: string) {
-  if (href === "/overview") return location === "/overview";
-  return location === href || location.startsWith(`${href}/`);
+  const workspaceRoute = workspaceRoutes.find((route) => route.href === href);
+  if (workspaceRoute) {
+    return workspaceRouteForLocation(location)?.id === workspaceRoute.id;
+  }
+  return routeLocationMatches(location, href);
+}
+
+function activateRouteLink(
+  event: React.MouseEvent<HTMLAnchorElement>,
+  href: string,
+  onNavigate: (href: string) => void,
+) {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return;
+  }
+  event.preventDefault();
+  onNavigate(href);
 }
 
 function WorkspaceLink({
@@ -120,11 +144,13 @@ function WorkspaceLink({
   href,
   location,
   indicator,
+  onNavigate,
 }: {
   label: string;
   href: string;
   location: string;
   indicator: string;
+  onNavigate: (href: string) => void;
 }) {
   const active = isRouteActive(location, href);
   return (
@@ -132,6 +158,7 @@ function WorkspaceLink({
       href={href}
       className={active ? "is-active" : undefined}
       aria-current={active ? "page" : undefined}
+      onClick={(event) => activateRouteLink(event, href, onNavigate)}
     >
       <span className="yt-workspace-link-label">{label}</span>
       {active ? (
@@ -225,11 +252,13 @@ function RailLink({
   href,
   icon: Icon,
   active,
+  onNavigate,
 }: {
   label: string;
   href: string;
   icon: React.ElementType;
   active: boolean;
+  onNavigate: (href: string) => void;
 }) {
   const tooltipId = React.useId();
 
@@ -240,6 +269,7 @@ function RailLink({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       aria-describedby={tooltipId}
+      onClick={(event) => activateRouteLink(event, href, onNavigate)}
     >
       {active && (
         <motion.span
@@ -251,29 +281,6 @@ function RailLink({
       <Icon aria-hidden="true" />
       <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
     </Link>
-  );
-}
-
-function NotificationControl() {
-  const tooltipId = React.useId();
-
-  return (
-    <span className="yt-notification-control">
-      <button
-        className="yt-utility-button"
-        type="button"
-        aria-label="Notifications unavailable"
-        aria-describedby={tooltipId}
-        aria-disabled="true"
-        onClick={(event) => event.preventDefault()}
-      >
-        <Bell aria-hidden="true" />
-        <span className="yt-utility-status" aria-hidden="true" />
-      </button>
-      <span id={tooltipId} className="yt-top-utility-tooltip" role="tooltip">
-        Notifications · Deferred
-      </span>
-    </span>
   );
 }
 
@@ -461,9 +468,15 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {compact ? (
-          <button className="yt-rail-link" type="button" aria-label="Open account session menu">
+          <button
+            className="yt-rail-link"
+            type="button"
+            aria-label={`Open account session menu for ${primaryLabel}, ${secondaryLabel}`}
+          >
             <CircleUserRound aria-hidden="true" />
-            <span className="yt-rail-tooltip" role="tooltip">Account session</span>
+            <span className="yt-rail-tooltip" role="tooltip">
+              {primaryLabel} · {secondaryLabel}
+            </span>
           </button>
         ) : (
           <button className="yt-account-control" type="button" aria-label={`Account session for ${primaryLabel}`}>
@@ -492,12 +505,74 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function MobileSessionItems() {
+  const { state, signOut, signOutAllDevices } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [pending, setPending] = React.useState<"current" | "all" | null>(null);
+
+  if (state.kind !== "authenticated") return null;
+
+  const reviewSession = state.session.sessionType === "development_review";
+  const primaryLabel = reviewSession
+    ? "Visual Review"
+    : state.user.displayName?.trim() || state.user.email;
+  const secondaryLabel = reviewSession
+    ? "Local development session"
+    : state.user.email;
+
+  const runSignOut = async (allDevices: boolean) => {
+    setPending(allDevices ? "all" : "current");
+    try {
+      if (allDevices) await signOutAllDevices();
+      else await signOut();
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Secure sign-out unavailable",
+        description: safeAuthErrorMessage(error, "sign-out"),
+        variant: "destructive",
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="yt-account-menu-label">
+        <strong>{primaryLabel}</strong>
+        <span>{secondaryLabel}</span>
+      </DropdownMenuLabel>
+      <DropdownMenuItem
+        disabled={pending !== null}
+        onSelect={() => void runSignOut(false)}
+      >
+        <LogOut aria-hidden="true" />
+        {pending === "current" ? "Signing out…" : "Sign out"}
+      </DropdownMenuItem>
+      {!reviewSession ? (
+        <DropdownMenuItem
+          disabled={pending !== null}
+          onSelect={() => void runSignOut(true)}
+        >
+          <ShieldOff aria-hidden="true" />
+          {pending === "all" ? "Revoking sessions…" : "Sign out all devices"}
+        </DropdownMenuItem>
+      ) : null}
+    </>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [commandOpen, setCommandOpen] = React.useState(false);
   const searchTriggerRef = React.useRef<HTMLButtonElement>(null);
-  const routeContentRef = React.useRef<HTMLDivElement>(null);
+  const routeScrollRef = React.useRef<HTMLElement>(null);
   const pendingRouteFocusRef = React.useRef<string | null>(null);
+  const previousLocationRef = React.useRef(location);
+  const initialRouteRef = React.useRef(true);
   const reducedMotion = useReducedMotion();
 
   React.useEffect(() => {
@@ -525,13 +600,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", updateVisibility);
   }, []);
 
+  React.useLayoutEffect(() => {
+    routeScrollRef.current?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+    const initialRoute = initialRouteRef.current;
+    const locationChanged = previousLocationRef.current !== location;
+    initialRouteRef.current = false;
+    previousLocationRef.current = location;
+    pendingRouteFocusRef.current = location;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      const activeElement = document.activeElement;
+      const documentOwnsFocus =
+        activeElement === document.body ||
+        activeElement === document.documentElement ||
+        activeElement === null;
+      if (
+        pendingRouteFocusRef.current === location &&
+        (locationChanged || !initialRoute || documentOwnsFocus)
+      ) {
+        pendingRouteFocusRef.current = null;
+        routeScrollRef.current?.focus({ preventScroll: true });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [location]);
+
   const goTo = (href: string) => {
     setCommandOpen(false);
     pendingRouteFocusRef.current = href;
     if (href === location) {
       window.requestAnimationFrame(() => {
         pendingRouteFocusRef.current = null;
-        routeContentRef.current?.focus({ preventScroll: true });
+        routeScrollRef.current?.focus({ preventScroll: true });
       });
       return;
     }
@@ -543,6 +648,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.requestAnimationFrame(() => searchTriggerRef.current?.focus());
   }, []);
 
+  const handleRouteScrollKey = (
+    event: React.KeyboardEvent<HTMLElement>,
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.target !== event.currentTarget ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const scrollOwner = event.currentTarget;
+    const pageStep = Math.max(1, Math.round(scrollOwner.clientHeight * 0.82));
+    const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
+    let delta = 0;
+
+    if (event.key === "PageDown" || event.key === " ") delta = pageStep;
+    if (event.key === "PageUp") delta = -pageStep;
+    if (event.key === "ArrowDown") delta = 56;
+    if (event.key === "ArrowUp") delta = -56;
+
+    if (delta !== 0) {
+      event.preventDefault();
+      scrollOwner.scrollBy({ top: delta, behavior });
+      return;
+    }
+
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      scrollOwner.scrollTo({
+        top: event.key === "Home" ? 0 : scrollOwner.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
   return (
     <div className="yt-app">
       <MeridianAtmosphere location={location} reducedMotion={Boolean(reducedMotion)} />
@@ -553,12 +696,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         animate={{ opacity: 1, x: 0 }}
         transition={reducedMotion ? { duration: 0 } : motionTokens.spring.panel}
       >
-        <Link href="/overview" className="yt-rail-brand" aria-label="YucaTanaTrades overview">
+        <Link
+          href="/overview"
+          className="yt-rail-brand"
+          aria-label="YucaTanaTrades overview"
+          onClick={(event) => activateRouteLink(event, "/overview", goTo)}
+        >
           <BrandMark />
         </Link>
         <nav className="yt-rail-routes">
           {railRoutes.map((item) => (
-            <RailLink key={item.href} {...item} active={isRouteActive(location, item.href)} />
+            <RailLink
+              key={item.href}
+              {...item}
+              active={isRouteActive(location, item.href)}
+              onNavigate={goTo}
+            />
           ))}
         </nav>
         <div className="yt-rail-utilities">
@@ -567,6 +720,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={item.href}
               {...item}
               active={isRouteActive(location, item.href)}
+              onNavigate={goTo}
             />
           ))}
           <AccountMenu compact />
@@ -580,15 +734,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           animate={{ opacity: 1, y: 0 }}
           transition={reducedMotion ? { duration: 0 } : { ...motionTokens.spring.panel, delay: motionTokens.delay.topbar }}
         >
-          <Link href="/overview" className="yt-wordmark" aria-label="YucaTanaTrades overview">
+          <Link
+            href="/overview"
+            className="yt-wordmark"
+            aria-label="YucaTanaTrades overview"
+            onClick={(event) => activateRouteLink(event, "/overview", goTo)}
+          >
             YUCATANATRADES
           </Link>
           <nav className="yt-topnav yt-topnav-wide" aria-label="Workspace navigation">
-            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" />)}
+            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-wide" onNavigate={goTo} />)}
             <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-wide" />
           </nav>
           <nav className="yt-topnav yt-topnav-compact" aria-label="Workspace navigation">
-            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" />)}
+            {primaryTopRoutes.map((route) => <WorkspaceLink key={route.href} {...route} location={location} indicator="yt-topnav-active-compact" onNavigate={goTo} />)}
             <WorkspaceMoreMenu location={location} onNavigate={goTo} indicator="yt-topnav-active-compact" />
           </nav>
           <div className="yt-tablet-workspaces">
@@ -618,19 +777,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span>Jump to a workspace…</span>
             <kbd><Command aria-hidden="true" />K</kbd>
           </button>
-          <div className="yt-top-utilities">
-            <NotificationControl />
-            <AccountMenu />
-          </div>
         </motion.header>
 
-        <main className="yt-route-frame">
+        <main
+          ref={routeScrollRef}
+          className="yt-route-frame"
+          tabIndex={-1}
+          data-scroll-owner="authenticated-route"
+          aria-label="Meridian OS workspace content"
+          onKeyDown={handleRouteScrollKey}
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
-              ref={routeContentRef}
               key={location}
               className="yt-route-content"
-              tabIndex={-1}
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={
@@ -641,11 +801,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               transition={reducedMotion
                 ? { duration: 0.06 }
                 : { duration: motionTokens.duration.route, ease: motionTokens.ease.out }}
-              onAnimationComplete={() => {
-                if (pendingRouteFocusRef.current !== location) return;
-                pendingRouteFocusRef.current = null;
-                routeContentRef.current?.focus({ preventScroll: true });
-              }}
             >
               <RouteErrorBoundary route={location}>
                 {children}
@@ -660,7 +815,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           const active = isRouteActive(location, route.href);
           const Icon = route.icon;
           return (
-            <Link key={route.href} href={route.href} className={active ? "is-active" : undefined} aria-current={active ? "page" : undefined}>
+            <Link
+              key={route.href}
+              href={route.href}
+              className={active ? "is-active" : undefined}
+              aria-current={active ? "page" : undefined}
+              onClick={(event) => activateRouteLink(event, route.href, goTo)}
+            >
               <Icon aria-hidden="true" /><span>{route.label}</span>
             </Link>
           );
@@ -685,6 +846,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <route.icon aria-hidden="true" /> {route.label}
               </DropdownMenuItem>
             ))}
+            <MobileSessionItems />
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>

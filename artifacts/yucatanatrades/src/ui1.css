@@ -217,6 +217,7 @@ button:disabled {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
   border: 1px solid rgba(241, 211, 154, 0.48);
   border-radius: 11px;
   background:
@@ -262,6 +263,7 @@ button:disabled {
   flex: 1 1 auto;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   height: calc(100dvh - 22px);
 }
 
@@ -481,16 +483,19 @@ button:disabled {
 .yt-route-frame {
   position: relative;
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 158, 166, 0.28) transparent;
 }
 
 .yt-route-content {
-  position: absolute;
-  inset: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 158, 166, 0.28) transparent;
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .yt-command-backdrop {

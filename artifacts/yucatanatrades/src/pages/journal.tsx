@@ -79,7 +79,7 @@ export default function Journal() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="min-h-full p-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">

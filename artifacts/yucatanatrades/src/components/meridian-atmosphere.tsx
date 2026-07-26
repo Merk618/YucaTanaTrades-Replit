@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { motionTokens } from "@/lib/motion";
+import { workspaceRouteForLocation } from "@/navigation/workspace-navigation";
 
 type LayerPosition = readonly [x: number, y: number, scale: number];
 
@@ -80,13 +81,9 @@ const profiles: Record<string, AtmosphereProfile> = {
 };
 
 function profileForRoute(location: string): AtmosphereProfile {
-  if (location === "/" || location.startsWith("/overview")) return profiles.overview;
-  if (location.startsWith("/markets")) return profiles.markets;
-  if (location.startsWith("/charts")) return profiles.charts;
-  if (location.startsWith("/portfolio")) return profiles.portfolio;
-  if (location.startsWith("/research")) return profiles.research;
-  if (location.startsWith("/news")) return profiles.news;
-  if (location.startsWith("/ai-lab")) return profiles["ai-hub"];
+  if (location === "/") return profiles.overview;
+  const workspaceRoute = workspaceRouteForLocation(location);
+  if (workspaceRoute) return profiles[workspaceRoute.id];
   if (location.startsWith("/settings")) return profiles.settings;
   return profiles.utility;
 }

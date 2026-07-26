@@ -1,16 +1,30 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
+import { AppRouter } from "../App";
 import {
   publicSiteNavigation,
 } from "../components/public/public-site-shell";
 import PublicLandingPage from "./public-landing";
 
+vi.mock("../auth/auth-provider", () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAuth: () => ({ state: { kind: "guest" } }),
+}));
+
 function renderLanding(): string {
   return renderToStaticMarkup(
     <Router ssrPath="/">
       <PublicLandingPage />
+    </Router>,
+  );
+}
+
+function renderPublicAppRoot(): string {
+  return renderToStaticMarkup(
+    <Router ssrPath="/">
+      <AppRouter />
     </Router>,
   );
 }
@@ -72,6 +86,30 @@ describe("UI-2.4 public experience contract", () => {
     expect(text).toContain("Market intelligence,");
     expect(text).toContain("organized around the");
     expect(text).toContain("next decision.");
+  });
+
+  it("keeps the public root outside the authenticated shell", () => {
+    const markup = renderPublicAppRoot();
+
+    expect(markup).toContain('class="yt-public-root yt24-root"');
+    expect(markup).not.toContain('class="yt-app"');
+    expect(markup).not.toContain("yt-topbar");
+    expect(markup).not.toContain("yt-icon-rail");
+    expect(markup).not.toContain('data-scroll-owner="authenticated-route"');
+    expect(markup).not.toContain("Global utilities");
+    expect(markup).not.toContain("Account session");
+  });
+
+  it("contains a deliberate multi-section narrative beyond the opening hero", () => {
+    const markup = renderLanding();
+    const sectionCount = Array.from(markup.matchAll(/<section\b/g)).length;
+    const footerPosition = markup.indexOf("<footer");
+    const lastSectionPosition = markup.lastIndexOf("<section");
+
+    expect(sectionCount).toBeGreaterThanOrEqual(7);
+    expect(lastSectionPosition).toBeGreaterThan(markup.indexOf("<main"));
+    expect(footerPosition).toBeGreaterThan(lastSectionPosition);
+    expect(markup).toContain('id="trust"');
   });
 
   it("keeps the exact public navigation contract and real anchor destinations", () => {

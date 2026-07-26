@@ -82,7 +82,12 @@ export function OverviewIntelligenceBand() {
               </div>
             ))}
           </div>
-          <p>{focus === "market" ? "Breadth and contained volatility support the expansion sample." : "Concentration remains the primary portfolio review point."}</p>
+          <p>
+            <strong>Next actions · </strong>
+            {focus === "market"
+              ? "Review breadth beside the fixed benchmark before opening Markets."
+              : "Review concentration and provider boundaries before opening Portfolio."}
+          </p>
         </article>
 
         <article className="yt-overview-module is-concentration">

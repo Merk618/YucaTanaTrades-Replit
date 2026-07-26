@@ -100,7 +100,7 @@ export const workspaceRoutes = [
     id: "ai-hub",
     label: "AI Hub",
     href: "/ai-lab",
-    aliases: [],
+    aliases: ["/ai-hub"],
     icon: "ai",
     desktopPlacement: "more",
     description: "Meridian synthesis in a provider-neutral workspace",
@@ -111,19 +111,53 @@ export const workspaceRoutes = [
 
 export type WorkspaceRouteId = (typeof workspaceRoutes)[number]["id"];
 
+export function routeLocationMatches(location: string, href: string) {
+  const path = location.split(/[?#]/, 1)[0] || "/";
+  if (href === "/") return path === "/";
+  return path === href || path.startsWith(`${href}/`);
+}
+
+export function workspaceRouteForLocation(location: string) {
+  return workspaceRoutes.find((route) =>
+    [route.href, ...route.aliases].some((path) =>
+      routeLocationMatches(location, path),
+    ),
+  );
+}
+
 export interface UtilityRouteDefinition {
   id: string;
   label: string;
   href: string;
   icon: NavigationIconKey;
   placement: "rail" | "footer" | "hidden";
-  access: "deferred" | "persistent_user" | "session";
-  status: "Deferred" | "Unavailable";
+  access:
+    | "deferred"
+    | "provider_unavailable"
+    | "persistent_user"
+    | "session";
+  classification:
+    | "Implemented"
+    | "Review Access restricted"
+    | "Provider unavailable"
+    | "Deferred";
+  status:
+    | "Implemented"
+    | "Review Access restricted"
+    | "Provider unavailable"
+    | "Deferred";
   title: string;
   description: string;
   commandLabel: string;
   commandDetail: string;
   recoveryHref: "/overview";
+  availableNow: string;
+  futureCapability: string;
+  alternativeHref: string;
+  alternativeLabel: string;
+  providerClass?: string;
+  providerState?: string;
+  configurationLocation?: string;
 }
 
 export const utilityRoutes = [
@@ -133,14 +167,24 @@ export const utilityRoutes = [
     href: "/ask-meridian",
     icon: "ask",
     placement: "rail",
-    access: "deferred",
-    status: "Deferred",
+    access: "provider_unavailable",
+    classification: "Provider unavailable",
+    status: "Provider unavailable",
     title: "Ask Meridian is not connected",
     description:
       "The conversational utility is reserved for a future approved model provider. No prompt is sent and no answer is fabricated.",
     commandLabel: "Open Ask Meridian",
     commandDetail: "Deferred · no model request",
     recoveryHref: "/overview",
+    availableNow:
+      "Research, News, and AI Hub continue to expose deterministic context and explicit provider boundaries without making a model request.",
+    futureCapability:
+      "Source-aware questions and cited synthesis after an approved model provider is connected.",
+    alternativeHref: "/research",
+    alternativeLabel: "Open Research",
+    providerClass: "Approved AI model and citation provider",
+    providerState: "Not configured",
+    configurationLocation: "Settings · Application & integrations",
   },
   {
     id: "scan",
@@ -149,13 +193,20 @@ export const utilityRoutes = [
     icon: "scan",
     placement: "rail",
     access: "persistent_user",
-    status: "Unavailable",
+    classification: "Review Access restricted",
+    status: "Review Access restricted",
     title: "Scanner data is unavailable in Local review",
     description:
       "Scanning requires a persistent user session and approved market-data access. This development-review session has neither.",
     commandLabel: "Open scanner",
     commandDetail: "Persistent user data required",
     recoveryHref: "/overview",
+    availableNow:
+      "The provider-neutral Markets workspace and its fixed historical structures remain available for visual review.",
+    futureCapability:
+      "Owned scan definitions, provider-backed results, freshness, and review history for persistent users.",
+    alternativeHref: "/markets",
+    alternativeLabel: "Review Markets",
   },
   {
     id: "watchlist",
@@ -164,13 +215,20 @@ export const utilityRoutes = [
     icon: "watchlist",
     placement: "rail",
     access: "persistent_user",
-    status: "Unavailable",
+    classification: "Review Access restricted",
+    status: "Review Access restricted",
     title: "Watchlist persistence is unavailable in Local review",
     description:
       "The development-review principal has no stored user record or owned watchlist. No symbols or results are invented.",
     commandLabel: "Open watchlist",
     commandDetail: "Persistent user data required",
     recoveryHref: "/overview",
+    availableNow:
+      "Fixed watchlist context remains visible in Charts and News without creating or storing an owned list.",
+    futureCapability:
+      "Owned symbol lists, saved context, and provider-backed observations tied to a persistent user.",
+    alternativeHref: "/markets",
+    alternativeLabel: "Review Markets",
   },
   {
     id: "alerts",
@@ -178,14 +236,24 @@ export const utilityRoutes = [
     href: "/alerts",
     icon: "alerts",
     placement: "rail",
-    access: "deferred",
-    status: "Deferred",
-    title: "Alerts are deferred",
+    access: "provider_unavailable",
+    classification: "Provider unavailable",
+    status: "Provider unavailable",
+    title: "Alert monitoring is not connected",
     description:
       "Monitoring, delivery, and provider-backed alert evaluation are not configured. No alert events are fabricated.",
     commandLabel: "Open alerts",
     commandDetail: "Deferred · no monitoring provider",
     recoveryHref: "/overview",
+    availableNow:
+      "Risk, portfolio, and market Demo context remains readable, but no background monitor evaluates or delivers an alert.",
+    futureCapability:
+      "Owned alert rules, provider-backed evaluation, delivery status, and revocation controls.",
+    alternativeHref: "/markets",
+    alternativeLabel: "Review Markets",
+    providerClass: "Market monitoring and notification delivery",
+    providerState: "Not configured",
+    configurationLocation: "Settings · Notifications & alerts",
   },
   {
     id: "journal",
@@ -194,13 +262,20 @@ export const utilityRoutes = [
     icon: "journal",
     placement: "rail",
     access: "persistent_user",
-    status: "Unavailable",
+    classification: "Review Access restricted",
+    status: "Review Access restricted",
     title: "Journal persistence is unavailable in Local review",
     description:
       "Private notes require a persistent, server-derived user identity. The development-review principal stores no journal records.",
     commandLabel: "Open journal",
     commandDetail: "Persistent user data required",
     recoveryHref: "/overview",
+    availableNow:
+      "The Research workspace remains available for reviewing deterministic dossiers without saving private notes.",
+    futureCapability:
+      "Private research notes, decision records, and owned review history for a persistent user.",
+    alternativeHref: "/research",
+    alternativeLabel: "Open Research",
   },
   {
     id: "calendar",
@@ -208,14 +283,24 @@ export const utilityRoutes = [
     href: "/calendar",
     icon: "calendar",
     placement: "rail",
-    access: "deferred",
-    status: "Deferred",
-    title: "Calendar intelligence is deferred",
+    access: "provider_unavailable",
+    classification: "Provider unavailable",
+    status: "Provider unavailable",
+    title: "Calendar intelligence is not connected",
     description:
       "No approved calendar provider is connected. No events, dates, or market catalysts are fabricated.",
     commandLabel: "Open calendar",
     commandDetail: "Deferred · provider unavailable",
     recoveryHref: "/overview",
+    availableNow:
+      "Overview keeps the catalyst area visibly unavailable, with no invented events, dates, or freshness claims.",
+    futureCapability:
+      "Sourced economic and company events with freshness, provenance, and workspace relevance.",
+    alternativeHref: "/news",
+    alternativeLabel: "Review News",
+    providerClass: "Economic and company-event calendar",
+    providerState: "Not configured",
+    configurationLocation: "Settings · Data providers & health",
   },
   {
     id: "settings",
@@ -224,12 +309,20 @@ export const utilityRoutes = [
     icon: "settings",
     placement: "footer",
     access: "session",
-    status: "Unavailable",
-    title: "Settings are unavailable",
-    description: "Session settings could not be opened.",
+    classification: "Implemented",
+    status: "Implemented",
+    title: "Settings",
+    description:
+      "Session, provider-health, application, privacy, and display controls are available within their truthful local-development boundaries.",
     commandLabel: "Open settings",
     commandDetail: "Session, truth, and display controls",
     recoveryHref: "/overview",
+    availableNow:
+      "Current-session context, provider status, preferences, motion, privacy, and application-state surfaces are available.",
+    futureCapability:
+      "Session, display, provider-boundary, and user-owned preference controls.",
+    alternativeHref: "/overview",
+    alternativeLabel: "Return to Overview",
   },
   {
     id: "help",
@@ -238,6 +331,7 @@ export const utilityRoutes = [
     icon: "help",
     placement: "footer",
     access: "deferred",
+    classification: "Deferred",
     status: "Deferred",
     title: "Help center is deferred",
     description:
@@ -245,6 +339,12 @@ export const utilityRoutes = [
     commandLabel: "Open help",
     commandDetail: "Deferred · documentation foundation",
     recoveryHref: "/overview",
+    availableNow:
+      "Route-level provenance, security boundaries, and capability-state explanations remain available throughout Meridian OS.",
+    futureCapability:
+      "Product guidance, security documentation, support boundaries, and versioned release notes.",
+    alternativeHref: "/overview",
+    alternativeLabel: "Return to Overview",
   },
   {
     id: "bots",
@@ -253,13 +353,20 @@ export const utilityRoutes = [
     icon: "bots",
     placement: "hidden",
     access: "persistent_user",
-    status: "Unavailable",
+    classification: "Review Access restricted",
+    status: "Review Access restricted",
     title: "Automation is unavailable in Local review",
     description:
       "Automation requires a persistent user identity and provider configuration. Review Access grants neither.",
     commandLabel: "Open automation",
     commandDetail: "Persistent user data required",
     recoveryHref: "/overview",
+    availableNow:
+      "No automation runs in Local review; the Overview and Markets surfaces remain available as read-only context.",
+    futureCapability:
+      "Owned automation definitions, provider state, audit history, and explicit execution boundaries.",
+    alternativeHref: "/overview",
+    alternativeLabel: "Return to Overview",
   },
   {
     id: "risk",
@@ -268,13 +375,20 @@ export const utilityRoutes = [
     icon: "risk",
     placement: "hidden",
     access: "persistent_user",
-    status: "Unavailable",
+    classification: "Review Access restricted",
+    status: "Review Access restricted",
     title: "Account risk is unavailable in Local review",
     description:
       "User-owned positions and risk thresholds require a persistent user identity. No account state is fabricated.",
     commandLabel: "Open risk",
     commandDetail: "Persistent user data required",
     recoveryHref: "/overview",
+    availableNow:
+      "The Portfolio Demo and its clearly labeled concentration context remain available without loading owned positions.",
+    futureCapability:
+      "Owned exposure, thresholds, scenario context, and provider-backed portfolio risk.",
+    alternativeHref: "/portfolio",
+    alternativeLabel: "Review Portfolio",
   },
 ] as const satisfies readonly UtilityRouteDefinition[];
 
@@ -288,6 +402,7 @@ export type ReviewSessionType = "guest" | "user" | "development_review";
 export type UtilityAvailability =
   | "available"
   | "deferred"
+  | "provider_unavailable"
   | "persistent_user_required";
 
 export const primaryWorkspaceRoutes = workspaceRoutes.filter(
@@ -324,6 +439,7 @@ export function utilityAvailabilityForSession(
   sessionType: ReviewSessionType,
 ): UtilityAvailability {
   if (route.access === "deferred") return "deferred";
+  if (route.access === "provider_unavailable") return "provider_unavailable";
   if (
     route.access === "persistent_user" &&
     sessionType === "development_review"

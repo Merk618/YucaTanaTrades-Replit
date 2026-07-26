@@ -115,7 +115,7 @@
 
 @media (min-width: 1360px) {
   .yt-topbar {
-    grid-template-columns: minmax(205px, 230px) minmax(550px, 1fr) minmax(230px, 300px) auto;
+    grid-template-columns: minmax(205px, 230px) minmax(550px, 1fr) minmax(230px, 300px);
   }
 }
 
@@ -124,7 +124,7 @@
   .yt-topnav-compact { display: flex; }
 
   .yt-topbar {
-    grid-template-columns: 150px minmax(430px, 1fr) minmax(165px, 235px) auto;
+    grid-template-columns: 150px minmax(430px, 1fr) minmax(165px, 235px);
     gap: 8px;
   }
 
@@ -147,20 +147,7 @@
   .yt-wordmark { display: none; }
 
   .yt-topbar {
-    grid-template-columns: minmax(430px, 1fr) minmax(160px, 225px) auto;
-  }
-
-  .yt-account-control {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
-    grid-template-columns: 1fr;
-    padding: 5px;
-  }
-
-  .yt-account-control span,
-  .yt-account-control > svg:last-child {
-    display: none;
+    grid-template-columns: minmax(430px, 1fr) minmax(160px, 225px);
   }
 }
 
@@ -169,7 +156,7 @@
   .yt-tablet-workspaces { display: block; }
 
   .yt-topbar {
-    grid-template-columns: minmax(142px, 190px) minmax(150px, 1fr) auto;
+    grid-template-columns: minmax(142px, 190px) minmax(150px, 1fr);
     gap: 8px;
   }
 
@@ -198,7 +185,7 @@
   }
 
   .yt-topbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     min-height: 54px;
     height: 54px;
     gap: 7px;
@@ -218,22 +205,6 @@
   .yt-search-trigger > span::after {
     content: "Search Meridian";
     font-size: 9.5px;
-  }
-
-  .yt-top-utilities { gap: 6px; }
-  .yt-utility-button { display: none; }
-
-  .yt-account-control {
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
-    height: 38px;
-    padding: 4px;
-  }
-
-  .yt-account-control > svg:first-child {
-    width: 28px;
-    height: 28px;
   }
 
   .yt-route-frame { border-radius: 13px; }

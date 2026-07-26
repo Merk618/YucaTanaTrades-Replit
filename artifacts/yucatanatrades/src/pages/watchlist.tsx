@@ -119,7 +119,7 @@ export default function Watchlist() {
   const losers = items.filter((i) => (quoteBySymbol[i.ticker]?.changePercent ?? 0) < 0).length;
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="min-h-full p-6 space-y-6">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-1">

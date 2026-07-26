@@ -62,7 +62,7 @@ export default function Bots() {
   const crypto = botsData?.cryptoHunter ?? { name: "Crypto Hunter Bot", status: "scanning", lastScan: "Just now", scansToday: 31, isReadOnly: true, lastResult: "BTC momentum building — monitoring for breakout confirmation", health: "good" };
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="min-h-full p-6 space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">

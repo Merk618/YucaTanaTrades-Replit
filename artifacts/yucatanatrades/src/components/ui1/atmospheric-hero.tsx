@@ -435,7 +435,11 @@ export function AtmosphericHero({ data }: { data: MarketBriefing }) {
             <span>{data.greeting}</span>
             <SunMedium aria-hidden="true" />
           </div>
-          <TruthBadge state={data.dataState} label="Demo briefing" compact />
+          <TruthBadge
+            state={data.dataState}
+            label="Morning Briefing · Demo"
+            compact
+          />
         </motion.div>
         <motion.h1 id="yt-briefing-title" variants={briefingItem}>{data.title}</motion.h1>
         <motion.p variants={briefingItem}>{data.summary}</motion.p>

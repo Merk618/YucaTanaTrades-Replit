@@ -87,7 +87,7 @@ function UtilityRoute({ route }: { route: UtilityRouteDefinition }) {
   return <Component />;
 }
 
-function WorkspaceRoutes() {
+export function WorkspaceRoutes() {
   return (
     <AppShell>
       <Switch>
@@ -120,7 +120,7 @@ function PublicHomeRoute() {
   return <PublicLandingPage />;
 }
 
-function Router() {
+export function AppRouter() {
   return (
     <Switch>
       <Route path="/">
@@ -155,7 +155,7 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
+              <AppRouter />
             </WouterRouter>
             <AuthEntryTransition />
             <Toaster />

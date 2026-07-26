@@ -89,16 +89,49 @@ describe("Meridian workspace navigation registry", () => {
     const deferred = utilityRoutes.filter(
       (route) => route.access === "deferred",
     );
-    expect(deferred.map((route) => route.label)).toEqual([
+    expect(deferred.map((route) => route.label)).toEqual(["Help"]);
+    for (const route of deferred) {
+      expect(route.classification).toBe("Deferred");
+      expect(route.status).toBe("Deferred");
+      expect(route.description).toMatch(/No |not |deferred|not been/i);
+      expect(route.availableNow.length).toBeGreaterThan(20);
+      expect(route.recoveryHref).toBe("/overview");
+    }
+  });
+
+  it("classifies provider boundaries and implemented settings explicitly", () => {
+    const providerUnavailable = utilityRoutes.filter(
+      (route) => route.access === "provider_unavailable",
+    );
+    expect(providerUnavailable.map((route) => route.label)).toEqual([
       "Ask Meridian",
       "Alerts",
       "Calendar",
-      "Help",
     ]);
-    for (const route of deferred) {
-      expect(route.status).toBe("Deferred");
-      expect(route.description).toMatch(/No |not |deferred|not been/i);
-      expect(route.recoveryHref).toBe("/overview");
+    for (const route of providerUnavailable) {
+      expect(route.classification).toBe("Provider unavailable");
+      expect(route.status).toBe("Provider unavailable");
+      expect(route.providerClass).toBeTruthy();
+      expect(route.providerState).toBe("Not configured");
+      expect(route.configurationLocation).toMatch(/^Settings/);
+      expect(route.availableNow.length).toBeGreaterThan(20);
+    }
+
+    const settings = utilityRoutes.find((route) => route.id === "settings");
+    expect(settings?.classification).toBe("Implemented");
+    expect(settings?.status).toBe("Implemented");
+  });
+
+  it("assigns exactly one approved classification to every utility", () => {
+    const approvedClassifications = new Set([
+      "Implemented",
+      "Review Access restricted",
+      "Provider unavailable",
+      "Deferred",
+    ]);
+
+    for (const route of utilityRoutes) {
+      expect(approvedClassifications.has(route.classification)).toBe(true);
     }
   });
 
@@ -109,9 +142,12 @@ describe("Meridian workspace navigation registry", () => {
         "development_review",
       );
       if (route.access === "persistent_user") {
+        expect(route.classification).toBe("Review Access restricted");
         expect(availability).toBe("persistent_user_required");
       } else if (route.access === "deferred") {
         expect(availability).toBe("deferred");
+      } else if (route.access === "provider_unavailable") {
+        expect(availability).toBe("provider_unavailable");
       } else {
         expect(availability).toBe("available");
       }

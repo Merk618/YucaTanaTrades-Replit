@@ -540,9 +540,10 @@
 }
 
 .yt-ui2-market-analytics-grid > *:nth-child(4),
-.yt-ui2-market-analytics-grid > *:nth-child(5) {
+.yt-ui2-market-analytics-grid > *:nth-child(5),
+.yt-ui2-market-analytics-grid > *:nth-child(6) {
   min-height: 238px;
-  grid-column: span 3;
+  grid-column: span 2;
 }
 
 .yt-ui2-sector-list {
@@ -1400,12 +1401,13 @@
 
   .yt-ui2-market-analytics-grid > *,
   .yt-ui2-market-analytics-grid > *:nth-child(4),
-  .yt-ui2-market-analytics-grid > *:nth-child(5) {
+  .yt-ui2-market-analytics-grid > *:nth-child(5),
+  .yt-ui2-market-analytics-grid > *:nth-child(6) {
     grid-column: auto;
   }
 
   .yt-ui2-market-analytics-grid > *:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .yt-ui2-chart-analysis-grid {

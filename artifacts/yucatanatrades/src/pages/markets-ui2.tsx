@@ -5,6 +5,7 @@ import {
   Bitcoin,
   Clock3,
   Coins,
+  Eye,
   Gauge,
   Landmark,
   Layers3,
@@ -189,6 +190,37 @@ function BreadthPanel() {
   );
 }
 
+function OpportunityContextPanel() {
+  return (
+    <motion.article className="yt-ui2-panel yt-ui2-list-panel" variants={panelReveal}>
+      <MarketPanelHeading
+        icon={Eye}
+        title="Opportunity watchlist context"
+        detail="Static ranked examples"
+        state="Demo"
+        tone="demo"
+      />
+      <div className="yt-ui2-instrument-list">
+        {dashboardDemo.opportunities.items.map((item) => (
+          <div key={item.symbol}>
+            <span>
+              <strong>{item.symbol}</strong>
+              <small>{item.company}</small>
+            </span>
+            <span>
+              <b>Rank {item.rank}</b>
+              <Delta value={item.changePercent} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="yt-ui2-panel-note">
+        Fixed Demo ordering · no scan, provider request, or confidence claim.
+      </p>
+    </motion.article>
+  );
+}
+
 function RatesPanel() {
   return (
     <motion.article className="yt-ui2-panel yt-ui2-list-panel" variants={panelReveal}>
@@ -297,6 +329,7 @@ export function MarketsRoute() {
       <div className="yt-ui2-market-analytics-grid">
         <SectorPanel />
         <BreadthPanel />
+        <OpportunityContextPanel />
         <RatesPanel />
         <CommoditiesPanel />
         <CryptoPanel />

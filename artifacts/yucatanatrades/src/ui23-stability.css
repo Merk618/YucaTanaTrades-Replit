@@ -37,6 +37,51 @@
   line-height: 1.35;
 }
 
+.yt-utility-boundary-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.yt-utility-boundary-detail article {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(134, 178, 184, 0.13);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, rgba(14, 39, 49, 0.62), rgba(4, 20, 28, 0.48));
+}
+
+.yt-utility-boundary-detail span {
+  color: var(--yt-gold);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.yt-utility-boundary-detail h3 {
+  margin: 0;
+  color: var(--yt-text);
+  font-size: 10px;
+  font-weight: 560;
+}
+
+.yt-utility-boundary-detail p {
+  margin: 0;
+  color: var(--yt-text-muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.yt-utility-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .yt-utility-return,
 .yt-route-failure-actions a,
 .yt-route-failure-actions button {
@@ -55,6 +100,12 @@
   font-size: 9px;
   text-decoration: none;
   cursor: pointer;
+}
+
+.yt-utility-return.is-secondary {
+  border-color: rgba(134, 178, 184, 0.2);
+  background: rgba(101, 174, 185, 0.055);
+  color: var(--yt-text-secondary);
 }
 
 .yt-utility-return svg,
@@ -175,6 +226,11 @@
   }
 
   .yt-utility-truth-list {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .yt-utility-boundary-detail {
     grid-template-columns: 1fr;
     width: 100%;
   }
