@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Route, Router, Switch } from "wouter";
 import {
+  dockUtilityRoutes,
   footerUtilityRoutes,
   moreWorkspaceRoutes,
   navigableUtilityRoutes,
@@ -56,24 +57,70 @@ describe("Meridian workspace navigation registry", () => {
     ]);
   });
 
-  it("registers each rail and footer control as a real, unique destination", () => {
+  it("keeps the visible utility dock compact while preserving unique deep-link routes", () => {
     expect(railUtilityRoutes.map((route) => route.label)).toEqual([
-      "Ask Meridian",
       "Scan",
       "Watchlist",
       "Alerts",
-      "Journal",
-      "Calendar",
     ]);
     expect(footerUtilityRoutes.map((route) => route.label)).toEqual([
       "Settings",
       "Help",
+    ]);
+    expect(dockUtilityRoutes.map((route) => route.label)).toEqual([
+      "Scan",
+      "Watchlist",
+      "Alerts",
+      "Settings",
+      "Help",
+    ]);
+    expect(navigableUtilityRoutes.map((route) => route.label)).toEqual([
+      "Scan",
+      "Watchlist",
+      "Alerts",
+      "Settings",
+      "Help",
+    ]);
+    expect(
+      utilityRoutes
+        .filter((route) => route.placement === "hidden")
+        .map((route) => route.label),
+    ).toEqual([
+      "Ask Meridian",
+      "Journal",
+      "Calendar",
+      "Automation",
+      "Risk",
     ]);
 
     const ids = utilityRoutes.map((route) => route.id);
     const paths = utilityRoutes.map((route) => route.href);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("assigns compact surfaces to Scan, Watchlist, Alerts, and Help while Settings remains a route", () => {
+    expect(
+      Object.fromEntries(
+        dockUtilityRoutes.map((route) => [route.id, route.presentation]),
+      ),
+    ).toEqual({
+      scan: "scan_drawer",
+      watchlist: "watchlist_drawer",
+      alerts: "alerts_center",
+      settings: "route",
+      help: "help_panel",
+    });
+  });
+
+  it("does not expose Calendar or Journal as primary dock destinations", () => {
+    const visibleIds = new Set<string>(
+      dockUtilityRoutes.map((route) => route.id),
+    );
+    expect(visibleIds.has("calendar")).toBe(false);
+    expect(visibleIds.has("journal")).toBe(false);
+    expect(protectedRoutePaths).toContain("/calendar");
+    expect(protectedRoutePaths).toContain("/journal");
   });
 
   it("does not duplicate a primary workspace in the utility rail", () => {

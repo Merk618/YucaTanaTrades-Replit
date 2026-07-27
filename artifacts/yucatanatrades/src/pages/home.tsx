@@ -27,29 +27,38 @@ export default function Home() {
         <div className="yt-primary-stack">
           <AtmosphericHero data={dashboardDemo.briefing} />
           <PortfolioBand data={dashboardDemo.portfolio} />
-          <MarketChart data={previewChartData} />
-          <SupportingAnalytics
-            breadth={{
-              advancing: dashboardDemo.breadth.advancingPercent,
-              declining: dashboardDemo.breadth.decliningPercent,
-              unchanged: dashboardDemo.breadth.unchangedPercent,
-              stateLabel: "Demo",
-            }}
-            heatmap={dashboardDemo.heatmap.cells.map((cell) => ({
-              sector: cell.sector,
-              changePercent: cell.changePercent,
-              weight: cell.weight,
-            }))}
-            watchlist={{
-              stateLabel: "Demo",
-              items: dashboardDemo.watchlist.items.map((item) => ({
-                symbol: item.symbol,
-                company: item.company,
-                price: item.displayPrice,
-                changePercent: item.changePercent,
-              })),
-            }}
-          />
+          <section
+            className="yt-overview-analysis-row"
+            aria-label="Primary market analysis and supporting context"
+          >
+            <div className="yt-overview-chart-column">
+              <MarketChart data={previewChartData} />
+            </div>
+            <div className="yt-overview-analysis-context">
+              <SupportingAnalytics
+                breadth={{
+                  advancing: dashboardDemo.breadth.advancingPercent,
+                  declining: dashboardDemo.breadth.decliningPercent,
+                  unchanged: dashboardDemo.breadth.unchangedPercent,
+                  stateLabel: "Demo",
+                }}
+                heatmap={dashboardDemo.heatmap.cells.map((cell) => ({
+                  sector: cell.sector,
+                  changePercent: cell.changePercent,
+                  weight: cell.weight,
+                }))}
+                watchlist={{
+                  stateLabel: "Demo",
+                  items: dashboardDemo.watchlist.items.map((item) => ({
+                    symbol: item.symbol,
+                    company: item.company,
+                    price: item.displayPrice,
+                    changePercent: item.changePercent,
+                  })),
+                }}
+              />
+            </div>
+          </section>
         </div>
 
         <IntelligenceRail

@@ -41,17 +41,24 @@ import { motionTokens } from "@/lib/motion";
 import { MeridianAtmosphere } from "@/components/meridian-atmosphere";
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import {
+  isCompactUtilitySurfaceId,
+  UtilityDockSurfaces,
+  type CompactUtilitySurfaceId,
+} from "@/components/utility-dock-surfaces";
+import {
   footerUtilityRoutes,
   moreWorkspaceRoutes,
   navigableUtilityRoutes,
   primaryWorkspaceRoutes,
   railUtilityRoutes,
   routeLocationMatches,
+  utilityRoutes,
   workspaceRouteForLocation,
   workspaceRoutes,
   type NavigationIconKey,
 } from "@/navigation/workspace-navigation";
 import "../meridian-eclipse-shell.css";
+import "../ui25-utility-dock.css";
 
 const navigationIcons = {
   home: Home,
@@ -247,30 +254,31 @@ export function BrandMark() {
   );
 }
 
-function RailLink({
+function RailControl({
+  id,
   label,
   href,
   icon: Icon,
+  presentation,
   active,
   onNavigate,
+  onOpenSurface,
 }: {
+  id: string;
   label: string;
   href: string;
   icon: React.ElementType;
+  presentation: string;
   active: boolean;
   onNavigate: (href: string) => void;
+  onOpenSurface: (
+    surface: CompactUtilitySurfaceId,
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const tooltipId = React.useId();
-
-  return (
-    <Link
-      href={href}
-      className="yt-rail-link"
-      aria-label={label}
-      aria-current={active ? "page" : undefined}
-      aria-describedby={tooltipId}
-      onClick={(event) => activateRouteLink(event, href, onNavigate)}
-    >
+  const contents = (
+    <>
       {active && (
         <motion.span
           layoutId="yt-active-route"
@@ -280,6 +288,36 @@ function RailLink({
       )}
       <Icon aria-hidden="true" />
       <span id={tooltipId} className="yt-rail-tooltip" role="tooltip">{label}</span>
+    </>
+  );
+
+  if (presentation !== "route" && isCompactUtilitySurfaceId(id)) {
+    return (
+      <button
+        className="yt-rail-link"
+        type="button"
+        aria-label={label}
+        aria-pressed={active}
+        aria-describedby={tooltipId}
+        data-utility-dock-control={id}
+        onClick={(event) => onOpenSurface(id, event.currentTarget)}
+      >
+        {contents}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className="yt-rail-link"
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      aria-describedby={tooltipId}
+      data-utility-dock-control={id}
+      onClick={(event) => activateRouteLink(event, href, onNavigate)}
+    >
+      {contents}
     </Link>
   );
 }
@@ -472,6 +510,7 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
             className="yt-rail-link"
             type="button"
             aria-label={`Open account session menu for ${primaryLabel}, ${secondaryLabel}`}
+            data-utility-dock-control="account"
           >
             <CircleUserRound aria-hidden="true" />
             <span className="yt-rail-tooltip" role="tooltip">
@@ -568,7 +607,10 @@ function MobileSessionItems() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const [commandOpen, setCommandOpen] = React.useState(false);
+  const [utilitySurface, setUtilitySurface] =
+    React.useState<CompactUtilitySurfaceId | null>(null);
   const searchTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const utilityTriggerRef = React.useRef<HTMLElement | null>(null);
   const routeScrollRef = React.useRef<HTMLElement>(null);
   const pendingRouteFocusRef = React.useRef<string | null>(null);
   const previousLocationRef = React.useRef(location);
@@ -630,8 +672,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.cancelAnimationFrame(focusFrame);
   }, [location]);
 
-  const goTo = (href: string) => {
+  const closeUtilitySurface = React.useCallback(() => {
+    setUtilitySurface(null);
+  }, []);
+
+  const openUtilitySurface = React.useCallback(
+    (surface: CompactUtilitySurfaceId, trigger?: HTMLElement | null) => {
+      utilityTriggerRef.current =
+        trigger ??
+        (document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null);
+      setUtilitySurface(surface);
+    },
+    [],
+  );
+
+  const navigateToRoute = (href: string) => {
     setCommandOpen(false);
+    setUtilitySurface(null);
     pendingRouteFocusRef.current = href;
     if (href === location) {
       window.requestAnimationFrame(() => {
@@ -641,6 +700,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return;
     }
     navigate(href);
+  };
+
+  const goTo = (href: string) => {
+    const compactUtility = utilityRoutes.find(
+      (route) =>
+        route.href === href &&
+        route.presentation !== "route" &&
+        isCompactUtilitySurfaceId(route.id),
+    );
+
+    if (compactUtility && isCompactUtilitySurfaceId(compactUtility.id)) {
+      const surfaceId = compactUtility.id;
+      setCommandOpen(false);
+      const trigger =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      window.requestAnimationFrame(() => {
+        openUtilitySurface(surfaceId, trigger);
+      });
+      return;
+    }
+
+    navigateToRoute(href);
   };
 
   const closeCommand = React.useCallback(() => {
@@ -706,21 +789,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <nav className="yt-rail-routes">
           {railRoutes.map((item) => (
-            <RailLink
+            <RailControl
               key={item.href}
               {...item}
-              active={isRouteActive(location, item.href)}
-              onNavigate={goTo}
+              active={
+                utilitySurface === item.id ||
+                isRouteActive(location, item.href)
+              }
+              onNavigate={navigateToRoute}
+              onOpenSurface={openUtilitySurface}
             />
           ))}
         </nav>
         <div className="yt-rail-utilities">
           {footerRoutes.map((item) => (
-            <RailLink
+            <RailControl
               key={item.href}
               {...item}
-              active={isRouteActive(location, item.href)}
-              onNavigate={goTo}
+              active={
+                utilitySurface === item.id ||
+                isRouteActive(location, item.href)
+              }
+              onNavigate={navigateToRoute}
+              onOpenSurface={openUtilitySurface}
             />
           ))}
           <AccountMenu compact />
@@ -828,7 +919,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         })}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className={topRoutes.slice(4).some((route) => isRouteActive(location, route.href)) || mobileUtilityRoutes.some((route) => isRouteActive(location, route.href)) ? "is-active" : undefined} type="button">
+            <button className={topRoutes.slice(4).some((route) => isRouteActive(location, route.href)) || mobileUtilityRoutes.some((route) => isRouteActive(location, route.href)) || utilitySurface !== null ? "is-active" : undefined} type="button">
               <MoreHorizontal aria-hidden="true" /><span>More</span>
             </button>
           </DropdownMenuTrigger>
@@ -855,6 +946,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         open={commandOpen}
         onClose={closeCommand}
         onNavigate={goTo}
+      />
+      <UtilityDockSurfaces
+        surface={utilitySurface}
+        onClose={closeUtilitySurface}
+        onNavigate={navigateToRoute}
+        returnFocusRef={utilityTriggerRef}
       />
     </div>
   );

@@ -86,6 +86,49 @@ describe("Meridian authenticated shell contract", () => {
     }
   });
 
+  it("renders the approved compact utility dock without sparse route links", () => {
+    const markup = renderToStaticMarkup(
+      <Router ssrPath="/overview">
+        <AppShell>content</AppShell>
+      </Router>,
+    );
+
+    for (const control of [
+      "scan",
+      "watchlist",
+      "alerts",
+      "settings",
+      "help",
+      "account",
+    ]) {
+      expect(markup).toContain(`data-utility-dock-control="${control}"`);
+    }
+
+    for (const hiddenControl of [
+      "ask-meridian",
+      "journal",
+      "calendar",
+    ]) {
+      expect(markup).not.toContain(
+        `data-utility-dock-control="${hiddenControl}"`,
+      );
+    }
+
+    for (const surfaceControl of ["scan", "watchlist", "alerts"]) {
+      const button = markup.match(
+        new RegExp(
+          `<button[^>]*data-utility-dock-control="${surfaceControl}"[^>]*>`,
+        ),
+      )?.[0];
+      expect(button).toBeTruthy();
+      expect(button).toContain('aria-pressed="false"');
+    }
+    expect(markup).toContain(
+      'data-utility-dock-control="settings"',
+    );
+    expect(markup).toContain('href="/settings"');
+  });
+
   it("keeps alerts and account/session controls in the utility architecture, not the desktop top bar", () => {
     const markup = renderToStaticMarkup(
       <Router ssrPath="/overview">

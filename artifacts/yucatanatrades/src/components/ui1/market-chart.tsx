@@ -51,20 +51,40 @@ interface RenderCandle extends ChartCandleView {
 
 type DensityBand = "mobile" | "compact" | "tablet" | "desktop" | "wide";
 
-const densityTargets: Record<DensityBand, number> = {
-  mobile: 52,
-  compact: 66,
-  tablet: 96,
-  desktop: 144,
-  wide: 168,
-};
-
 function densityBandForWidth(width: number): DensityBand {
   if (width >= 1180) return "wide";
   if (width >= 860) return "desktop";
   if (width >= 620) return "tablet";
   if (width >= 390) return "compact";
   return "mobile";
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+/**
+ * Keeps the Overview candle cadence tied to its rendered container rather
+ * than the viewport. Standard desktop cards resolve to roughly 90–130
+ * intervals, with the 150 interval ceiling reserved for genuinely large
+ * Overview surfaces. The dedicated Charts route retains its denser range.
+ */
+export function chartCandleTarget(width: number, routeMode: boolean) {
+  const safeWidth = Math.max(280, Number.isFinite(width) ? width : 960);
+
+  if (routeMode) {
+    return clamp(Math.round(safeWidth / 7), 48, safeWidth >= 1180 ? 168 : 144);
+  }
+  if (safeWidth < 620) {
+    return clamp(Math.round(safeWidth / 7.2), 44, 72);
+  }
+  if (safeWidth < 900) {
+    return clamp(Math.round(safeWidth / 7.8), 72, 96);
+  }
+  if (safeWidth < 1200) {
+    return clamp(Math.round(safeWidth / 8.2), 96, 128);
+  }
+  return clamp(Math.round(safeWidth / 8.5), 110, 148);
 }
 
 function parseTimeMinutes(value: string) {
@@ -168,24 +188,34 @@ export function MarketChart({
   const [showComparison, setShowComparison] = React.useState(false);
   const [expanded, setExpanded] = React.useState(false);
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null);
-  const [densityBand, setDensityBand] = React.useState<DensityBand>("desktop");
+  const [chartSize, setChartSize] = React.useState({ width: 960, height: routeMode ? 420 : 204 });
   const reducedMotion = useReducedMotion();
   const workspaceRef = React.useRef<HTMLElement | null>(null);
+  const chartWrapRef = React.useRef<HTMLDivElement | null>(null);
   const expandButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const frameRef = React.useRef<number | null>(null);
   const pendingIndexRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     const workspace = workspaceRef.current;
-    if (!workspace || typeof ResizeObserver === "undefined") return undefined;
-    const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      const nextBand = densityBandForWidth(entry.contentRect.width);
-      setDensityBand((current) => current === nextBand ? current : nextBand);
+    const chartWrap = chartWrapRef.current;
+    if (!workspace || !chartWrap || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver((entries) => {
+      const chartEntry = entries.find((entry) => entry.target === chartWrap);
+      if (!chartEntry) return;
+      const nextSize = {
+        width: Math.max(280, Math.round(chartEntry.contentRect.width)),
+        height: Math.max(140, Math.round(chartEntry.contentRect.height)),
+      };
+      setChartSize((current) => (
+        current.width === nextSize.width && current.height === nextSize.height
+          ? current
+          : nextSize
+      ));
     });
-    observer.observe(workspace);
+    observer.observe(chartWrap);
     return () => observer.disconnect();
-  }, []);
+  }, [expanded, timeframe]);
 
   React.useEffect(() => {
     if (!expanded) return undefined;
@@ -204,18 +234,21 @@ export function MarketChart({
   }, []);
 
   const sourcePoints = data.timeframes[timeframe] ?? data.timeframes[timeframes[0] ?? ""] ?? [];
+  const densityBand = densityBandForWidth(chartSize.width);
+  const candleTarget = chartCandleTarget(chartSize.width, routeMode);
   const points = React.useMemo(
-    () => densifyCandles(sourcePoints, densityTargets[densityBand]),
-    [densityBand, sourcePoints],
+    () => densifyCandles(sourcePoints, candleTarget),
+    [candleTarget, sourcePoints],
   );
   React.useEffect(() => {
     setHoverIndex((current) => current === null ? null : Math.min(current, Math.max(0, points.length - 1)));
   }, [points.length]);
-  const W = 960;
-  const H = expanded ? 720 : routeMode ? 420 : 204;
+  const W = chartSize.width;
+  const H = chartSize.height;
   const plot = { left: 10, right: 62, top: 17, bottom: 28 };
   const chartBottom = H - plot.bottom;
-  const priceBottom = chartBottom - 28;
+  const volumeBandHeight = clamp(Math.round(H * 0.115), 24, 56);
+  const priceBottom = chartBottom - volumeBandHeight - 8;
   const priceDomain = calculateVisiblePriceDomain(points, 0.07);
   const paddedMin = priceDomain.min;
   const paddedMax = priceDomain.max;
@@ -225,6 +258,7 @@ export function MarketChart({
   const step = points.length > 1 ? (W - plot.left - plot.right) / (points.length - 1) : 0;
   const candleWidth = Math.max(1.7, Math.min(6.4, step * 0.64));
   const xAt = (index: number) => plot.left + step * index;
+  const crispLine = (value: number) => Math.round(value) + 0.5;
   const yAt = (value: number) => {
     const projected = plot.top + ((paddedMax - value) / paddedRange) * (priceBottom - plot.top);
     return Math.max(plot.top, Math.min(priceBottom, projected));
@@ -281,6 +315,10 @@ export function MarketChart({
       className={`yt-chart-workspace ${routeMode ? "is-route" : ""} ${expanded ? "is-expanded" : ""}`}
       aria-labelledby={chartTitleId}
       data-density={densityBand}
+      data-chart-scope={routeMode ? "route" : "overview"}
+      data-candle-count={points.length}
+      data-render-width={W}
+      data-render-height={H}
       layout={!reducedMotion}
       initial={reducedMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -371,6 +409,7 @@ export function MarketChart({
       <div className="yt-chart-canvas">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
+            ref={chartWrapRef}
             key={timeframe}
             className="yt-chart-svg-wrap"
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
@@ -380,7 +419,7 @@ export function MarketChart({
           >
             <svg
               viewBox={`0 0 ${W} ${H}`}
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMid meet"
               role="img"
               tabIndex={0}
               aria-label={`${data.name} ${timeframe} deterministic historical demo candlestick chart`}
@@ -390,6 +429,10 @@ export function MarketChart({
               onBlur={clearHover}
               onKeyDown={moveKeyboardCrosshair}
             >
+              <desc>
+                {points.length} visible deterministic intervals with volume, moving averages, and a current price of{" "}
+                {lastPoint ? formatPrice(lastPoint.close, axisDecimals) : "unavailable"}.
+              </desc>
               <defs>
                 <linearGradient id={volumeGradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#8eb9a0" stopOpacity="0.42" />
@@ -414,7 +457,14 @@ export function MarketChart({
                 const labelValue = paddedMax - (paddedRange / 5) * index;
                 return (
                   <g key={`y-${index}`}>
-                    <line className="yt-chart-grid" x1={plot.left} x2={W - plot.right} y1={y} y2={y} />
+                    <line
+                      className="yt-chart-grid"
+                      x1={plot.left}
+                      x2={W - plot.right}
+                      y1={crispLine(y)}
+                      y2={crispLine(y)}
+                      vectorEffect="non-scaling-stroke"
+                    />
                     <text className="yt-chart-axis" x={W - 5} y={y + 3} textAnchor="end">
                       {formatPrice(labelValue, axisDecimals)}
                     </text>
@@ -423,9 +473,26 @@ export function MarketChart({
               })}
               {points.length > 0 && Array.from({ length: 9 }).map((_, index) => {
                 const x = plot.left + ((W - plot.left - plot.right) / 8) * index;
-                return <line key={`x-${index}`} className="yt-chart-grid is-vertical" x1={x} x2={x} y1={plot.top} y2={chartBottom} />;
+                return (
+                  <line
+                    key={`x-${index}`}
+                    className="yt-chart-grid is-vertical"
+                    x1={crispLine(x)}
+                    x2={crispLine(x)}
+                    y1={plot.top}
+                    y2={chartBottom}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
               })}
-              <line className="yt-chart-volume-separator" x1={plot.left} x2={W - plot.right} y1={priceBottom + 4} y2={priceBottom + 4} />
+              <line
+                className="yt-chart-volume-separator"
+                x1={plot.left}
+                x2={W - plot.right}
+                y1={crispLine(priceBottom + 4)}
+                y2={crispLine(priceBottom + 4)}
+                vectorEffect="non-scaling-stroke"
+              />
 
               {points.map((point, index) => {
                 const x = xAt(index);
@@ -433,7 +500,7 @@ export function MarketChart({
                 const bodyTop = yAt(Math.max(point.open, point.close));
                 const bodyBottom = yAt(Math.min(point.open, point.close));
                 const bodyHeight = Math.max(1.3, bodyBottom - bodyTop);
-                const volumeHeight = (point.volume / maxVolume) * 24;
+                const volumeHeight = (point.volume / maxVolume) * volumeBandHeight;
                 return (
                   <g
                     key={`${timeframe}-${point.sourcePosition.toFixed(4)}-${index}`}
@@ -447,14 +514,23 @@ export function MarketChart({
                       height={volumeHeight}
                       style={{ fill: `url(#${volumeGradientId})` }}
                     />
-                    <line className="yt-candle-wick" x1={x} x2={x} y1={yAt(point.high)} y2={yAt(point.low)} />
+                    <line
+                      className="yt-candle-wick"
+                      x1={crispLine(x)}
+                      x2={crispLine(x)}
+                      y1={yAt(point.high)}
+                      y2={yAt(point.low)}
+                      vectorEffect="non-scaling-stroke"
+                    />
                     <rect
                       className="yt-candle-body"
-                      x={x - candleWidth / 2}
+                      x={Math.round(x - candleWidth / 2)}
                       y={bodyTop}
-                      width={candleWidth}
+                      width={Math.max(2, Math.round(candleWidth))}
                       height={bodyHeight}
-                      rx="0.8"
+                      rx="0.6"
+                      vectorEffect="non-scaling-stroke"
+                      shapeRendering="geometricPrecision"
                     />
                   </g>
                 );
@@ -501,7 +577,13 @@ export function MarketChart({
 
               {lastPoint && (
                 <g className={`yt-last-price ${lastPoint.close >= lastPoint.open ? "is-up" : "is-down"}`}>
-                  <line x1={plot.left} x2={W - plot.right} y1={yAt(lastPoint.close)} y2={yAt(lastPoint.close)} />
+                  <line
+                    x1={plot.left}
+                    x2={W - plot.right}
+                    y1={crispLine(yAt(lastPoint.close))}
+                    y2={crispLine(yAt(lastPoint.close))}
+                    vectorEffect="non-scaling-stroke"
+                  />
                   <rect x={W - plot.right + 4} y={yAt(lastPoint.close) - 8} width={plot.right - 8} height="16" rx="4" />
                   <text x={W - 5} y={yAt(lastPoint.close) + 3} textAnchor="end">
                     {formatPrice(lastPoint.close, axisDecimals)}

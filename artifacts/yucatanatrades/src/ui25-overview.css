@@ -1,0 +1,508 @@
+/* UI-2.5 — authenticated Overview signature hierarchy only. */
+.yt-dashboard {
+  --yt25-obsidian: #02080d;
+  --yt25-navy: #06141e;
+  --yt25-petrol: #0a2832;
+  --yt25-gold: #e3c589;
+  --yt25-gold-soft: rgba(227, 197, 137, 0.18);
+  --yt25-jade: #82c69b;
+  --yt25-coral: #e97965;
+  --yt25-cyan: #79b8c5;
+  position: relative;
+  isolation: isolate;
+  padding-top: 6px;
+}
+
+.yt-dashboard::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  inset: -22px -20px -34px;
+  border-radius: 28px;
+  background:
+    radial-gradient(58% 31% at 44% 2%, rgba(214, 182, 119, 0.065), transparent 72%),
+    radial-gradient(42% 48% at 95% 32%, rgba(35, 103, 111, 0.09), transparent 76%),
+    radial-gradient(36% 42% at 8% 78%, rgba(24, 68, 81, 0.08), transparent 74%),
+    linear-gradient(180deg, rgba(2, 8, 13, 0.48), rgba(4, 17, 24, 0.18));
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+.yt-dashboard::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 28px 10% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229, 199, 142, 0.16), transparent);
+  pointer-events: none;
+}
+
+.yt-dashboard-columns {
+  grid-template-columns: minmax(0, 1fr) minmax(306px, 334px);
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.yt-primary-stack {
+  gap: 11px;
+}
+
+/* Primary surfaces use warmer top-edge light and deeper, more substantial fill. */
+.yt-dashboard :is(.yt-atmospheric-hero, .yt-chart-workspace) {
+  border: 1px solid rgba(227, 197, 137, 0.25);
+  background-color: rgba(3, 14, 21, 0.94);
+  box-shadow:
+    inset 0 1px rgba(255, 246, 221, 0.085),
+    inset 0 -1px rgba(64, 123, 132, 0.05),
+    0 20px 48px rgba(0, 3, 8, 0.29),
+    0 1px 0 rgba(225, 193, 132, 0.035);
+}
+
+.yt-dashboard .yt-hero-greeting {
+  display: inline;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.yt-dashboard .yt-hero-greeting-word {
+  display: inline-block;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  transform-origin: 50% 100%;
+}
+
+.yt-dashboard .yt-eclipse-visual.is-ambient-paused,
+.yt-dashboard .yt-eclipse-visual.is-ambient-paused::before,
+.yt-dashboard .yt-eclipse-visual.is-ambient-paused::after {
+  animation-play-state: paused !important;
+}
+
+.yt-dashboard .yt-portfolio-band {
+  border-color: rgba(151, 190, 201, 0.14);
+  background:
+    radial-gradient(65% 120% at 10% 0%, rgba(213, 181, 119, 0.075), transparent 67%),
+    linear-gradient(112deg, rgba(12, 31, 40, 0.96), rgba(5, 21, 30, 0.94));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.045),
+    0 12px 32px rgba(0, 3, 8, 0.2);
+}
+
+.yt-dashboard .yt-market-strip {
+  border-color: rgba(128, 174, 184, 0.14);
+  background:
+    linear-gradient(180deg, rgba(9, 27, 36, 0.94), rgba(4, 18, 27, 0.96)),
+    var(--yt25-obsidian);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    0 12px 32px rgba(0, 3, 8, 0.18);
+}
+
+.yt-dashboard .yt-market-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0 18% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(118, 183, 191, 0.16), transparent);
+  pointer-events: none;
+}
+
+/* The Overview analytical row is intentionally bounded: chart 65–75%, context 25–35%. */
+.yt-overview-analysis-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(286px, 0.95fr);
+  align-items: stretch;
+  gap: 11px;
+  min-width: 0;
+}
+
+.yt-overview-chart-column,
+.yt-overview-analysis-context {
+  min-width: 0;
+}
+
+.yt-overview-chart-column .yt-chart-workspace {
+  width: 100%;
+  height: 548px;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 17px;
+  background:
+    radial-gradient(100% 54% at 88% 0%, rgba(58, 115, 122, 0.08), transparent 72%),
+    linear-gradient(180deg, rgba(5, 22, 30, 0.985), rgba(2, 14, 22, 0.985));
+}
+
+.yt-overview-chart-column .yt-chart-header {
+  min-height: 68px;
+  padding: 11px 14px 9px 18px;
+  border-bottom-color: rgba(117, 167, 177, 0.11);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 229, 0.025), transparent),
+    rgba(4, 18, 26, 0.34);
+}
+
+.yt-overview-chart-column .yt-chart-canvas {
+  height: calc(100% - 68px);
+  padding: 3px 12px 7px 12px;
+}
+
+.yt-overview-chart-column .yt-chart-svg-wrap {
+  position: relative;
+  contain: layout paint;
+}
+
+.yt-overview-chart-column .yt-chart-svg-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+.yt-overview-chart-column .yt-chart-axis {
+  fill: rgba(191, 206, 208, 0.72);
+  font-size: 9.5px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  paint-order: stroke;
+  stroke: rgba(2, 13, 20, 0.74);
+  stroke-width: 1.2px;
+  stroke-linejoin: round;
+}
+
+.yt-overview-chart-column .yt-chart-axis.is-time {
+  fill: rgba(159, 179, 183, 0.76);
+  font-size: 9px;
+}
+
+.yt-overview-chart-column .yt-chart-grid {
+  stroke: rgba(66, 111, 124, 0.23);
+}
+
+.yt-overview-chart-column .yt-chart-grid.is-vertical {
+  stroke: rgba(60, 101, 114, 0.115);
+}
+
+.yt-overview-chart-column .yt-candle-wick {
+  stroke-width: 1.05;
+}
+
+.yt-overview-chart-column .yt-candle-body {
+  shape-rendering: crispEdges;
+}
+
+.yt-overview-chart-column .yt-chart-volume {
+  fill: rgba(119, 176, 151, 0.22);
+  shape-rendering: crispEdges;
+}
+
+.yt-overview-chart-column .yt-ma-line {
+  stroke-width: 1.25;
+}
+
+.yt-overview-chart-column .yt-ma-line.is-fast {
+  stroke: #e2bf7d;
+  opacity: 0.94;
+}
+
+.yt-overview-chart-column .yt-ma-line.is-slow {
+  stroke: #69aa8d;
+  opacity: 0.72;
+}
+
+.yt-overview-chart-column .yt-chart-legend {
+  top: 7px;
+  left: 18px;
+  color: rgba(171, 190, 192, 0.72);
+  font-size: 8.5px;
+}
+
+.yt-overview-chart-column .yt-chart-tooltip {
+  border-color: rgba(227, 197, 137, 0.28);
+  background: rgba(3, 15, 22, 0.97);
+  box-shadow: 0 16px 38px rgba(0, 3, 8, 0.52);
+}
+
+/* Supporting analytics become an intentional secondary context column. */
+.yt-overview-analysis-context .yt-supporting-analytics {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 0.94fr 1.08fr 1.15fr;
+  gap: 10px;
+  width: 100%;
+  height: 548px;
+}
+
+.yt-overview-analysis-context .yt-analytics-panel {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  border-color: rgba(126, 171, 180, 0.13);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(8, 29, 38, 0.91), rgba(4, 20, 29, 0.94));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    0 10px 26px rgba(0, 3, 8, 0.17);
+}
+
+.yt-overview-analysis-context .yt-panel-heading {
+  height: 40px;
+  min-height: 40px;
+  padding-inline: 13px;
+  border-bottom-color: rgba(123, 170, 180, 0.085);
+}
+
+.yt-overview-analysis-context .yt-panel-heading h2 {
+  font-size: 11px;
+}
+
+.yt-overview-analysis-context .yt-breadth-body,
+.yt-overview-analysis-context .yt-heatmap-grid,
+.yt-overview-analysis-context .yt-watchlist-table {
+  height: calc(100% - 40px);
+}
+
+.yt-overview-analysis-context .yt-breadth-body {
+  grid-template-columns: 94px minmax(82px, 1fr);
+  gap: 7px;
+  padding: 7px 10px;
+}
+
+.yt-overview-analysis-context .yt-breadth-donut {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  background: none;
+  transform: none;
+}
+
+.yt-overview-analysis-context .yt-breadth-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.yt-overview-analysis-context .yt-breadth-donut::after {
+  inset: 13px;
+}
+
+.yt-overview-analysis-context .yt-breadth-center,
+.yt-overview-analysis-context .yt-breadth-donut > span {
+  position: relative;
+  z-index: 2;
+  transform: none;
+}
+
+.yt-overview-analysis-context .yt-breadth-legend {
+  gap: 8px;
+}
+
+.yt-overview-analysis-context .yt-breadth-legend > div {
+  font-size: 8.5px;
+}
+
+.yt-overview-analysis-context .yt-heatmap-grid {
+  gap: 3px;
+  padding: 6px;
+}
+
+.yt-overview-analysis-context .yt-heatmap-grid button {
+  min-width: 64px;
+  min-height: 30%;
+  padding: 4px 5px;
+  border-color: rgba(172, 201, 197, 0.08);
+}
+
+.yt-overview-analysis-context .yt-watchlist-table > button {
+  min-height: 33px;
+}
+
+/* Secondary rail material is quieter than the hero and chart. */
+.yt-dashboard .yt-intelligence-card,
+.yt-dashboard .yt-overview-module {
+  border-color: rgba(125, 171, 180, 0.12);
+  background:
+    radial-gradient(90% 70% at 100% 0%, rgba(55, 112, 120, 0.045), transparent 72%),
+    linear-gradient(145deg, rgba(8, 28, 37, 0.9), rgba(3, 18, 27, 0.93));
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.03),
+    0 9px 24px rgba(0, 3, 8, 0.15);
+}
+
+.yt-dashboard .yt-ai-insight {
+  border-color: rgba(224, 193, 132, 0.19);
+  background:
+    radial-gradient(55% 100% at 100% 72%, rgba(116, 179, 139, 0.075), transparent 75%),
+    linear-gradient(145deg, rgba(13, 35, 43, 0.94), rgba(4, 20, 29, 0.94));
+}
+
+.yt-dashboard :is(.is-positive, .market-positive) {
+  color: var(--yt25-jade);
+}
+
+.yt-dashboard :is(.is-negative, .market-negative) {
+  color: var(--yt25-coral);
+}
+
+.yt-dashboard :is(.yt-state-pill.is-historical, .yt-truth-badge.is-historical) {
+  color: #9bcbd4;
+}
+
+@media (max-width: 1439px) {
+  .yt-overview-analysis-row {
+    grid-template-columns: minmax(0, 2.08fr) minmax(270px, 0.92fr);
+  }
+
+  .yt-overview-chart-column .yt-chart-workspace,
+  .yt-overview-analysis-context .yt-supporting-analytics {
+    height: 520px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .yt-dashboard-columns {
+    grid-template-columns: minmax(0, 1fr) 304px;
+    gap: 13px;
+  }
+
+  .yt-overview-analysis-row {
+    grid-template-columns: minmax(0, 1.95fr) minmax(254px, 0.9fr);
+  }
+
+  .yt-overview-chart-column .yt-chart-workspace,
+  .yt-overview-analysis-context .yt-supporting-analytics {
+    height: 500px;
+  }
+
+  .yt-overview-chart-column .yt-chart-header {
+    min-height: 72px;
+  }
+
+  .yt-overview-chart-column .yt-chart-canvas {
+    height: calc(100% - 72px);
+  }
+}
+
+@media (max-width: 1179px) {
+  .yt-dashboard-columns {
+    display: block;
+  }
+
+  .yt-overview-analysis-row {
+    grid-template-columns: minmax(0, 2.15fr) minmax(286px, 0.9fr);
+  }
+
+  .yt-overview-chart-column .yt-chart-workspace,
+  .yt-overview-analysis-context .yt-supporting-analytics {
+    height: 520px;
+  }
+
+  .yt-dashboard .yt-intelligence-rail {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 899px) {
+  .yt-dashboard {
+    padding-top: 2px;
+  }
+
+  .yt-dashboard::before {
+    inset-inline: -8px;
+  }
+
+  .yt-overview-analysis-row {
+    grid-template-columns: 1fr;
+  }
+
+  .yt-overview-chart-column .yt-chart-workspace {
+    height: clamp(390px, 57vw, 470px);
+  }
+
+  .yt-overview-analysis-context .yt-supporting-analytics {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, auto);
+    height: auto;
+  }
+
+  .yt-overview-analysis-context .yt-analytics-panel {
+    min-height: 184px;
+  }
+
+  .yt-overview-analysis-context .yt-breadth-body {
+    grid-template-columns: 118px minmax(120px, 1fr);
+  }
+
+  .yt-overview-analysis-context .yt-breadth-donut {
+    width: 104px;
+    height: 104px;
+  }
+}
+
+@media (max-width: 599px) {
+  .yt-dashboard-columns,
+  .yt-primary-stack {
+    gap: 9px;
+  }
+
+  .yt-overview-chart-column .yt-chart-workspace {
+    height: 410px;
+    border-radius: 14px;
+  }
+
+  .yt-overview-chart-column .yt-chart-header {
+    min-height: 100px;
+    padding: 10px 10px 8px;
+  }
+
+  .yt-overview-chart-column .yt-chart-canvas {
+    height: calc(100% - 100px);
+    padding-inline: 5px;
+  }
+
+  .yt-overview-chart-column .yt-chart-axis {
+    font-size: 8.5px;
+    stroke-width: 1px;
+  }
+
+  .yt-overview-chart-column .yt-chart-axis.is-time {
+    font-size: 8px;
+  }
+
+  .yt-overview-analysis-context .yt-analytics-panel {
+    min-height: 178px;
+  }
+}
+
+@media (max-width: 399px) {
+  .yt-overview-chart-column .yt-chart-workspace {
+    height: 390px;
+  }
+
+  .yt-overview-analysis-context .yt-breadth-body {
+    grid-template-columns: 100px minmax(98px, 1fr);
+    padding-inline: 9px;
+  }
+
+  .yt-overview-analysis-context .yt-breadth-donut {
+    width: 92px;
+    height: 92px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-dashboard *,
+  html:not(.yt-force-full-motion) .yt-dashboard *::before,
+  html:not(.yt-force-full-motion) .yt-dashboard *::after {
+    scroll-behavior: auto !important;
+  }
+}

@@ -131,6 +131,12 @@ export interface UtilityRouteDefinition {
   href: string;
   icon: NavigationIconKey;
   placement: "rail" | "footer" | "hidden";
+  presentation:
+    | "route"
+    | "scan_drawer"
+    | "watchlist_drawer"
+    | "alerts_center"
+    | "help_panel";
   access:
     | "deferred"
     | "provider_unavailable"
@@ -166,7 +172,8 @@ export const utilityRoutes = [
     label: "Ask Meridian",
     href: "/ask-meridian",
     icon: "ask",
-    placement: "rail",
+    placement: "hidden",
+    presentation: "route",
     access: "provider_unavailable",
     classification: "Provider unavailable",
     status: "Provider unavailable",
@@ -192,6 +199,7 @@ export const utilityRoutes = [
     href: "/scanners",
     icon: "scan",
     placement: "rail",
+    presentation: "scan_drawer",
     access: "persistent_user",
     classification: "Review Access restricted",
     status: "Review Access restricted",
@@ -214,6 +222,7 @@ export const utilityRoutes = [
     href: "/watchlist",
     icon: "watchlist",
     placement: "rail",
+    presentation: "watchlist_drawer",
     access: "persistent_user",
     classification: "Review Access restricted",
     status: "Review Access restricted",
@@ -236,6 +245,7 @@ export const utilityRoutes = [
     href: "/alerts",
     icon: "alerts",
     placement: "rail",
+    presentation: "alerts_center",
     access: "provider_unavailable",
     classification: "Provider unavailable",
     status: "Provider unavailable",
@@ -260,7 +270,8 @@ export const utilityRoutes = [
     label: "Journal",
     href: "/journal",
     icon: "journal",
-    placement: "rail",
+    placement: "hidden",
+    presentation: "route",
     access: "persistent_user",
     classification: "Review Access restricted",
     status: "Review Access restricted",
@@ -282,7 +293,8 @@ export const utilityRoutes = [
     label: "Calendar",
     href: "/calendar",
     icon: "calendar",
-    placement: "rail",
+    placement: "hidden",
+    presentation: "route",
     access: "provider_unavailable",
     classification: "Provider unavailable",
     status: "Provider unavailable",
@@ -308,6 +320,7 @@ export const utilityRoutes = [
     href: "/settings",
     icon: "settings",
     placement: "footer",
+    presentation: "route",
     access: "session",
     classification: "Implemented",
     status: "Implemented",
@@ -330,6 +343,7 @@ export const utilityRoutes = [
     href: "/help",
     icon: "help",
     placement: "footer",
+    presentation: "help_panel",
     access: "deferred",
     classification: "Deferred",
     status: "Deferred",
@@ -352,6 +366,7 @@ export const utilityRoutes = [
     href: "/bots",
     icon: "bots",
     placement: "hidden",
+    presentation: "route",
     access: "persistent_user",
     classification: "Review Access restricted",
     status: "Review Access restricted",
@@ -374,6 +389,7 @@ export const utilityRoutes = [
     href: "/risk",
     icon: "risk",
     placement: "hidden",
+    presentation: "route",
     access: "persistent_user",
     classification: "Review Access restricted",
     status: "Review Access restricted",
@@ -420,6 +436,10 @@ export const footerUtilityRoutes = utilityRoutes.filter(
 export const navigableUtilityRoutes = utilityRoutes.filter(
   (route) => route.placement !== "hidden",
 );
+export const dockUtilityRoutes = [
+  ...railUtilityRoutes,
+  ...footerUtilityRoutes,
+] as const;
 
 export const protectedRoutePaths = [
   ...workspaceRoutes.flatMap((route) => [route.href, ...route.aliases]),

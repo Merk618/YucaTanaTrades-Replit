@@ -2,6 +2,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  chartCandleTarget,
   MarketChart,
   type ChartWorkspaceView,
 } from "./market-chart.tsx";
@@ -58,5 +59,34 @@ describe("MarketChart SVG identity", () => {
     }
     expect(markup).not.toContain('id="yt-volume-fill"');
     expect(markup).not.toContain('id="yt-line-glow"');
+  });
+
+  it("matches the viewBox to the rendered chart surface instead of stretching SVG labels", () => {
+    const markup = renderToStaticMarkup(<MarketChart data={fixture} />);
+
+    expect(markup).toContain('data-chart-scope="overview"');
+    expect(markup).toContain('data-render-width="960"');
+    expect(markup).toContain('data-render-height="204"');
+    expect(markup).toContain('viewBox="0 0 960 204"');
+    expect(markup).toContain('preserveAspectRatio="xMidYMid meet"');
+    expect(markup).toContain("visible deterministic intervals with volume, moving averages");
+    expect(markup).toContain('vector-effect="non-scaling-stroke"');
+  });
+});
+
+describe("MarketChart responsive candle density", () => {
+  it("keeps Overview density readable at mobile, desktop, and large desktop widths", () => {
+    expect(chartCandleTarget(320, false)).toBe(44);
+    expect(chartCandleTarget(430, false)).toBe(60);
+    expect(chartCandleTarget(768, false)).toBe(96);
+    expect(chartCandleTarget(960, false)).toBe(117);
+    expect(chartCandleTarget(1_100, false)).toBe(128);
+    expect(chartCandleTarget(1_200, false)).toBe(141);
+    expect(chartCandleTarget(1_600, false)).toBe(148);
+  });
+
+  it("allows the dedicated Charts route to remain more expansive", () => {
+    expect(chartCandleTarget(960, true)).toBe(137);
+    expect(chartCandleTarget(1_600, true)).toBe(168);
   });
 });

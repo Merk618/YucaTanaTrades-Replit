@@ -8,10 +8,54 @@ import {
   useTransform,
 } from "framer-motion";
 import { ArrowRight, Globe2, SunMedium } from "lucide-react";
+import { useAuth } from "@/auth/auth-provider";
 import type { MarketBriefing } from "@/contracts/dashboard";
 import { motionTokens } from "@/lib/motion";
 import { TruthBadge } from "@/components/ui1/truth-badge";
 import "@/meridian-eclipse-hero.css";
+
+const DISPLAY_NAME_FALLBACK = "Trader";
+const MAX_GREETING_NAME_LENGTH = 48;
+
+export type OverviewDayPeriod = "morning" | "afternoon" | "evening";
+
+export function safeOverviewDisplayName(
+  displayName: string | null | undefined,
+): string {
+  if (typeof displayName !== "string") return DISPLAY_NAME_FALLBACK;
+
+  const normalized = displayName
+    .normalize("NFKC")
+    .replace(/[\p{Cc}\p{Cf}\p{Cs}]/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+
+  if (
+    normalized.length === 0 ||
+    Array.from(normalized).length > MAX_GREETING_NAME_LENGTH
+  ) {
+    return DISPLAY_NAME_FALLBACK;
+  }
+
+  return normalized;
+}
+
+export function overviewDayPeriod(hour: number): OverviewDayPeriod {
+  const normalizedHour = Number.isFinite(hour)
+    ? ((Math.trunc(hour) % 24) + 24) % 24
+    : 0;
+
+  if (normalizedHour < 12) return "morning";
+  if (normalizedHour < 18) return "afternoon";
+  return "evening";
+}
+
+export function overviewGreeting(
+  displayName: string | null | undefined,
+  hour: number,
+): string {
+  return `Good ${overviewDayPeriod(hour)}, ${safeOverviewDisplayName(displayName)}.`;
+}
 
 const primaryWave = {
   rest: "M342 207 C415 181 462 256 535 215 C606 175 636 77 711 111 C795 149 821 229 899 183 C966 144 1015 124 1085 158",
@@ -77,24 +121,88 @@ const intelligenceNodes = [
   { name: "Risk", x: 1015, y: 137, className: "is-risk" },
 ] as const;
 
-const briefingContainer = {
-  hidden: {},
+const greetingBlock = {
+  hidden: { opacity: 0, y: 10 },
   visible: {
+    opacity: 1,
+    y: 0,
     transition: {
+      ...motionTokens.spring.panel,
+      delay: 0.34,
       staggerChildren: 0.055,
-      delayChildren: 0.31,
+      delayChildren: 0.08,
     },
   },
 };
 
-const briefingItem = {
+const greetingWord = {
+  hidden: { opacity: 0, y: 7 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 270,
+      damping: 28,
+      mass: 0.72,
+    },
+  },
+};
+
+const briefingItem = (delay: number) => ({
   hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.42, ease: motionTokens.ease.out },
+    transition: {
+      duration: 0.42,
+      delay,
+      ease: motionTokens.ease.out,
+    },
   },
-};
+});
+
+const briefingTitleItem = briefingItem(0.68);
+const briefingCopyItem = briefingItem(0.78);
+const briefingActionItem = briefingItem(0.9);
+const briefingMetricsItem = briefingItem(1.02);
+
+function nextGreetingBoundaryDelay(now: Date): number {
+  const nextBoundary = new Date(now);
+  const hour = now.getHours();
+
+  if (hour < 12) {
+    nextBoundary.setHours(12, 0, 0, 0);
+  } else if (hour < 18) {
+    nextBoundary.setHours(18, 0, 0, 0);
+  } else {
+    nextBoundary.setDate(nextBoundary.getDate() + 1);
+    nextBoundary.setHours(0, 0, 0, 0);
+  }
+
+  return Math.max(1_000, nextBoundary.getTime() - now.getTime());
+}
+
+function useLocalGreetingHour(): number {
+  const [hour, setHour] = React.useState(() => new Date().getHours());
+
+  React.useEffect(() => {
+    let timer = 0;
+
+    const scheduleBoundaryUpdate = () => {
+      const now = new Date();
+      timer = window.setTimeout(() => {
+        setHour(new Date().getHours());
+        scheduleBoundaryUpdate();
+      }, nextGreetingBoundaryDelay(now));
+    };
+
+    scheduleBoundaryUpdate();
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return hour;
+}
 
 function usePageVisibility() {
   const [pageVisible, setPageVisible] = React.useState(() =>
@@ -134,14 +242,21 @@ const AtmosphereArtwork = React.memo(function AtmosphereArtwork({
 
   return (
     <motion.div
-      className="yt-hero-visual yt-eclipse-visual"
+      className={`yt-hero-visual yt-eclipse-visual ${canAnimate ? "is-ambient-active" : "is-ambient-paused"}`}
+      data-ambient-state={canAnimate ? "active" : "paused"}
       aria-hidden="true"
       initial={reducedMotion ? false : { opacity: 0, scale: 1.012 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={revealTransition}
     >
-      <div className="yt-eclipse-aurora" />
-      <div className="yt-eclipse-scan" />
+      <div
+        className="yt-eclipse-aurora"
+        style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+      />
+      <div
+        className="yt-eclipse-scan"
+        style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+      />
       <svg className="yt-hero-art yt-eclipse-art" viewBox="0 0 1080 340" preserveAspectRatio="none">
         <defs>
           <linearGradient id="yt-eclipse-primary" x1="0" x2="1" y1="0" y2="0">
@@ -194,7 +309,15 @@ const AtmosphereArtwork = React.memo(function AtmosphereArtwork({
         </defs>
 
         <rect x="320" y="0" width="760" height="340" fill="url(#yt-eclipse-grid)" className="yt-eclipse-grid" />
-        <ellipse cx="760" cy="274" rx="350" ry="82" fill="url(#yt-eclipse-horizon)" className="yt-eclipse-horizon-glow" />
+        <ellipse
+          cx="760"
+          cy="274"
+          rx="350"
+          ry="82"
+          fill="url(#yt-eclipse-horizon)"
+          className="yt-eclipse-horizon-glow"
+          style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+        />
 
         <motion.g className="yt-eclipse-terrain" style={reducedMotion ? undefined : { x: depthX, y: depthY }}>
           <motion.path
@@ -280,6 +403,7 @@ const AtmosphereArtwork = React.memo(function AtmosphereArtwork({
             className="yt-eclipse-wave yt-eclipse-wave--travel"
             d={primaryWave.rest}
             fill="none"
+            style={{ animationPlayState: canAnimate ? "running" : "paused" }}
             initial={reducedMotion ? false : { opacity: 0, pathLength: 0 }}
             animate={{ opacity: 1, pathLength: 1 }}
             transition={reducedMotion ? { duration: 0 } : { duration: 1.7, delay: 1.12, ease: motionTokens.ease.out }}
@@ -306,22 +430,44 @@ const AtmosphereArtwork = React.memo(function AtmosphereArtwork({
             </motion.g>
           ))}
 
-          <g className="yt-eclipse-nodes">
+          <motion.g
+            className="yt-eclipse-nodes"
+            initial={reducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={reducedMotion
+              ? { duration: 0 }
+              : { duration: 0.46, delay: 1.72, ease: motionTokens.ease.out }}
+          >
             {intelligenceNodes.map((node) => (
               <g key={node.name} className={`yt-eclipse-node ${node.className}`} transform={`translate(${node.x} ${node.y})`}>
-                <circle className="yt-eclipse-node__bloom" r="10" />
+                <circle
+                  className="yt-eclipse-node__bloom"
+                  r="10"
+                  style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+                />
                 <circle className="yt-eclipse-node__ring" r="5.2" />
                 <circle className="yt-eclipse-node__core" r="1.7" />
-                <g className="yt-eclipse-node__annotation">
+                <g
+                  className="yt-eclipse-node__annotation"
+                  style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+                >
                   <rect x="-4" y="-30" width={node.name.length * 5.5 + 14} height="18" rx="5" />
                   <text x="3" y="-18">{node.name}</text>
                 </g>
               </g>
             ))}
-          </g>
+          </motion.g>
         </motion.g>
 
-        <motion.g className="yt-eclipse-depth-particles" style={reducedMotion ? undefined : { x: depthX, y: depthY }}>
+        <motion.g
+          className="yt-eclipse-depth-particles"
+          style={reducedMotion ? undefined : { x: depthX, y: depthY }}
+          initial={reducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={reducedMotion
+            ? { duration: 0 }
+            : { duration: 0.5, delay: 2.16, ease: motionTokens.ease.out }}
+        >
           {depthParticles.map((particle, index) => (
             <circle
               key={`${particle.x}-${particle.y}`}
@@ -332,31 +478,48 @@ const AtmosphereArtwork = React.memo(function AtmosphereArtwork({
               style={{
                 "--yt-mote-delay": `${particle.delay}s`,
                 "--yt-mote-duration": `${particle.duration}s`,
+                animationPlayState: canAnimate ? "running" : "paused",
               } as React.CSSProperties}
             />
           ))}
         </motion.g>
       </svg>
-      <div className="yt-hero-horizon yt-eclipse-horizon" />
+      <div
+        className="yt-hero-horizon yt-eclipse-horizon"
+        style={{ animationPlayState: canAnimate ? "running" : "paused" }}
+      />
     </motion.div>
   );
 });
 
 export function AtmosphericHero({ data }: { data: MarketBriefing }) {
   const [expanded, setExpanded] = React.useState(false);
+  const { state: authState } = useAuth();
+  const greetingHour = useLocalGreetingHour();
   const reducedMotion = Boolean(useReducedMotion());
   const pageVisible = usePageVisibility();
   const finePointer = React.useRef(false);
+  const sessionDisplayName =
+    authState.kind === "authenticated" ? authState.user.displayName : null;
+  const greetingDisplayName = React.useMemo(
+    () => safeOverviewDisplayName(sessionDisplayName),
+    [sessionDisplayName],
+  );
+  const greeting = React.useMemo(
+    () => overviewGreeting(greetingDisplayName, greetingHour),
+    [greetingDisplayName, greetingHour],
+  );
+  const greetingWords = React.useMemo(() => greeting.split(" "), [greeting]);
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const waveSpringX = useSpring(pointerX, { stiffness: 82, damping: 24, mass: 0.85 });
   const waveSpringY = useSpring(pointerY, { stiffness: 82, damping: 24, mass: 0.85 });
   const depthSpringX = useSpring(pointerX, { stiffness: 46, damping: 22, mass: 1.1 });
   const depthSpringY = useSpring(pointerY, { stiffness: 46, damping: 22, mass: 1.1 });
-  const waveX = useTransform(waveSpringX, [-1, 1], [-5, 5]);
-  const waveY = useTransform(waveSpringY, [-1, 1], [-2.5, 3]);
-  const depthX = useTransform(depthSpringX, [-1, 1], [-8, 8]);
-  const depthY = useTransform(depthSpringY, [-1, 1], [-3, 4]);
+  const waveX = useTransform(waveSpringX, [-1, 1], [-4.5, 4.5]);
+  const waveY = useTransform(waveSpringY, [-1, 1], [-2.25, 2.5]);
+  const depthX = useTransform(depthSpringX, [-1, 1], [-6, 6]);
+  const depthY = useTransform(depthSpringY, [-1, 1], [-2.75, 3]);
 
   React.useEffect(() => {
     const query = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -395,6 +558,8 @@ export function AtmosphericHero({ data }: { data: MarketBriefing }) {
   return (
     <motion.section
       className="yt-atmospheric-hero yt-meridian-eclipse-hero"
+      data-motion-mode={reducedMotion ? "reduced" : "full"}
+      data-personalization={greetingDisplayName === DISPLAY_NAME_FALLBACK ? "fallback" : "session-profile"}
       aria-labelledby="yt-briefing-title"
       onPointerMove={onPointerMove}
       onPointerLeave={resetPointer}
@@ -420,19 +585,34 @@ export function AtmosphericHero({ data }: { data: MarketBriefing }) {
         transition={reducedMotion ? { duration: 0 } : { duration: 0.4, delay: 1.32, ease: motionTokens.ease.out }}
       >
         <Globe2 aria-hidden="true" />
-        <span>Meridian atmosphere</span>
-        <TruthBadge state="demo" label="Demo stage" compact />
+        <span>Market regime field</span>
+        <TruthBadge state="demo" label="Demo context" compact />
       </motion.div>
 
       <motion.div
         className="yt-hero-briefing"
-        variants={briefingContainer}
         initial={reducedMotion ? false : "hidden"}
         animate="visible"
       >
-        <motion.div className="yt-hero-heading" variants={briefingItem}>
+        <motion.div className="yt-hero-heading" variants={greetingBlock}>
           <div>
-            <span>{data.greeting}</span>
+            <motion.span
+              className="yt-hero-greeting"
+              aria-label={greeting}
+            >
+              {greetingWords.map((word, index) => (
+                <React.Fragment key={`${word}-${index}`}>
+                  {index > 0 ? " " : null}
+                  <motion.span
+                    className="yt-hero-greeting-word"
+                    aria-hidden="true"
+                    variants={greetingWord}
+                  >
+                    {word}
+                  </motion.span>
+                </React.Fragment>
+              ))}
+            </motion.span>
             <SunMedium aria-hidden="true" />
           </div>
           <TruthBadge
@@ -441,8 +621,8 @@ export function AtmosphericHero({ data }: { data: MarketBriefing }) {
             compact
           />
         </motion.div>
-        <motion.h1 id="yt-briefing-title" variants={briefingItem}>{data.title}</motion.h1>
-        <motion.p variants={briefingItem}>{data.summary}</motion.p>
+        <motion.h1 id="yt-briefing-title" variants={briefingTitleItem}>{data.title}</motion.h1>
+        <motion.p variants={briefingCopyItem}>{data.summary}</motion.p>
         <AnimatePresence initial={false}>
           {expanded && (
             <motion.p
@@ -461,13 +641,13 @@ export function AtmosphericHero({ data }: { data: MarketBriefing }) {
           className="yt-hero-action"
           onClick={() => setExpanded((current) => !current)}
           aria-expanded={expanded}
-          variants={briefingItem}
+          variants={briefingActionItem}
           whileTap={reducedMotion ? undefined : { scale: 0.985 }}
         >
           {expanded ? "Close market brief" : data.actionLabel}
           <ArrowRight aria-hidden="true" />
         </motion.button>
-        <motion.dl className="yt-hero-metrics" variants={briefingItem}>
+        <motion.dl className="yt-hero-metrics" variants={briefingMetricsItem}>
           {data.metrics.map((metric) => (
             <div key={metric.label}>
               <dt>{metric.label}</dt>

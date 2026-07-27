@@ -55,11 +55,65 @@ export function SupportingAnalytics({
             className="yt-breadth-donut"
             role="img"
             aria-label={`${breadth.advancing}% advancing, ${breadth.declining}% declining, ${breadth.unchanged}% unchanged, demo data`}
-            style={{
-              background: `conic-gradient(var(--yt-positive) 0 ${breadth.advancing}%, var(--yt-negative) ${breadth.advancing}% ${breadth.advancing + breadth.declining}%, #83939a ${breadth.advancing + breadth.declining}% 100%)`,
-            }}
+            style={{ transform: "none" }}
           >
-            <span><strong>{breadth.advancing}%</strong><small>advancing</small></span>
+            <svg
+              className="yt-breadth-ring"
+              viewBox="0 0 104 104"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle
+                className="yt-breadth-ring-track"
+                cx="52"
+                cy="52"
+                r="44"
+                fill="none"
+                stroke="rgba(131, 147, 154, 0.18)"
+                strokeWidth="15"
+              />
+              <g className="yt-breadth-ring-arcs" transform="rotate(-90 52 52)">
+                <circle
+                  className="yt-breadth-arc is-positive"
+                  cx="52"
+                  cy="52"
+                  r="44"
+                  pathLength="100"
+                  fill="none"
+                  stroke="var(--yt-positive)"
+                  strokeWidth="15"
+                  strokeDasharray={`${breadth.advancing} ${100 - breadth.advancing}`}
+                />
+                <circle
+                  className="yt-breadth-arc is-negative"
+                  cx="52"
+                  cy="52"
+                  r="44"
+                  pathLength="100"
+                  fill="none"
+                  stroke="var(--yt-negative)"
+                  strokeWidth="15"
+                  strokeDasharray={`${breadth.declining} ${100 - breadth.declining}`}
+                  strokeDashoffset={-breadth.advancing}
+                />
+                <circle
+                  className="yt-breadth-arc is-flat"
+                  cx="52"
+                  cy="52"
+                  r="44"
+                  pathLength="100"
+                  fill="none"
+                  stroke="#83939a"
+                  strokeWidth="15"
+                  strokeDasharray={`${breadth.unchanged} ${100 - breadth.unchanged}`}
+                  strokeDashoffset={-(breadth.advancing + breadth.declining)}
+                />
+              </g>
+            </svg>
+            <span className="yt-breadth-center" aria-hidden="true" style={{ transform: "none" }}>
+              <strong>{breadth.advancing}%</strong>
+              <small>advancing</small>
+            </span>
           </div>
           <dl className="yt-breadth-legend">
             <div><dt><i className="is-positive" />Advancing</dt><dd>{breadth.advancing}%</dd></div>
