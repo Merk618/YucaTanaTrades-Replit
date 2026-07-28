@@ -14,10 +14,23 @@ const fixture: ChartWorkspaceView = {
   changePercent: 0.82,
   asOf: "Historical demo",
   stateLabel: "Historical · Demo",
+  timeZone: "America/New_York",
+  currency: "USD",
+  truthState: "historical",
+  provenance: {
+    state: "historical",
+    provider: "Meridian deterministic fixture",
+    sourceType: "fixture",
+    generatedAt: "2026-07-10T20:00:00.000Z",
+    marketAt: "2026-07-10T20:00:00.000Z",
+    freshness: "unknown",
+    cacheState: "none",
+  },
   timeframes: {
     "1D": [
       {
-        time: "9:30 AM",
+        timestamp: "2026-07-10T13:30:00.000Z",
+        displayLabel: "9:30 AM",
         open: 5_270,
         high: 5_282,
         low: 5_266,
@@ -25,7 +38,8 @@ const fixture: ChartWorkspaceView = {
         volume: 100,
       },
       {
-        time: "4:00 PM",
+        timestamp: "2026-07-10T20:00:00.000Z",
+        displayLabel: "4:00 PM",
         open: 5_278,
         high: 5_286,
         low: 5_274,
@@ -71,6 +85,54 @@ describe("MarketChart SVG identity", () => {
     expect(markup).toContain('preserveAspectRatio="xMidYMid meet"');
     expect(markup).toContain("visible deterministic intervals with volume, moving averages");
     expect(markup).toContain('vector-effect="non-scaling-stroke"');
+    expect(markup).toContain('data-chart-engine="svg"');
+  });
+
+  it("enables the V2 plot only through the explicit route engine seam", () => {
+    const routeMarkup = renderToStaticMarkup(
+      <MarketChart data={fixture} routeMode plotEngine="lightweight" />,
+    );
+    const overviewMarkup = renderToStaticMarkup(
+      <MarketChart data={fixture} plotEngine="lightweight" />,
+    );
+
+    expect(routeMarkup).toContain('data-chart-engine="lightweight"');
+    expect(routeMarkup).toContain("Preparing analytical chart");
+    expect(routeMarkup).toContain("Historical · Demo");
+    expect(routeMarkup).toContain("Chart controls");
+    expect(routeMarkup).toContain("simulated intervals");
+    expect(overviewMarkup).toContain('data-chart-engine="svg"');
+    expect(overviewMarkup).not.toContain("Charts by TradingView");
+  });
+
+  it("keeps empty and invalid V2 data inside Meridian states without mounting a chart", () => {
+    const empty = {
+      ...fixture,
+      timeframes: { "1D": [] },
+    } satisfies ChartWorkspaceView;
+    const invalid = {
+      ...fixture,
+      timeframes: {
+        "1D": [
+          {
+            ...fixture.timeframes["1D"][0],
+            timestamp: "not-an-instant",
+          },
+        ],
+      },
+    } satisfies ChartWorkspaceView;
+
+    const emptyMarkup = renderToStaticMarkup(
+      <MarketChart data={empty} routeMode plotEngine="lightweight" />,
+    );
+    const invalidMarkup = renderToStaticMarkup(
+      <MarketChart data={invalid} routeMode plotEngine="lightweight" />,
+    );
+
+    expect(emptyMarkup).toContain("Historical series unavailable");
+    expect(emptyMarkup).not.toContain('data-chart-engine="lightweight-charts"');
+    expect(invalidMarkup).toContain("Preparing analytical chart");
+    expect(invalidMarkup).not.toContain("not-an-instant");
   });
 });
 

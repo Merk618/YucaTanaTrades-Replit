@@ -10,9 +10,23 @@ import { MarketChart, type ChartCandleView, type ChartWorkspaceView } from "@/co
 import { PortfolioBand } from "@/components/ui1/portfolio-band";
 import { dashboardDemo } from "@/data/ui1-demo";
 
-function deterministicSeries(length: number, phase: number, labelEvery: number): ChartCandleView[] {
+type FixtureLabelMode = "time" | "date";
+
+function deterministicSeries(
+  length: number,
+  phase: number,
+  labelEvery: number,
+  startTimestamp: string,
+  endTimestamp: string,
+  labelMode: FixtureLabelMode,
+): ChartCandleView[] {
   let previous = 5208 + phase * 3;
+  const start = Date.parse(startTimestamp);
+  const end = Date.parse(endTimestamp);
+
   return Array.from({ length }, (_, index) => {
+    const ratio = index / Math.max(1, length - 1);
+    const timestamp = new Date(Math.round(start + (end - start) * ratio)).toISOString();
     const drift = index * 1.36;
     const wave = Math.sin(index * 0.63 + phase) * 9.4 + Math.sin(index * 0.18 + phase * 0.4) * 14;
     const close = 5208 + drift + wave;
@@ -20,13 +34,27 @@ function deterministicSeries(length: number, phase: number, labelEvery: number):
     const high = Math.max(open, close) + 3.2 + Math.abs(Math.sin(index * 0.91)) * 5.8;
     const low = Math.min(open, close) - 3.1 - Math.abs(Math.cos(index * 0.77)) * 5.1;
     previous = close;
-    const hour = 9 + Math.floor((index * 390 / Math.max(1, length - 1) + 30) / 60);
-    const minute = Math.floor((index * 390 / Math.max(1, length - 1) + 30) % 60);
-    const time = index % labelEvery === 0
-      ? `${hour > 12 ? hour - 12 : hour}:${minute.toString().padStart(2, "0")} ${hour >= 12 ? "PM" : "AM"}`
-      : `${hour}:${minute.toString().padStart(2, "0")}`;
+
+    const displayLabel = new Intl.DateTimeFormat(
+      "en-US",
+      labelMode === "time"
+        ? {
+            timeZone: "America/New_York",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: index % labelEvery === 0,
+          }
+        : {
+            timeZone: "America/New_York",
+            month: index % labelEvery === 0 ? "short" : "numeric",
+            day: "numeric",
+            year: index % labelEvery === 0 ? "2-digit" : undefined,
+          },
+    ).format(new Date(timestamp));
+
     return {
-      time,
+      timestamp,
+      displayLabel,
       open,
       high,
       low,
@@ -43,16 +71,28 @@ export const previewChartData: ChartWorkspaceView = {
   changePercent: 0.82,
   asOf: "Historical demo · fixed at 4:00 PM ET",
   stateLabel: "Historical · Demo",
+  timeZone: "America/New_York",
+  currency: "USD",
+  truthState: "historical",
+  provenance: {
+    state: "historical",
+    provider: "Meridian deterministic fixture",
+    sourceType: "fixture",
+    generatedAt: "2026-07-10T20:00:00.000Z",
+    marketAt: "2026-07-10T20:00:00.000Z",
+    freshness: "unknown",
+    cacheState: "none",
+  },
   timeframes: {
-    "1D": deterministicSeries(58, 0.2, 10),
-    "1W": deterministicSeries(52, 1.3, 9),
-    "1M": deterministicSeries(48, 2.1, 8),
-    "3M": deterministicSeries(46, 2.8, 8),
-    "6M": deterministicSeries(44, 3.6, 8),
-    "YTD": deterministicSeries(42, 4.3, 7),
-    "1Y": deterministicSeries(40, 5.1, 7),
-    "5Y": deterministicSeries(38, 6.2, 6),
-    "All": deterministicSeries(36, 7.4, 6),
+    "1D": deterministicSeries(58, 0.2, 10, "2026-07-10T13:30:00.000Z", "2026-07-10T20:00:00.000Z", "time"),
+    "1W": deterministicSeries(52, 1.3, 9, "2026-07-06T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "1M": deterministicSeries(48, 2.1, 8, "2026-06-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "3M": deterministicSeries(46, 2.8, 8, "2026-04-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "6M": deterministicSeries(44, 3.6, 8, "2026-01-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "YTD": deterministicSeries(42, 4.3, 7, "2026-01-02T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "1Y": deterministicSeries(40, 5.1, 7, "2025-07-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "5Y": deterministicSeries(38, 6.2, 6, "2021-07-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
+    "All": deterministicSeries(36, 7.4, 6, "2016-07-10T20:00:00.000Z", "2026-07-10T20:00:00.000Z", "date"),
   },
 };
 

@@ -18,6 +18,7 @@ import {
   Target,
 } from "lucide-react";
 import { MarketChart, type ChartWorkspaceView } from "@/components/ui1/market-chart";
+import { meridianFeatureFlags } from "@/config/feature-flags";
 import { motionTokens, panelReveal, staggerContainer, useAppReducedMotion } from "@/lib/motion";
 import {
   Delta,
@@ -376,13 +377,13 @@ export function ChartsRoute() {
           </div>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
-              key={symbol}
+              key="active-chart-workspace"
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
               transition={{ duration: reducedMotion ? 0 : motionTokens.duration.interface, ease: motionTokens.ease.out }}
             >
-              <MarketChart data={chartSymbols[symbol]} routeMode />
+              <MarketChart data={chartSymbols[symbol]} routeMode plotEngine={meridianFeatureFlags.chartV2 ? "lightweight" : "svg"} />
             </motion.div>
           </AnimatePresence>
           <div className="yt-ui2-chart-capabilities" aria-label="Chart capability status">

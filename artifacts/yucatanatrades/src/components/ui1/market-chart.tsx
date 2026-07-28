@@ -11,16 +11,19 @@ import {
 } from "lucide-react";
 import { motionTokens } from "@/lib/motion";
 import { calculateVisiblePriceDomain } from "@/components/ui1/chart-domain";
+import type {
+  MeridianChartCandle,
+  MeridianChartSeries,
+} from "@/contracts/chart";
 import "@/meridian-eclipse-chart.css";
 
-export interface ChartCandleView {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
+const LightweightChartSurface = React.lazy(async () => {
+  const module = await import("@/components/ui1/lightweight-chart-surface");
+  return { default: module.LightweightChartSurface };
+});
+
+export type ChartCandleView = MeridianChartCandle;
+export type ChartPlotEngine = "svg" | "lightweight";
 
 export interface ChartWorkspaceView {
   symbol: string;
@@ -29,6 +32,10 @@ export interface ChartWorkspaceView {
   changePercent: number;
   asOf: string;
   stateLabel: string;
+  timeZone: string;
+  currency?: string;
+  truthState: MeridianChartSeries["truthState"];
+  provenance: MeridianChartSeries["provenance"];
   timeframes: Record<string, ChartCandleView[]>;
 }
 
@@ -99,7 +106,13 @@ function parseTimeMinutes(value: string) {
   return hour * 60 + minute;
 }
 
-function interpolateTime(left: string, right: string, ratio: number) {
+function interpolateDisplayLabel(
+  left: string | undefined,
+  right: string | undefined,
+  ratio: number,
+) {
+  if (!left) return right;
+  if (!right) return left;
   const leftMinutes = parseTimeMinutes(left);
   const rightMinutes = parseTimeMinutes(right);
   if (leftMinutes === null || rightMinutes === null) return ratio < 0.5 ? left : right;
@@ -108,6 +121,15 @@ function interpolateTime(left: string, right: string, ratio: number) {
   const minute = ((total % 60) + 60) % 60;
   const hour12 = hour24 % 12 || 12;
   return `${hour12}:${minute.toString().padStart(2, "0")} ${hour24 >= 12 ? "PM" : "AM"}`;
+}
+
+function interpolateTimestamp(left: string, right: string, ratio: number) {
+  const leftTime = Date.parse(left);
+  const rightTime = Date.parse(right);
+  if (!Number.isFinite(leftTime) || !Number.isFinite(rightTime)) {
+    return ratio < 0.5 ? left : right;
+  }
+  return new Date(Math.round(leftTime + (rightTime - leftTime) * ratio)).toISOString();
 }
 
 /**
@@ -149,7 +171,12 @@ function densifyCandles(source: ChartCandleView[], target: number): RenderCandle
       const lowerWick = Math.max(0.45, lerp(Math.min(left.open, left.close) - left.low, Math.min(right.open, right.close) - right.low) * 0.62);
 
       result.push({
-        time: interpolateTime(left.time, right.time, ratio),
+        timestamp: interpolateTimestamp(left.timestamp, right.timestamp, ratio),
+        displayLabel: interpolateDisplayLabel(
+          left.displayLabel,
+          right.displayLabel,
+          ratio,
+        ),
         open,
         close,
         high: Math.max(open, close) + upperWick,
@@ -174,12 +201,15 @@ function formatPrice(value: number, decimals: number) {
 export function MarketChart({
   data,
   routeMode = false,
+  plotEngine = "svg",
 }: {
   data: ChartWorkspaceView;
   routeMode?: boolean;
+  plotEngine?: ChartPlotEngine;
 }) {
   const chartInstanceId = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const chartTitleId = `yt-chart-title-${chartInstanceId}`;
+  const chartSummaryId = `yt-chart-summary-${chartInstanceId}`;
   const volumeGradientId = `yt-volume-fill-${chartInstanceId}`;
   const lineGlowId = `yt-line-glow-${chartInstanceId}`;
   const timeframes = Object.keys(data.timeframes);
@@ -243,6 +273,47 @@ export function MarketChart({
   React.useEffect(() => {
     setHoverIndex((current) => current === null ? null : Math.min(current, Math.max(0, points.length - 1)));
   }, [points.length]);
+  const useLightweight = routeMode && plotEngine === "lightweight";
+  const hasDerivedPoints = points.some((point) => point.derived);
+  const lightweightSeries = React.useMemo<MeridianChartSeries>(() => {
+    const truthState = hasDerivedPoints ? "simulated" : data.truthState;
+    const provenance = hasDerivedPoints
+      ? {
+          ...data.provenance,
+          state: "simulated" as const,
+          sourceType: "derived" as const,
+          freshness: "unknown" as const,
+          cacheState: "none" as const,
+        }
+      : data.provenance;
+
+    return {
+      symbol: data.symbol,
+      timeframe,
+      timeZone: data.timeZone,
+      ...(data.currency ? { currency: data.currency } : {}),
+      truthState,
+      provenance,
+      candles: points.map((point) => ({
+        timestamp: point.timestamp,
+        ...(point.displayLabel ? { displayLabel: point.displayLabel } : {}),
+        open: point.open,
+        high: point.high,
+        low: point.low,
+        close: point.close,
+        volume: point.volume,
+      })),
+    };
+  }, [
+    data.currency,
+    data.provenance,
+    data.symbol,
+    data.timeZone,
+    data.truthState,
+    hasDerivedPoints,
+    points,
+    timeframe,
+  ]);
   const W = chartSize.width;
   const H = chartSize.height;
   const plot = { left: 10, right: 62, top: 17, bottom: 28 };
@@ -314,8 +385,10 @@ export function MarketChart({
       ref={workspaceRef}
       className={`yt-chart-workspace ${routeMode ? "is-route" : ""} ${expanded ? "is-expanded" : ""}`}
       aria-labelledby={chartTitleId}
+      aria-describedby={chartSummaryId}
       data-density={densityBand}
       data-chart-scope={routeMode ? "route" : "overview"}
+      data-chart-engine={useLightweight ? "lightweight" : "svg"}
       data-candle-count={points.length}
       data-render-width={W}
       data-render-height={H}
@@ -406,17 +479,40 @@ export function MarketChart({
         </div>
       </header>
 
+      <p id={chartSummaryId} className="sr-only">
+        {points.length && lastPoint
+          ? `${data.name} ${timeframe}. ${points.length} ${hasDerivedPoints ? "simulated" : data.truthState} intervals. Latest open ${formatPrice(lastPoint.open, axisDecimals)}, high ${formatPrice(lastPoint.high, axisDecimals)}, low ${formatPrice(lastPoint.low, axisDecimals)}, close ${formatPrice(lastPoint.close, axisDecimals)}, volume ${Math.round(lastPoint.volume).toLocaleString()}. Source: ${data.provenance.provider ?? data.provenance.sourceType}.`
+          : `${data.name} ${timeframe}. Historical series unavailable. Source: ${data.provenance.provider ?? data.provenance.sourceType}.`}
+      </p>
+
       <div className="yt-chart-canvas">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             ref={chartWrapRef}
-            key={timeframe}
-            className="yt-chart-svg-wrap"
+            key={useLightweight ? "lightweight-chart" : timeframe}
+            className={`yt-chart-svg-wrap ${useLightweight ? "has-lightweight" : ""}`}
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -3 }}
             transition={{ duration: reducedMotion ? 0.06 : motionTokens.duration.interface }}
           >
+            {useLightweight ? (
+              points.length ? (
+                <React.Suspense
+                  fallback={(
+                    <div className="yt-chart-empty" role="status">
+                      <BarChart3 aria-hidden="true" />Preparing analytical chart
+                    </div>
+                  )}
+                >
+                  <LightweightChartSurface
+                    series={lightweightSeries}
+                    showIndicators={showIndicators}
+                    showComparison={showComparison}
+                  />
+                </React.Suspense>
+              ) : null
+            ) : (
             <svg
               viewBox={`0 0 ${W} ${H}`}
               preserveAspectRatio="xMidYMid meet"
@@ -602,7 +698,7 @@ export function MarketChart({
                     y={H - 7}
                     textAnchor={originalIndex === 0 ? "start" : originalIndex === points.length - 1 ? "end" : "middle"}
                   >
-                    {point.time}
+                    {point.displayLabel ?? ""}
                   </text>
                 );
               })}
@@ -619,11 +715,12 @@ export function MarketChart({
                 </g>
               )}
             </svg>
+            )}
           </motion.div>
         </AnimatePresence>
 
         <AnimatePresence>
-          {activePoint && hoverIndex !== null && (
+          {!useLightweight && activePoint && hoverIndex !== null && (
             <motion.div
               className="yt-chart-tooltip"
               data-side={(xAt(hoverIndex) / W) * 100 > 72 ? "right" : "center"}
@@ -636,29 +733,31 @@ export function MarketChart({
               exit={{ opacity: 0 }}
               transition={{ duration: reducedMotion ? 0.04 : motionTokens.duration.micro }}
             >
-              <strong>{activePoint.time}</strong>
+              <strong>{activePoint.displayLabel ?? "Selected interval"}</strong>
               <span>O {activePoint.open.toFixed(2)}</span>
               <span>H {activePoint.high.toFixed(2)}</span>
               <span>L {activePoint.low.toFixed(2)}</span>
               <span>C {activePoint.close.toFixed(2)}</span>
               <span className="yt-chart-tooltip-volume">Vol {Math.round(activePoint.volume).toLocaleString()}</span>
-              {activePoint.derived && <small className="yt-chart-tooltip-derived">Deterministic interval</small>}
+              {activePoint.derived && <small className="yt-chart-tooltip-derived">Simulated interval</small>}
               {activeIsDomainClipped && <small className="yt-chart-tooltip-note">Extreme range clipped on axis</small>}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {(priceDomain.clippedHigh || priceDomain.clippedLow) && points.length > 0 && (
+        {!useLightweight && (priceDomain.clippedHigh || priceDomain.clippedLow) && points.length > 0 && (
           <div className="yt-chart-domain-note" role="status">Extreme candle range clipped to preserve readable scale</div>
         )}
 
-        <div className="yt-chart-legend" aria-hidden="true">
-          {showIndicators && <span><i className="is-fast" />MA 8</span>}
-          {showIndicators && <span><i className="is-slow" />MA 21</span>}
-          {showComparison && <span><i className="is-compare" />Benchmark demo</span>}
-        </div>
+        {!useLightweight && (
+          <div className="yt-chart-legend" aria-hidden="true">
+            {showIndicators && <span><i className="is-fast" />MA 8</span>}
+            {showIndicators && <span><i className="is-slow" />MA 21</span>}
+            {showComparison && <span><i className="is-compare" />Benchmark demo</span>}
+          </div>
+        )}
         <div className="yt-chart-density-note" aria-hidden="true">
-          {sourcePoints.length} fixture anchors · {points.length} deterministic intervals
+          {hasDerivedPoints ? "Simulated · " : "Historical Demo · "}{sourcePoints.length} fixture anchors · {points.length} intervals
         </div>
         {!points.length && (
           <div className="yt-chart-empty"><BarChart3 aria-hidden="true" />Historical series unavailable</div>

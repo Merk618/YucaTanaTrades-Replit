@@ -197,6 +197,12 @@ describe("authenticated workspace route content", () => {
         expect(markup).toContain(landmark);
       }
       expect(markup.length).toBeGreaterThan(2_000);
+      if (label === "Overview" || label === "Markets" || label === "Charts") {
+        expect(markup).toContain('data-chart-engine="svg"');
+      }
+      if (label === "Overview" || label === "Markets") {
+        expect(markup).not.toContain("TradingView Lightweight Charts™");
+      }
     });
   }
 

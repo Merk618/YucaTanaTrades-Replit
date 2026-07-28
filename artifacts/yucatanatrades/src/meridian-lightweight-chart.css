@@ -1,0 +1,246 @@
+/* Phase 1 · Meridian-owned presentation for the optional Lightweight Charts engine. */
+
+.yt-chart-workspace .yt-chart-svg-wrap.has-lightweight {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.yt-lwc-surface {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0 0 10px 10px;
+  background:
+    radial-gradient(ellipse 58% 52% at 72% 24%, rgba(49, 113, 119, 0.045), transparent 70%),
+    linear-gradient(180deg, rgba(4, 25, 34, 0.12), rgba(2, 16, 23, 0.24));
+}
+
+.yt-lwc-plot {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  cursor: crosshair;
+  outline: none;
+}
+
+.yt-lwc-plot:focus-visible {
+  outline: 1px solid rgba(237, 211, 150, 0.78);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 3px rgba(217, 187, 122, 0.07);
+}
+
+.yt-lwc-readout {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  left: 11px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100% - 250px);
+  min-height: 25px;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(126, 167, 169, 0.12);
+  border-radius: 7px;
+  background: rgba(3, 20, 28, 0.78);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14), inset 0 1px rgba(255, 255, 255, 0.025);
+  color: rgba(189, 203, 200, 0.75);
+  font-size: 8px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+}
+
+.yt-lwc-readout strong {
+  flex: 0 0 auto;
+  color: rgba(236, 230, 210, 0.9);
+  font-size: 9px;
+  font-weight: 580;
+}
+
+.yt-lwc-readout span {
+  display: inline-flex;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.yt-lwc-readout small {
+  color: rgba(217, 187, 122, 0.7);
+  font-size: 7px;
+  letter-spacing: 0.05em;
+}
+
+.yt-lwc-footer {
+  position: absolute;
+  z-index: 7;
+  top: 8px;
+  right: 64px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 24px;
+  padding: 4px 7px;
+  border: 1px solid rgba(126, 167, 169, 0.1);
+  border-radius: 7px;
+  background: rgba(3, 19, 27, 0.72);
+  color: rgba(143, 168, 169, 0.58);
+  font-size: 9px;
+  line-height: 1.15;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+}
+
+.yt-lwc-footer a {
+  display: grid;
+  gap: 2px;
+  color: rgba(213, 191, 139, 0.82);
+  text-align: right;
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 140ms ease, text-shadow 140ms ease;
+}
+
+.yt-lwc-footer a small {
+  color: rgba(143, 168, 169, 0.54);
+  font-size: 7px;
+  letter-spacing: 0.02em;
+}
+
+.yt-lwc-footer a:hover {
+  color: rgba(239, 215, 158, 0.96);
+  text-shadow: 0 0 14px rgba(217, 187, 122, 0.18);
+}
+
+.yt-lwc-footer a:focus-visible {
+  border-radius: 3px;
+  outline: 1px solid rgba(237, 211, 150, 0.78);
+  outline-offset: 3px;
+}
+
+.yt-lwc-state {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(4, 24, 33, 0.78), rgba(2, 17, 24, 0.9));
+  color: rgba(152, 175, 177, 0.7);
+  text-align: center;
+  pointer-events: none;
+}
+
+.yt-lwc-state strong {
+  color: rgba(229, 231, 224, 0.9);
+  font-size: 12px;
+  font-weight: 580;
+}
+
+.yt-lwc-state span {
+  font-size: 9px;
+}
+
+.yt-lwc-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (max-width: 899px) {
+  .yt-lwc-plot,
+  .yt-lwc-plot canvas {
+    touch-action: pan-y !important;
+  }
+
+  .yt-lwc-readout {
+    right: 62px;
+    max-width: none;
+  }
+
+  .yt-lwc-footer {
+    top: auto;
+    right: 62px;
+    bottom: 27px;
+  }
+
+  .yt-lwc-footer > span {
+    display: none;
+  }
+}
+
+@media (max-width: 539px) {
+  .yt-lwc-plot {
+    cursor: default;
+  }
+
+  .yt-lwc-readout {
+    right: 54px;
+    gap: 6px;
+    padding-inline: 6px;
+    font-size: 7px;
+  }
+
+  .yt-lwc-readout strong {
+    font-size: 8px;
+  }
+
+  .yt-lwc-readout-volume {
+    display: none !important;
+  }
+
+  .yt-lwc-footer {
+    right: 54px;
+    bottom: 25px;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 359px) {
+  .yt-lwc-readout span:nth-of-type(1),
+  .yt-lwc-readout span:nth-of-type(3) {
+    display: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .yt-lwc-plot,
+  .yt-lwc-plot canvas {
+    touch-action: pan-y !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.yt-force-full-motion) .yt-lwc-surface *,
+  html:not(.yt-force-full-motion) .yt-lwc-surface *::before,
+  html:not(.yt-force-full-motion) .yt-lwc-surface *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+html.yt-motion-paused .yt-lwc-surface *,
+html.yt-motion-paused .yt-lwc-surface *::before,
+html.yt-motion-paused .yt-lwc-surface *::after {
+  animation-play-state: paused !important;
+  transition-duration: 0.001ms !important;
+}
